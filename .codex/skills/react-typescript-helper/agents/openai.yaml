@@ -1,0 +1,4 @@
+interface:
+  display_name: "React Typescript Helper"
+  short_description: "flowlet 用の React 実装方針を整理する"
+  default_prompt: "flowlet の React + TypeScript 実装を、pages、features、shared 構成で整理してください。"
