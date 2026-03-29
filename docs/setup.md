@@ -21,19 +21,20 @@ Copy-Item infra/.env.example infra/.env
 ### 開発DB起動
 
 ```powershell
-docker compose --env-file infra/.env.dev -f infra/docker-compose.yml up -d db-dev
+docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml up -d
 ```
 
 ### 本番相当DB起動
 
 ```powershell
-docker compose --env-file infra/.env -f infra/docker-compose.yml up -d db-prod
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d
 ```
 
 ### DB停止
 
 ```powershell
-docker compose --env-file infra/.env -f infra/docker-compose.yml down
+docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml down
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 ```
 
 ### frontend 依存関係インストール
@@ -82,6 +83,6 @@ powershell -ExecutionPolicy Bypass -File .\infra\scripts\sync-frontend-static.ps
 - PostgreSQL は `18-alpine` を使用する
 - backend は Java 25 前提で構成している
 - 開発時は `frontend` と `backend` を別プロセスで起動する
-- backend の DB 接続先は `SPRING_PROFILES_ACTIVE` と `infra/.env` の組み合わせで切り替える
+- backend は `FLOWLET_DB_*` を共通の環境変数名として参照する
 - Docker Compose の env ファイルは、開発用が `infra/.env.dev`、本番相当用が `infra/.env`
 - 本番相当では frontend build を backend `static` にコピーして配信する
