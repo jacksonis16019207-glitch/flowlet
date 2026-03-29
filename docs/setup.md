@@ -9,12 +9,14 @@
 
 ## 環境変数ファイル
 
-初回のみ、開発用と本番相当用の env ファイルを作成する。
+初回のみ、[`infra/.env.example`](/C:/Users/jacks/Documents/flowlet/infra/.env.example) をコピーして開発用と本番相当用の env ファイルを作成する。
 
 ```powershell
-Copy-Item infra/.env.dev.example infra/.env.dev
+Copy-Item infra/.env.example infra/.env.dev
 Copy-Item infra/.env.example infra/.env
 ```
+
+作成後に、[`infra/.env.dev`](/C:/Users/jacks/Documents/flowlet/infra/.env.dev) は開発用の値、[`infra/.env`](/C:/Users/jacks/Documents/flowlet/infra/.env) は本番相当用の値へそれぞれ編集する。
 
 ## 開発環境
 
