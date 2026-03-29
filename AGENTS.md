@@ -10,6 +10,15 @@
 - AI コーディングエージェントと Skills の活用余地を都度提案する
 - 目的に直接関係しない実装は、AI に任せやすい単位へ分解できる形を意識する
 
+## Skills Policy
+このリポジトリでは、実装や設計を進める際に project-local Skills を優先して利用してください。新しい会話でも同じ方針を適用します。
+
+- まず `./.codex/skills/` 配下の Skills を確認し、該当するものがあれば優先して使う
+- このリポジトリで優先利用する Skills は `db-design-helper`、`java-spring-helper`、`react-typescript-helper`
+- タスク整理や検証観点の補助として `task-breakdown-helper`、`test-design-helper` も使う
+- project-local Skills で不足する部分のみ、グローバル Skills や通常の調査で補完する
+- Skills を使う場合は、着手時にどの Skill を使うか短く共有する
+
 ## Project Structure & Module Organization
 このリポジトリは、`flowlet` Web アプリの monorepo を想定します。バックエンドは `backend/`、フロントエンドは `frontend/`、共通ドキュメントは `docs/` に配置してください。DB スキーマ、seed、ローカル構築メモなどの DB 関連は `backend/db/` または `docs/db/` にまとめます。UI 用の静的アセットは `frontend/src/assets/` に置き、コードはファイル種別ではなく機能単位で整理してください。
 
