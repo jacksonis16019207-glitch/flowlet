@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: flowlet
+  datasource:
+    url: jdbc:postgresql://localhost:5432/flowlet
+    username: flowlet
+    password: flowlet
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  sql:
+    init:
+      mode: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: 8080

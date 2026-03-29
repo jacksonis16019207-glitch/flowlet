@@ -1,0 +1,15 @@
+.gradle/
+build/
+out/
+node_modules/
+dist/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+!.env.example
+backend/build/
+frontend/dist/

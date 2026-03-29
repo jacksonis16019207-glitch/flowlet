@@ -1,0 +1,12 @@
+package com.flowlet.app;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class FlowletApplicationTest {
+
+    @Test
+    void contextLoads() {
+    }
+}
