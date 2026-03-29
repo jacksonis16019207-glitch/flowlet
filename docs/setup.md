@@ -1,4 +1,4 @@
-# セットアップメモ
+﻿# セットアップメモ
 
 ## 前提
 
@@ -51,3 +51,4 @@ cd backend
 - backend は Gradle Wrapper 未追加
 - frontend は依存関係未インストール
 - CSV 取込、DB migration、業務機能は未実装
+

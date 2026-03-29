@@ -1,4 +1,4 @@
-# flowlet MVPタスク
+﻿# flowlet MVPタスク
 
 ## 方針
 
@@ -170,3 +170,4 @@
 - Spring Boot + React + PostgreSQL + Docker の monorepo 立ち上げ手順
 - DDD を個人開発にどう持ち込むか
 - AI コーディングエージェントにどこまで任せるか
+
