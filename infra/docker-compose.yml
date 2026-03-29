@@ -1,0 +1,40 @@
+name: flowlet
+
+services:
+  db-dev:
+    image: postgres:18-alpine
+    container_name: ${FLOWLET_DB_DEV_CONTAINER_NAME:-flowlet-db-dev}
+    environment:
+      POSTGRES_DB: ${FLOWLET_DB_DEV_NAME:-flowlet_dev}
+      POSTGRES_USER: ${FLOWLET_DB_DEV_USER:-flowlet}
+      POSTGRES_PASSWORD: ${FLOWLET_DB_DEV_PASSWORD:-flowlet}
+    ports:
+      - "${FLOWLET_DB_DEV_PORT:-5432}:5432"
+    volumes:
+      - flowlet-db-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FLOWLET_DB_DEV_USER:-flowlet} -d ${FLOWLET_DB_DEV_NAME:-flowlet_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db-prod:
+    image: postgres:18-alpine
+    container_name: ${FLOWLET_DB_PROD_CONTAINER_NAME:-flowlet-db-prod}
+    environment:
+      POSTGRES_DB: ${FLOWLET_DB_PROD_NAME:-flowlet_prod}
+      POSTGRES_USER: ${FLOWLET_DB_PROD_USER:-flowlet}
+      POSTGRES_PASSWORD: ${FLOWLET_DB_PROD_PASSWORD:-flowlet}
+    ports:
+      - "${FLOWLET_DB_PROD_PORT:-5433}:5432"
+    volumes:
+      - flowlet-db-prod-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FLOWLET_DB_PROD_USER:-flowlet} -d ${FLOWLET_DB_PROD_NAME:-flowlet_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  flowlet-db-dev-data:
+  flowlet-db-prod-data:

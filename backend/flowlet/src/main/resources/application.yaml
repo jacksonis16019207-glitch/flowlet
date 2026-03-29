@@ -1,3 +1,16 @@
 spring:
   application:
     name: flowlet
+  profiles:
+    default: dev
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ${FLOWLET_DB_SCHEMA:flowlet}
+  flyway:
+    enabled: true
+    default-schema: ${FLOWLET_DB_SCHEMA:flowlet}
+    schemas: ${FLOWLET_DB_SCHEMA:flowlet}

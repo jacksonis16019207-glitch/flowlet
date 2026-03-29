@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:${FLOWLET_DB_PROD_PORT:5433}/${FLOWLET_DB_PROD_NAME:flowlet_prod}
+    username: ${FLOWLET_DB_PROD_USER:flowlet}
+    password: ${FLOWLET_DB_PROD_PASSWORD:flowlet}
