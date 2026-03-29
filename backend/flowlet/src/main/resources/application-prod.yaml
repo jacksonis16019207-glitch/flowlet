@@ -1,5 +1,5 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:${FLOWLET_DB_PORT:5433}/${FLOWLET_DB_NAME:flowlet_prod}
+    url: jdbc:postgresql://${FLOWLET_DB_HOST:localhost}:${FLOWLET_DB_PORT:5433}/${FLOWLET_DB_NAME:flowlet_prod}
     username: ${FLOWLET_DB_USER:flowlet}
     password: ${FLOWLET_DB_PASSWORD:flowlet}

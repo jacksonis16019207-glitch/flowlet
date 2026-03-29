@@ -18,5 +18,24 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build:
+      context: ..
+      dockerfile: infra/docker/app.Dockerfile
+    container_name: flowlet-app-prod
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      FLOWLET_DB_HOST: db
+      FLOWLET_DB_PORT: 5432
+      FLOWLET_DB_NAME: ${FLOWLET_DB_NAME:-flowlet_prod}
+      FLOWLET_DB_USER: ${FLOWLET_DB_USER:-flowlet}
+      FLOWLET_DB_PASSWORD: ${FLOWLET_DB_PASSWORD:-flowlet}
+      FLOWLET_DB_SCHEMA: ${FLOWLET_DB_SCHEMA:-flowlet}
+    ports:
+      - "8081:8080"
+
 volumes:
   flowlet-db-prod-data:

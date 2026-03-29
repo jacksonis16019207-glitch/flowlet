@@ -1,0 +1,10 @@
+.git
+.gradle
+.idea
+.vscode
+backend/flowlet/build
+frontend/dist
+frontend/node_modules
+backend/flowlet/src/test
+**/*.log
+infra/deploy

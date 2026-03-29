@@ -9,14 +9,14 @@
 
 ## 環境変数ファイル
 
-初回のみ、開発用と本番相当用の env ファイルをそれぞれ作成する。
+初回のみ、開発用と本番相当用の env ファイルを作成する。
 
 ```powershell
 Copy-Item infra/.env.dev.example infra/.env.dev
 Copy-Item infra/.env.example infra/.env
 ```
 
-## 開発コマンド
+## 開発環境
 
 ### 開発DB起動
 
@@ -24,34 +24,15 @@ Copy-Item infra/.env.example infra/.env
 docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml up -d
 ```
 
-### 本番相当DB起動
-
-```powershell
-docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d
-```
-
-### DB停止
-
-```powershell
-docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml down
-docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
-```
-
-### frontend 依存関係インストール
+### frontend 起動
 
 ```powershell
 cd frontend
 npm.cmd install
-```
-
-### frontend 開発サーバー起動
-
-```powershell
-cd frontend
 npm.cmd run dev
 ```
 
-### backend 開発起動
+### backend 起動
 
 ```powershell
 cd backend\flowlet
@@ -59,23 +40,19 @@ $env:SPRING_PROFILES_ACTIVE="dev"
 .\gradlew.bat bootRun
 ```
 
-### backend 本番相当起動
+## 本番相当環境
+
+### DB と app を Docker で起動
 
 ```powershell
-cd backend\flowlet
-$env:SPRING_PROFILES_ACTIVE="prod"
-.\gradlew.bat bootRun
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --build
 ```
 
-### frontend を backend static に配置
-
-本番相当では frontend を build したうえで、backend の `static` 配下へ配置してから backend を起動する。
+### 停止
 
 ```powershell
-cd frontend
-npm.cmd run build
-cd ..
-powershell -ExecutionPolicy Bypass -File .\infra\scripts\sync-frontend-static.ps1
+docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml down
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 ```
 
 ## 現時点の注意
@@ -84,5 +61,4 @@ powershell -ExecutionPolicy Bypass -File .\infra\scripts\sync-frontend-static.ps
 - backend は Java 25 前提で構成している
 - 開発時は `frontend` と `backend` を別プロセスで起動する
 - backend は `FLOWLET_DB_*` を共通の環境変数名として参照する
-- Docker Compose の env ファイルは、開発用が `infra/.env.dev`、本番相当用が `infra/.env`
-- 本番相当では frontend build を backend `static` にコピーして配信する
+- 本番相当は Docker image build 内で frontend build を取り込み、`app` コンテナだけを公開する

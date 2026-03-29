@@ -15,3 +15,4 @@ Thumbs.db
 !infra/.env.dev.example
 backend/build/
 frontend/dist/
+infra/deploy/
