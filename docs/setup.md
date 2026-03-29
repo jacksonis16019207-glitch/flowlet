@@ -42,6 +42,11 @@ $env:SPRING_PROFILES_ACTIVE="dev"
 .\gradlew.bat bootRun
 ```
 
+### 確認URL
+
+- frontend: `http://localhost:5173/`
+- backend API: `http://localhost:8080/api/accounts`
+
 ## 本番相当環境
 
 ### DB と app を Docker で起動
@@ -49,6 +54,11 @@ $env:SPRING_PROFILES_ACTIVE="dev"
 ```powershell
 docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --build
 ```
+
+### 確認URL
+
+- app: `http://localhost:8081/`
+- API: `http://localhost:8081/api/accounts`
 
 ### 停止
 
@@ -64,3 +74,4 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 - 開発時は `frontend` と `backend` を別プロセスで起動する
 - backend は `FLOWLET_DB_*` を共通の環境変数名として参照する
 - 本番相当は Docker image build 内で frontend build を取り込み、`app` コンテナだけを公開する
+- `m_account` の初期データは Flyway migration で投入する
