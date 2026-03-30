@@ -62,6 +62,8 @@
 | 作成中 | 個人開発アプリを公開するとき、実データをどう避けるか: flowlet のダミーデータ方針 | `docs/articles/004-demo-data-policy.md` |
 | 作成中 | 個人開発で Codex Skills を育てながら進める: flowlet で試しているやり方 | `docs/articles/005-codex-skills-in-personal-dev.md` |
 
+| 下書き中 | flowlet で学んだ、AI コーディング運用を Skill と AGENTS.md に落とし込むやり方 | `docs/articles/006-skill-and-agents-md-for-ai-dev.md` |
+
 ## メモ
 
 - 記事は `docs/articles/` 配下に下書きを増やしてもよい
