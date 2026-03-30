@@ -7,15 +7,15 @@ import jakarta.validation.constraints.Size;
 
 public class CreateAccountRequest {
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "{validation.account.bankName.notBlank}")
+    @Size(max = 100, message = "{validation.account.bankName.size}")
     private String bankName;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "{validation.account.accountName.notBlank}")
+    @Size(max = 100, message = "{validation.account.accountName.size}")
     private String accountName;
 
-    @NotNull
+    @NotNull(message = "{validation.account.accountType.notNull}")
     private AccountType accountType;
 
     private boolean active = true;
