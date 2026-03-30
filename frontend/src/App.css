@@ -115,6 +115,18 @@
   border-color: #c57d31;
 }
 
+.account-form input[aria-invalid='true'],
+.account-form select[aria-invalid='true'] {
+  border-color: #c84f45;
+  background: #fff7f6;
+}
+
+.field-error {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a23d35;
+}
+
 .checkbox-row {
   grid-template-columns: auto 1fr;
   align-items: center;

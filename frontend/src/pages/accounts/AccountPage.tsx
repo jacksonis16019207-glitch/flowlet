@@ -4,6 +4,7 @@ import { createAccount, fetchAccounts } from '../../features/account/api/account
 import { AccountForm } from '../../features/account/components/AccountForm'
 import { AccountList } from '../../features/account/components/AccountList'
 import type { Account, CreateAccountInput } from '../../features/account/types/account'
+import { ApiRequestError } from '../../shared/lib/api/client'
 
 const initialForm: CreateAccountInput = {
   bankName: '',
@@ -12,12 +13,18 @@ const initialForm: CreateAccountInput = {
   active: true,
 }
 
+type AccountFormField = keyof CreateAccountInput
+
 export function AccountPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [form, setForm] = useState<CreateAccountInput>(initialForm)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [submitErrorMessage, setSubmitErrorMessage] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<AccountFormField, string>>
+  >({})
 
   useEffect(() => {
     void loadAccounts()
@@ -31,9 +38,7 @@ export function AccountPage() {
       const data = await fetchAccounts()
       setAccounts(data)
     } catch {
-      setErrorMessage(
-        '口座マスタの取得に失敗しました。backend が起動しているか確認してください。',
-      )
+      setErrorMessage('Failed to load accounts. Check backend status and try again.')
     } finally {
       setLoading(false)
     }
@@ -42,16 +47,37 @@ export function AccountPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSubmitting(true)
-    setErrorMessage('')
+    setSubmitErrorMessage('')
+    setFieldErrors({})
 
     try {
       const createdAccount = await createAccount(form)
       setAccounts((currentAccounts) => [createdAccount, ...currentAccounts])
       setForm(initialForm)
-    } catch {
-      setErrorMessage(
-        '口座マスタの登録に失敗しました。入力内容と backend の状態を確認してください。',
-      )
+    } catch (error) {
+      if (error instanceof ApiRequestError) {
+        if (error.code === 'VALIDATION_ERROR') {
+          setSubmitErrorMessage(error.message)
+          setFieldErrors(
+            error.fieldErrors.reduce<Partial<Record<AccountFormField, string>>>(
+              (accumulator, fieldError) => {
+                if (isAccountFormField(fieldError.field)) {
+                  accumulator[fieldError.field] = fieldError.message
+                }
+
+                return accumulator
+              },
+              {},
+            ),
+          )
+          return
+        }
+
+        setSubmitErrorMessage(error.message)
+        return
+      }
+
+      setSubmitErrorMessage('Failed to create account. Check your input and backend status.')
     } finally {
       setSubmitting(false)
     }
@@ -61,18 +87,19 @@ export function AccountPage() {
     <main className="app-shell">
       <section className="hero-panel">
         <p className="eyebrow">flowlet / master account</p>
-        <h1>口座マスタを登録する</h1>
+        <h1>Create and manage accounts</h1>
         <p className="lead">
-          `m_account` を起点に、口座マスタの一覧表示と登録の最小縦切りを完成させます。
-          次の段階で目的別口座や残高配分へ広げます。
+          Manage the `m_account` master with a single screen for listing and registration.
+          This view is wired to structured backend errors so field validation and business
+          errors are shown separately.
         </p>
         <div className="hero-stats">
           <article>
-            <span>登録済み口座</span>
+            <span>Total accounts</span>
             <strong>{accounts.length}</strong>
           </article>
           <article>
-            <span>有効口座</span>
+            <span>Active accounts</span>
             <strong>{accounts.filter((account) => account.active).length}</strong>
           </article>
         </div>
@@ -82,11 +109,13 @@ export function AccountPage() {
         <section className="panel">
           <div className="panel-heading">
             <p className="eyebrow">new account</p>
-            <h2>口座マスタを追加</h2>
+            <h2>New account</h2>
           </div>
           <AccountForm
             value={form}
             submitting={submitting}
+            submitErrorMessage={submitErrorMessage}
+            fieldErrors={fieldErrors}
             onChange={setForm}
             onSubmit={handleSubmit}
           />
@@ -95,7 +124,7 @@ export function AccountPage() {
         <section className="panel">
           <div className="panel-heading">
             <p className="eyebrow">account list</p>
-            <h2>登録済み口座マスタ</h2>
+            <h2>Saved accounts</h2>
           </div>
           <AccountList
             accounts={accounts}
@@ -105,5 +134,14 @@ export function AccountPage() {
         </section>
       </section>
     </main>
+  )
+}
+
+function isAccountFormField(value: string): value is AccountFormField {
+  return (
+    value === 'bankName' ||
+    value === 'accountName' ||
+    value === 'accountType' ||
+    value === 'active'
   )
 }

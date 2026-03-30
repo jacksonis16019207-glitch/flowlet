@@ -5,9 +5,13 @@ import {
   type CreateAccountInput,
 } from '../types/account'
 
+type AccountFormField = keyof CreateAccountInput
+
 type AccountFormProps = {
   value: CreateAccountInput
   submitting: boolean
+  submitErrorMessage: string
+  fieldErrors: Partial<Record<AccountFormField, string>>
   onChange: (nextValue: CreateAccountInput) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
@@ -15,14 +19,23 @@ type AccountFormProps = {
 export function AccountForm({
   value,
   submitting,
+  submitErrorMessage,
+  fieldErrors,
   onChange,
   onSubmit,
 }: AccountFormProps) {
   return (
     <form className="account-form" onSubmit={onSubmit}>
+      {submitErrorMessage ? (
+        <div className="status error" role="alert">
+          {submitErrorMessage}
+        </div>
+      ) : null}
+
       <label>
-        銀行名
+        Bank name
         <input
+          aria-invalid={fieldErrors.bankName ? 'true' : 'false'}
           value={value.bankName}
           onChange={(event) =>
             onChange({
@@ -30,15 +43,19 @@ export function AccountForm({
               bankName: event.target.value,
             })
           }
-          placeholder="三菱UFJ銀行"
+          placeholder="MUFG"
           maxLength={100}
           required
         />
+        {fieldErrors.bankName ? (
+          <span className="field-error">{fieldErrors.bankName}</span>
+        ) : null}
       </label>
 
       <label>
-        口座名
+        Account name
         <input
+          aria-invalid={fieldErrors.accountName ? 'true' : 'false'}
           value={value.accountName}
           onChange={(event) =>
             onChange({
@@ -46,15 +63,19 @@ export function AccountForm({
               accountName: event.target.value,
             })
           }
-          placeholder="メイン口座"
+          placeholder="Main account"
           maxLength={100}
           required
         />
+        {fieldErrors.accountName ? (
+          <span className="field-error">{fieldErrors.accountName}</span>
+        ) : null}
       </label>
 
       <label>
-        口座種別
+        Account type
         <select
+          aria-invalid={fieldErrors.accountType ? 'true' : 'false'}
           value={value.accountType}
           onChange={(event) =>
             onChange({
@@ -67,6 +88,9 @@ export function AccountForm({
           <option value="SAVINGS">{accountTypeLabels.SAVINGS}</option>
           <option value="OTHER">{accountTypeLabels.OTHER}</option>
         </select>
+        {fieldErrors.accountType ? (
+          <span className="field-error">{fieldErrors.accountType}</span>
+        ) : null}
       </label>
 
       <label className="checkbox-row">
@@ -80,11 +104,11 @@ export function AccountForm({
             })
           }
         />
-        利用中の口座として登録する
+        Register as active account
       </label>
 
       <button type="submit" disabled={submitting}>
-        {submitting ? '登録中...' : '口座マスタを登録'}
+        {submitting ? 'Saving...' : 'Create account'}
       </button>
     </form>
   )

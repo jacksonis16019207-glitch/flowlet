@@ -16,13 +16,13 @@ export function AccountList({
   }
 
   if (loading) {
-    return <p className="status">読み込み中...</p>
+    return <p className="status">Loading...</p>
   }
 
   if (accounts.length === 0) {
     return (
       <p className="status">
-        まだ口座マスタがありません。まずは `m_account` に 1 件登録してください。
+        No accounts yet. Create the first `m_account` entry from the form.
       </p>
     )
   }
@@ -42,7 +42,7 @@ export function AccountList({
           <h3>{account.accountName}</h3>
           <p>{account.bankName}</p>
           <time dateTime={account.createdAt}>
-            登録日時: {new Date(account.createdAt).toLocaleString('ja-JP')}
+            Created at {new Date(account.createdAt).toLocaleString('ja-JP')}
           </time>
         </article>
       ))}
