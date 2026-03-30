@@ -1,4 +1,4 @@
-﻿---
+---
 name: java-spring-helper
 description: flowlet の Spring Boot 実装方針を整理するプロジェクト専用 Skill。package 構成、Entity とドメインの分離、Service と ApplicationService の使い分け、Repository、Controller、DTO、例外、バリデーション、トランザクション境界、テスト方針を整理したいときに使う。DDD を意識しつつ、個人開発で回る現実的な構成を取りたいときに使う。
 ---
