@@ -1,11 +1,11 @@
-comment on table flowlet.m_account is '口座マスタ';
-comment on column flowlet.m_account.account_id is '口座ID';
-comment on column flowlet.m_account.bank_name is '銀行名';
-comment on column flowlet.m_account.account_name is '口座名';
-comment on column flowlet.m_account.account_type is '口座種別';
-comment on column flowlet.m_account.is_active is '有効フラグ';
-comment on column flowlet.m_account.created_at is '作成日時';
-comment on column flowlet.m_account.updated_at is '更新日時';
+comment on table flowlet.m_account is 'Account master';
+comment on column flowlet.m_account.account_id is 'Account ID';
+comment on column flowlet.m_account.bank_name is 'Bank name';
+comment on column flowlet.m_account.account_name is 'Account name';
+comment on column flowlet.m_account.account_type is 'Account type';
+comment on column flowlet.m_account.is_active is 'Active flag';
+comment on column flowlet.m_account.created_at is 'Created at';
+comment on column flowlet.m_account.updated_at is 'Updated at';
 
 insert into flowlet.m_account (
     bank_name,
@@ -19,11 +19,11 @@ select seed.bank_name,
        seed.is_active
 from (
     values
-        ('三菱UFJ銀行', 'メイン口座', 'CHECKING', true),
-        ('三菱UFJ銀行', '使い分け口座', 'CHECKING', true),
-        ('PayPay銀行', 'PayPayカード引き落とし口座', 'CHECKING', true),
-        ('SBI新生銀行', '普通預金', 'CHECKING', true),
-        ('SBI新生銀行', 'ハイパー預金', 'SAVINGS', true)
+        ('メイン銀行', '生活口座', 'CHECKING', true),
+        ('メイン銀行', '使い分け口座', 'CHECKING', true),
+        ('決済用銀行', '固定費口座', 'CHECKING', true),
+        ('貯蓄用銀行', '普通預金', 'CHECKING', true),
+        ('貯蓄用銀行', '貯蓄口座', 'SAVINGS', true)
 ) as seed(bank_name, account_name, account_type, is_active)
 where not exists (
     select 1
