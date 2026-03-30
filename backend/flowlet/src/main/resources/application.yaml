@@ -1,6 +1,8 @@
 spring:
   application:
     name: flowlet
+  jackson:
+    time-zone: Asia/Tokyo
   profiles:
     default: dev
   jpa:
@@ -10,6 +12,8 @@ spring:
     properties:
       hibernate:
         default_schema: ${FLOWLET_DB_SCHEMA:flowlet}
+        jdbc:
+          time_zone: Asia/Tokyo
   flyway:
     enabled: true
     default-schema: ${FLOWLET_DB_SCHEMA:flowlet}

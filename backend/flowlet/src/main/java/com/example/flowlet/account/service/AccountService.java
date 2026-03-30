@@ -7,6 +7,7 @@ import com.example.flowlet.presentation.account.dto.CreateAccountRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -15,9 +16,11 @@ import java.util.List;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final Clock clock;
 
-    public AccountService(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository, Clock clock) {
         this.accountRepository = accountRepository;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -32,7 +35,7 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(CreateAccountRequest request) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         Account account = new Account(
             null,
             request.getBankName().trim(),
