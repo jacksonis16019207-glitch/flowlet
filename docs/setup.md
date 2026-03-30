@@ -7,16 +7,16 @@
 - Java 25 インストール済み
 - Node.js インストール済み
 
-## 環境変数ファイル
+## 起動用設定ファイル
 
-初回のみ、[`infra/.env.example`](/C:/Users/jacks/Documents/flowlet/infra/.env.example) をコピーして開発用と本番相当用の env ファイルを作成する。
+最初に [infra/.env.example](/C:/Users/jacks/Documents/flowlet/infra/.env.example) をコピーして、開発用と本番用の env ファイルを作成します。
 
 ```powershell
 Copy-Item infra/.env.example infra/.env.dev
 Copy-Item infra/.env.example infra/.env
 ```
 
-作成後に、[`infra/.env.dev`](/C:/Users/jacks/Documents/flowlet/infra/.env.dev) は開発用の値、[`infra/.env`](/C:/Users/jacks/Documents/flowlet/infra/.env) は本番相当用の値へそれぞれ編集する。
+コピー後に [infra/.env.dev](/C:/Users/jacks/Documents/flowlet/infra/.env.dev) は開発用、[infra/.env](/C:/Users/jacks/Documents/flowlet/infra/.env) は本番用の値に書き換えます。
 
 ## 開発環境
 
@@ -42,12 +42,12 @@ $env:SPRING_PROFILES_ACTIVE="dev"
 .\gradlew.bat bootRun
 ```
 
-### 確認URL
+### URL
 
 - frontend: `http://localhost:5173/`
 - backend API: `http://localhost:8080/api/accounts`
 
-## 本番相当環境
+## 本番構成
 
 ### DB と app を Docker で起動
 
@@ -55,7 +55,11 @@ $env:SPRING_PROFILES_ACTIVE="dev"
 docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --build
 ```
 
-### 確認URL
+`flowlet-prod` は `restart: unless-stopped` を設定しているため、Docker Desktop の `Start Docker Desktop when you sign in to your computer` を有効にしておけば、初回起動後は PC 再起動後も自動復帰します。
+
+初回だけは上のコマンドで本番用コンテナを起動してください。以後は明示的に停止しない限り、同じコンテナが再起動対象になります。
+
+### URL
 
 - app: `http://localhost:8081/`
 - API: `http://localhost:8081/api/accounts`
@@ -67,11 +71,13 @@ docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml down
 docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 ```
 
-## 現時点の注意
+`docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down` を実行すると、本番構成のコンテナは削除されるため、次回は再度 `up -d --build` が必要です。
+
+## 補足
 
 - PostgreSQL は `18-alpine` を使用する
 - backend は Java 25 前提で構成している
 - 開発時は `frontend` と `backend` を別プロセスで起動する
-- backend は `FLOWLET_DB_*` を共通の環境変数名として参照する
-- 本番相当は Docker image build 内で frontend build を取り込み、`app` コンテナだけを公開する
-- `m_account` の初期データは Flyway migration で投入する
+- backend は `FLOWLET_DB_*` を env から受け取る
+- 本番構成は Docker image build の中で frontend build を含め、app コンテナだけを公開する
+- `m_account` の初期スキーマは Flyway migration で管理する

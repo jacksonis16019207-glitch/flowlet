@@ -3,6 +3,7 @@ name: flowlet-prod
 services:
   db:
     image: postgres:18-alpine
+    restart: unless-stopped
     container_name: ${FLOWLET_DB_CONTAINER_NAME:-flowlet-db-prod}
     environment:
       POSTGRES_DB: ${FLOWLET_DB_NAME:-flowlet_prod}
@@ -22,6 +23,7 @@ services:
     build:
       context: ..
       dockerfile: infra/docker/app.Dockerfile
+    restart: unless-stopped
     container_name: flowlet-app-prod
     depends_on:
       db:
