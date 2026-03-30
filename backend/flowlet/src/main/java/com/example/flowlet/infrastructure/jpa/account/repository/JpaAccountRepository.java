@@ -1,6 +1,7 @@
 package com.example.flowlet.infrastructure.jpa.account.repository;
 
 import com.example.flowlet.account.domain.model.Account;
+import com.example.flowlet.account.domain.model.AccountType;
 import com.example.flowlet.account.domain.repository.AccountRepository;
 import com.example.flowlet.infrastructure.jpa.account.entity.AccountEntity;
 import com.example.flowlet.infrastructure.jpa.account.mapper.AccountEntityMapper;
@@ -22,6 +23,11 @@ public class JpaAccountRepository implements AccountRepository {
         return springDataAccountRepository.findAll().stream()
             .map(AccountEntityMapper::toDomain)
             .toList();
+    }
+
+    @Override
+    public boolean existsByBankNameAndAccountNameAndAccountType(String bankName, String accountName, AccountType accountType) {
+        return springDataAccountRepository.existsByBankNameAndAccountNameAndAccountType(bankName, accountName, accountType);
     }
 
     @Override

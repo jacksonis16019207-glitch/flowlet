@@ -60,6 +60,44 @@ class AccountControllerTest {
     }
 
     @Test
+    void postAccountsReturnsValidationErrors() {
+        def request = '{"bankName":"","accountName":"' + 'a'.repeat(101) + '","active":true}'
+
+        mockMvc.perform(post('/api/accounts')
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(request))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath('$.code').value('VALIDATION_ERROR'))
+            .andExpect(jsonPath('$.message').value('入力内容に誤りがあります。'))
+            .andExpect(jsonPath('$.fieldErrors[?(@.field == "bankName")].message').value('金融機関名は必須です。'))
+            .andExpect(jsonPath('$.fieldErrors[?(@.field == "accountName")].message').value('口座名は100文字以内で入力してください。'))
+            .andExpect(jsonPath('$.fieldErrors[?(@.field == "accountType")].message').value('口座種別は必須です。'))
+    }
+
+    @Test
+    void postAccountsReturnsConflictWhenAccountAlreadyExists() {
+        accountRepository.save(new Account(
+            null,
+            'MUFG',
+            'Main Account',
+            AccountType.CHECKING,
+            true,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ))
+
+        def request = '{"bankName":"MUFG","accountName":"Main Account","accountType":"CHECKING","active":true}'
+
+        mockMvc.perform(post('/api/accounts')
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(request))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath('$.code').value('ACCOUNT_ALREADY_EXISTS'))
+            .andExpect(jsonPath('$.message').value('MUFG / Main Account の口座はすでに登録されています。'))
+            .andExpect(jsonPath('$.fieldErrors').isEmpty())
+    }
+
+    @Test
     void getAccountsReturnsCreatedAccounts() {
         accountRepository.save(new Account(
             null,

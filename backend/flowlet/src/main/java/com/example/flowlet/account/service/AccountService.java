@@ -1,6 +1,7 @@
 package com.example.flowlet.account.service;
 
 import com.example.flowlet.account.domain.model.Account;
+import com.example.flowlet.account.exception.AccountAlreadyExistsException;
 import com.example.flowlet.account.domain.repository.AccountRepository;
 import com.example.flowlet.presentation.account.dto.AccountResponse;
 import com.example.flowlet.presentation.account.dto.CreateAccountRequest;
@@ -35,11 +36,18 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(CreateAccountRequest request) {
+        String bankName = request.getBankName().trim();
+        String accountName = request.getAccountName().trim();
+
+        if (accountRepository.existsByBankNameAndAccountNameAndAccountType(bankName, accountName, request.getAccountType())) {
+            throw new AccountAlreadyExistsException(bankName, accountName);
+        }
+
         LocalDateTime now = LocalDateTime.now(clock);
         Account account = new Account(
             null,
-            request.getBankName().trim(),
-            request.getAccountName().trim(),
+            bankName,
+            accountName,
             request.getAccountType(),
             request.isActive(),
             now,
