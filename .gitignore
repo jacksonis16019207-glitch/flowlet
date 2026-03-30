@@ -16,3 +16,4 @@ Thumbs.db
 backend/build/
 frontend/dist/
 infra/deploy/
+backend/db/local/
