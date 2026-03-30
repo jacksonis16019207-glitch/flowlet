@@ -1,4 +1,4 @@
-﻿interface:
+interface:
   display_name: "Article Writing Helper"
   short_description: "flowlet 向けの記事候補提案と記事ドラフト作成を支援する"
   default_prompt: "flowlet の開発内容から記事候補を提案し、選んだテーマの記事アウトラインと本文ドラフトを作成してください。"

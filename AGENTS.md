@@ -35,6 +35,9 @@
 - `npm run test`: フロントエンドのテストを実行します。
 - `npm run build`: フロントエンドの本番ビルドを作成します。
 
+## File Encoding
+テキストファイルは `UTF-8 BOMなし` を使用してください。既存ファイルの再保存や新規作成時も同じ方針に揃えてください。
+
 ## Coding Style & Naming Conventions
 各モジュールに formatter や linter を導入したら、それを標準としてください。Java は Spring Boot の一般的な規約に従い、インデントは 4 スペース、クラス名は `PascalCase`、フィールド・メソッドは `camelCase`、package 名は小文字に統一します。React / TypeScript は 2 スペースを基本とし、コンポーネントは `PascalCase`、hooks と utility は `camelCase` を使います。無関係な責務を 1 ファイルに混在させないでください。
 

@@ -1,4 +1,4 @@
-﻿# Package Example
+# Package Example
 
 ## 基本形
 
