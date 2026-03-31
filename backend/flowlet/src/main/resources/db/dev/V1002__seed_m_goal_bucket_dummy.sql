@@ -8,13 +8,13 @@ select account.account_id,
        seed.is_active
 from (
     values
-        ('Demo Bank', 'Main Checking', 'Emergency Buffer', true),
-        ('Demo Bank', 'Main Checking', 'Fixed Cost Reserve', true),
-        ('Demo Bank', 'Living Expenses', 'Groceries', true),
-        ('Sample Savings', 'Emergency Fund', 'Home Appliances', true),
-        ('Sample Savings', 'Emergency Fund', 'Long-Term Reserve', true),
-        ('Wallet Mock', 'Cash Wallet', 'Weekend Spending', true),
-        ('Travel Mock', 'Travel Reserve', 'Summer Trip', false)
+        ('みらい銀行', '生活口座', '緊急予備費', true),
+        ('みらい銀行', '生活口座', '固定費準備', true),
+        ('みらい銀行', '支出口座', '食費', true),
+        ('ひかり貯蓄銀行', '緊急積立', '家電買い替え', true),
+        ('ひかり貯蓄銀行', '緊急積立', '長期積立', true),
+        ('まいにちウォレット', '現金管理', '週末予算', true),
+        ('そらたび積立', '旅行積立', '夏休み旅行', false)
 ) as seed(bank_name, account_name, bucket_name, is_active)
 join flowlet.m_account account
     on account.bank_name = seed.bank_name
