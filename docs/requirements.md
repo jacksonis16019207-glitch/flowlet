@@ -207,6 +207,11 @@
   - 実口座
 - `GoalBucket`
   - 目的別口座
+- `GoalBucket` MVP
+  - 1つの`Account`に属する目的別口座として扱う
+  - 項目は`goalBucketId`, `accountId`, `bucketName`, `active`, `createdAt`, `updatedAt`
+  - MVPのAPIは一覧取得と登録に限定する
+  - 停止は`active`で管理し、配分や残高ロジックは次段階で扱う
 - `Transaction`
   - 入出金、振替、移動
 - `ScheduledPayment`

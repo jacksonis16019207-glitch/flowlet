@@ -3,10 +3,6 @@ package com.example.flowlet.account;
 import com.example.flowlet.account.domain.model.Account;
 import com.example.flowlet.account.domain.model.AccountType;
 import com.example.flowlet.account.domain.repository.AccountRepository;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +14,11 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -72,7 +73,7 @@ class AccountControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
             .andExpect(jsonPath("$.message").value("入力内容に誤りがあります。"))
-            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"bankName\")].message").value("金融機関名は必須です。"))
+            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"bankName\")].message").value("銀行名は必須です。"))
             .andExpect(jsonPath("$.fieldErrors[?(@.field == \"accountName\")].message").value("口座名は100文字以内で入力してください。"))
             .andExpect(jsonPath("$.fieldErrors[?(@.field == \"accountType\")].message").value("口座種別は必須です。"));
     }

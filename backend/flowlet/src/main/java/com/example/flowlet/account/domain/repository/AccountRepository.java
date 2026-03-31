@@ -9,6 +9,8 @@ public interface AccountRepository {
 
     List<Account> findAll();
 
+    boolean existsById(Long accountId);
+
     boolean existsByBankNameAndAccountNameAndAccountType(String bankName, String accountName, AccountType accountType);
 
     Account save(Account account);

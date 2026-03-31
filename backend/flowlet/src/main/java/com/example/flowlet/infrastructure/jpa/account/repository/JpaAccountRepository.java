@@ -26,6 +26,11 @@ public class JpaAccountRepository implements AccountRepository {
     }
 
     @Override
+    public boolean existsById(Long accountId) {
+        return springDataAccountRepository.existsById(accountId);
+    }
+
+    @Override
     public boolean existsByBankNameAndAccountNameAndAccountType(String bankName, String accountName, AccountType accountType) {
         return springDataAccountRepository.existsByBankNameAndAccountNameAndAccountType(bankName, accountName, accountType);
     }

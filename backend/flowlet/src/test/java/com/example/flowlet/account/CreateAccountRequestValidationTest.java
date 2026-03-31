@@ -2,11 +2,12 @@ package com.example.flowlet.account;
 
 import com.example.flowlet.presentation.account.dto.CreateAccountRequest;
 import jakarta.validation.Validator;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,7 +29,7 @@ class CreateAccountRequestValidationTest {
             .collect(java.util.stream.Collectors.toSet());
 
         assertThat(messages).contains(
-            "金融機関名は必須です。",
+            "銀行名は必須です。",
             "口座名は100文字以内で入力してください。",
             "口座種別は必須です。"
         );
