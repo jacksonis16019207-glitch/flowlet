@@ -1,3 +1,31 @@
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 24px 0;
+}
+
+.top-nav button {
+  border: 1px solid rgba(71, 49, 24, 0.12);
+  background: rgba(255, 252, 247, 0.9);
+  color: #684927;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(91, 61, 25, 0.08);
+}
+
+.top-nav button.active {
+  background: linear-gradient(135deg, #b6641f, #d9893a);
+  color: #fff7ef;
+  border-color: transparent;
+}
+
 .app-shell {
   min-height: 100svh;
   padding: 40px 24px 64px;
@@ -230,6 +258,12 @@
 }
 
 @media (max-width: 960px) {
+  .top-nav {
+    justify-content: flex-start;
+    padding: 16px 16px 0;
+    overflow-x: auto;
+  }
+
   .app-shell {
     padding: 20px 16px 40px;
   }
