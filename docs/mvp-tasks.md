@@ -25,6 +25,8 @@
 - 口座管理 API を作る
 - 目的別口座管理 API を作る
 - 取引管理 API を作る
+- 振替・振込 API を作る
+- 目的別口座配分 API を作る
 - 引き落とし予定管理 API を作る
 - 残高集計 API を作る
 
@@ -34,6 +36,8 @@
 - 実口座一覧画面
 - 目的別口座一覧画面
 - 取引入力画面
+- 振替・振込画面
+- 配分画面
 - 引き落とし予定画面
 
 ### M5: CSV 取込初版
@@ -75,14 +79,20 @@
 - `Account` の責務定義
 - `GoalBucket` の責務定義
 - `Transaction` の責務定義
+- `GoalBucketAllocation` の責務定義
+- `Category` / `Subcategory` の責務定義
 - `ScheduledPayment` の責務定義
 - 残高計算ルール定義
 
 ### 5. DB 設計
 
 - accounts テーブル
+- credit_card_profiles テーブル
 - goal_buckets テーブル
+- categories テーブル
+- subcategories テーブル
 - transactions テーブル
+- goal_bucket_allocations テーブル
 - scheduled_payments テーブル
 - CSV 取込履歴テーブル
 
@@ -90,7 +100,10 @@
 
 - 口座 CRUD
 - 目的別口座 CRUD
-- 取引登録 API
+- カテゴリ一覧 API
+- 通常取引登録 API
+- 振替・振込登録 API
+- 目的別口座配分 API
 - 引き落とし予定 CRUD
 - ダッシュボード集計 API
 
@@ -100,7 +113,10 @@
 - 引き落とし予定一覧と不足見込み表示
 - 口座登録フォーム
 - 目的別口座登録フォーム
-- 取引登録フォーム
+- 通常取引フォーム
+- 振替・振込フォーム
+- 配分フォーム
+- 振替・振込フォーム内で配分フォームを同時表示できる構成
 
 ### 8. CSV 取込
 
@@ -140,13 +156,16 @@
 ### Sprint 2
 
 - accounts と goal_buckets の設計、実装
+- categories / subcategories の設計、実装
 - ダッシュボードの骨組み作成
 - サンプルデータ表示
 
 ### Sprint 3
 
-- transactions と scheduled_payments の設計、実装
+- transactions と transfers の設計、実装
+- goal_bucket_allocations の設計、実装
 - 引き落とし不足判定のロジック実装
+- 配分を含む残高計算ロジック実装
 
 ### Sprint 4
 
@@ -157,8 +176,11 @@
 
 - ローカルで backend, frontend, DB が起動できる
 - 実口座を登録できる
+- クレジットカード口座を登録できる
 - 目的別口座を登録できる
 - 取引を登録して残高を更新できる
+- 振替・振込を登録して残高を更新できる
+- 目的別口座へ配分して未配分残高を更新できる
 - 引き落とし予定を登録できる
 - 指定口座の不足見込みを確認できる
 - CSV から過去明細を取り込める
