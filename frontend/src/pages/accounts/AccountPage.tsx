@@ -38,7 +38,7 @@ export function AccountPage() {
       const data = await fetchAccounts()
       setAccounts(data)
     } catch {
-      setErrorMessage('Failed to load accounts. Check backend status and try again.')
+      setErrorMessage('口座の取得に失敗しました。バックエンドの状態を確認してください。')
     } finally {
       setLoading(false)
     }
@@ -77,7 +77,7 @@ export function AccountPage() {
         return
       }
 
-      setSubmitErrorMessage('Failed to create account. Check your input and backend status.')
+      setSubmitErrorMessage('口座の登録に失敗しました。入力内容とバックエンドの状態を確認してください。')
     } finally {
       setSubmitting(false)
     }
@@ -86,20 +86,19 @@ export function AccountPage() {
   return (
     <main className="app-shell">
       <section className="hero-panel">
-        <p className="eyebrow">flowlet / master account</p>
-        <h1>Create and manage accounts</h1>
+        <p className="eyebrow">flowlet / 口座マスタ</p>
+        <h1>口座を登録して管理する</h1>
         <p className="lead">
-          Manage the `m_account` master with a single screen for listing and registration.
-          This view is wired to structured backend errors so field validation and business
-          errors are shown separately.
+          `m_account` を 1 画面で登録・一覧表示できます。
+          バックエンドの構造化エラーに合わせて、入力エラーと業務エラーを分けて表示します。
         </p>
         <div className="hero-stats">
           <article>
-            <span>Total accounts</span>
+            <span>口座数</span>
             <strong>{accounts.length}</strong>
           </article>
           <article>
-            <span>Active accounts</span>
+            <span>利用中の口座</span>
             <strong>{accounts.filter((account) => account.active).length}</strong>
           </article>
         </div>
@@ -108,8 +107,8 @@ export function AccountPage() {
       <section className="content-grid">
         <section className="panel">
           <div className="panel-heading">
-            <p className="eyebrow">new account</p>
-            <h2>New account</h2>
+            <p className="eyebrow">新規口座</p>
+            <h2>口座を登録</h2>
           </div>
           <AccountForm
             value={form}
@@ -123,8 +122,8 @@ export function AccountPage() {
 
         <section className="panel">
           <div className="panel-heading">
-            <p className="eyebrow">account list</p>
-            <h2>Saved accounts</h2>
+            <p className="eyebrow">口座一覧</p>
+            <h2>登録済み口座</h2>
           </div>
           <AccountList
             accounts={accounts}

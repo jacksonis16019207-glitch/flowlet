@@ -57,7 +57,7 @@ export function GoalBucketPage() {
       })
     } catch {
       setErrorMessage(
-        'Failed to load goal buckets. Check backend status and try again.',
+        '目的別口座の取得に失敗しました。バックエンドの状態を確認してください。',
       )
     } finally {
       setLoading(false)
@@ -104,7 +104,7 @@ export function GoalBucketPage() {
       }
 
       setSubmitErrorMessage(
-        'Failed to create goal bucket. Check your input and backend status.',
+        '目的別口座の登録に失敗しました。入力内容とバックエンドの状態を確認してください。',
       )
     } finally {
       setSubmitting(false)
@@ -114,19 +114,18 @@ export function GoalBucketPage() {
   return (
     <main className="app-shell">
       <section className="hero-panel">
-        <p className="eyebrow">flowlet / goal bucket</p>
-        <h1>Create and manage goal buckets</h1>
+        <p className="eyebrow">flowlet / 目的別口座</p>
+        <h1>目的別口座を登録して管理する</h1>
         <p className="lead">
-          Link each goal bucket to a parent account and keep your purpose-based
-          allocation visible from a single screen.
+          目的別口座を親口座にひも付けて登録し、用途ごとの管理を 1 画面で見えるようにします。
         </p>
         <div className="hero-stats">
           <article>
-            <span>Total goal buckets</span>
+            <span>目的別口座数</span>
             <strong>{goalBuckets.length}</strong>
           </article>
           <article>
-            <span>Available parent accounts</span>
+            <span>選択可能な親口座</span>
             <strong>{accounts.length}</strong>
           </article>
         </div>
@@ -135,8 +134,8 @@ export function GoalBucketPage() {
       <section className="content-grid">
         <section className="panel">
           <div className="panel-heading">
-            <p className="eyebrow">new goal bucket</p>
-            <h2>New goal bucket</h2>
+            <p className="eyebrow">新規目的別口座</p>
+            <h2>目的別口座を登録</h2>
           </div>
           <GoalBucketForm
             accounts={accounts}
@@ -151,8 +150,8 @@ export function GoalBucketPage() {
 
         <section className="panel">
           <div className="panel-heading">
-            <p className="eyebrow">goal bucket list</p>
-            <h2>Saved goal buckets</h2>
+            <p className="eyebrow">目的別口座一覧</p>
+            <h2>登録済み目的別口座</h2>
           </div>
           <GoalBucketList
             goalBuckets={goalBuckets}

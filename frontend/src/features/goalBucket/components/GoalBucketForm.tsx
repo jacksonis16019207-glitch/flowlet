@@ -32,7 +32,7 @@ export function GoalBucketForm({
       ) : null}
 
       <label>
-        Parent account
+        親口座
         <select
           aria-invalid={fieldErrors.accountId ? 'true' : 'false'}
           value={value.accountId}
@@ -45,7 +45,7 @@ export function GoalBucketForm({
           disabled={accounts.length === 0}
         >
           {accounts.length === 0 ? (
-            <option value={0}>Create an account first</option>
+            <option value={0}>先に口座を登録してください</option>
           ) : null}
           {accounts.map((account) => (
             <option key={account.accountId} value={account.accountId}>
@@ -59,7 +59,7 @@ export function GoalBucketForm({
       </label>
 
       <label>
-        Goal bucket name
+        目的別口座名
         <input
           aria-invalid={fieldErrors.bucketName ? 'true' : 'false'}
           value={value.bucketName}
@@ -69,7 +69,7 @@ export function GoalBucketForm({
               bucketName: event.target.value,
             })
           }
-          placeholder="Emergency fund"
+          placeholder="緊急費"
           maxLength={100}
           required
         />
@@ -89,11 +89,11 @@ export function GoalBucketForm({
             })
           }
         />
-        Register as active goal bucket
+        利用中の目的別口座として登録
       </label>
 
       <button type="submit" disabled={submitting || accounts.length === 0}>
-        {submitting ? 'Saving...' : 'Create goal bucket'}
+        {submitting ? '登録中...' : '目的別口座を登録'}
       </button>
     </form>
   )

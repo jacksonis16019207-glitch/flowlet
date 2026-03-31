@@ -19,13 +19,13 @@ export function GoalBucketList({
   }
 
   if (loading) {
-    return <p className="status">Loading...</p>
+    return <p className="status">読み込み中...</p>
   }
 
   if (goalBuckets.length === 0) {
     return (
       <p className="status">
-        No goal buckets yet. Create the first `m_goal_bucket` entry from the form.
+        目的別口座はまだありません。フォームから最初の `m_goal_bucket` を登録してください。
       </p>
     )
   }
@@ -43,14 +43,14 @@ export function GoalBucketList({
               <span
                 className={`badge ${goalBucket.active ? 'active' : 'inactive'}`}
               >
-                {goalBucket.active ? 'ACTIVE' : 'INACTIVE'}
+                {goalBucket.active ? '利用中' : '停止中'}
               </span>
-              <span className="type-chip">Account #{goalBucket.accountId}</span>
+              <span className="type-chip">口座ID #{goalBucket.accountId}</span>
             </div>
             <h3>{goalBucket.bucketName}</h3>
-            <p>{account ? `${account.bankName} / ${account.accountName}` : 'Unknown account'}</p>
+            <p>{account ? `${account.bankName} / ${account.accountName}` : '親口座不明'}</p>
             <time dateTime={goalBucket.createdAt}>
-              Created at {new Date(goalBucket.createdAt).toLocaleString('ja-JP')}
+              登録日時 {new Date(goalBucket.createdAt).toLocaleString('ja-JP')}
             </time>
           </article>
         )

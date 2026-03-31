@@ -18,7 +18,7 @@ export type CreateAccountInput = {
 }
 
 export const accountTypeLabels: Record<AccountType, string> = {
-  CHECKING: 'Checking',
-  SAVINGS: 'Savings',
-  OTHER: 'Other',
+  CHECKING: '普通預金',
+  SAVINGS: '貯蓄預金',
+  OTHER: 'その他',
 }

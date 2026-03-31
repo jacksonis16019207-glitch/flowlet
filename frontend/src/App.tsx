@@ -14,14 +14,14 @@ function App() {
           className={page === 'accounts' ? 'active' : ''}
           onClick={() => setPage('accounts')}
         >
-          Accounts
+          口座
         </button>
         <button
           type="button"
           className={page === 'goalBuckets' ? 'active' : ''}
           onClick={() => setPage('goalBuckets')}
         >
-          Goal Buckets
+          目的別口座
         </button>
       </nav>
       {page === 'accounts' ? <AccountPage /> : <GoalBucketPage />}

@@ -16,13 +16,13 @@ export function AccountList({
   }
 
   if (loading) {
-    return <p className="status">Loading...</p>
+    return <p className="status">読み込み中...</p>
   }
 
   if (accounts.length === 0) {
     return (
       <p className="status">
-        No accounts yet. Create the first `m_account` entry from the form.
+        口座はまだありません。フォームから最初の `m_account` を登録してください。
       </p>
     )
   }
@@ -33,7 +33,7 @@ export function AccountList({
         <article key={account.accountId} className="account-card">
           <div className="account-card-header">
             <span className={`badge ${account.active ? 'active' : 'inactive'}`}>
-              {account.active ? 'ACTIVE' : 'INACTIVE'}
+              {account.active ? '利用中' : '停止中'}
             </span>
             <span className="type-chip">
               {accountTypeLabels[account.accountType]}
@@ -42,7 +42,7 @@ export function AccountList({
           <h3>{account.accountName}</h3>
           <p>{account.bankName}</p>
           <time dateTime={account.createdAt}>
-            Created at {new Date(account.createdAt).toLocaleString('ja-JP')}
+            登録日時 {new Date(account.createdAt).toLocaleString('ja-JP')}
           </time>
         </article>
       ))}

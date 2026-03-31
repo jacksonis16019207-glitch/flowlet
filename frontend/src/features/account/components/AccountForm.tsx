@@ -33,7 +33,7 @@ export function AccountForm({
       ) : null}
 
       <label>
-        Bank name
+        銀行名
         <input
           aria-invalid={fieldErrors.bankName ? 'true' : 'false'}
           value={value.bankName}
@@ -43,7 +43,7 @@ export function AccountForm({
               bankName: event.target.value,
             })
           }
-          placeholder="MUFG"
+          placeholder="三菱UFJ銀行"
           maxLength={100}
           required
         />
@@ -53,7 +53,7 @@ export function AccountForm({
       </label>
 
       <label>
-        Account name
+        口座名
         <input
           aria-invalid={fieldErrors.accountName ? 'true' : 'false'}
           value={value.accountName}
@@ -63,7 +63,7 @@ export function AccountForm({
               accountName: event.target.value,
             })
           }
-          placeholder="Main account"
+          placeholder="生活口座"
           maxLength={100}
           required
         />
@@ -73,7 +73,7 @@ export function AccountForm({
       </label>
 
       <label>
-        Account type
+        口座種別
         <select
           aria-invalid={fieldErrors.accountType ? 'true' : 'false'}
           value={value.accountType}
@@ -104,11 +104,11 @@ export function AccountForm({
             })
           }
         />
-        Register as active account
+        利用中の口座として登録
       </label>
 
       <button type="submit" disabled={submitting}>
-        {submitting ? 'Saving...' : 'Create account'}
+        {submitting ? '登録中...' : '口座を登録'}
       </button>
     </form>
   )
