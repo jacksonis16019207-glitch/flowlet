@@ -21,7 +21,7 @@ class CreateAccountRequestValidationTest {
     @Test
     void resolvesValidationMessagesFromMessagesProperties() {
         CreateAccountRequest request = new CreateAccountRequest();
-        request.setBankName("");
+        request.setProviderName("");
         request.setAccountName("a".repeat(101));
 
         Set<String> messages = validator.validate(request).stream()
@@ -29,9 +29,10 @@ class CreateAccountRequestValidationTest {
             .collect(java.util.stream.Collectors.toSet());
 
         assertThat(messages).contains(
-            "銀行名は必須です。",
+            "提供元名は必須です。",
             "口座名は100文字以内で入力してください。",
-            "口座種別は必須です。"
+            "口座区分は必須です。",
+            "残高区分は必須です。"
         );
     }
 }

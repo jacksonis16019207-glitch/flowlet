@@ -7,10 +7,13 @@ import type { Account, CreateAccountInput } from '../../features/account/types/a
 import { ApiRequestError } from '../../shared/lib/api/client'
 
 const initialForm: CreateAccountInput = {
-  bankName: '',
+  providerName: '',
   accountName: '',
-  accountType: 'CHECKING',
+  accountCategory: 'BANK',
+  balanceSide: 'ASSET',
   active: true,
+  displayOrder: 10,
+  creditCardProfile: null,
 }
 
 type AccountFormField = keyof CreateAccountInput
@@ -51,8 +54,8 @@ export function AccountPage() {
     setFieldErrors({})
 
     try {
-      const createdAccount = await createAccount(form)
-      setAccounts((currentAccounts) => [createdAccount, ...currentAccounts])
+      await createAccount(form)
+      await loadAccounts()
       setForm(initialForm)
     } catch (error) {
       if (error instanceof ApiRequestError) {
@@ -89,8 +92,7 @@ export function AccountPage() {
         <p className="eyebrow">flowlet / 口座マスタ</p>
         <h1>口座を登録して管理する</h1>
         <p className="lead">
-          `m_account` を 1 画面で登録・一覧表示できます。
-          バックエンドの構造化エラーに合わせて、入力エラーと業務エラーを分けて表示します。
+          取引残高、未配分残高、クレジットカード詳細まで含めて 1 画面で管理します。
         </p>
         <div className="hero-stats">
           <article>
@@ -111,6 +113,7 @@ export function AccountPage() {
             <h2>口座を登録</h2>
           </div>
           <AccountForm
+            accounts={accounts}
             value={form}
             submitting={submitting}
             submitErrorMessage={submitErrorMessage}
@@ -138,9 +141,12 @@ export function AccountPage() {
 
 function isAccountFormField(value: string): value is AccountFormField {
   return (
-    value === 'bankName' ||
+    value === 'providerName' ||
     value === 'accountName' ||
-    value === 'accountType' ||
-    value === 'active'
+    value === 'accountCategory' ||
+    value === 'balanceSide' ||
+    value === 'active' ||
+    value === 'displayOrder' ||
+    value === 'creditCardProfile'
   )
 }

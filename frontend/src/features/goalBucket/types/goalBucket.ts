@@ -3,6 +3,7 @@ export type GoalBucket = {
   accountId: number
   bucketName: string
   active: boolean
+  currentBalance: string
   createdAt: string
   updatedAt: string
 }

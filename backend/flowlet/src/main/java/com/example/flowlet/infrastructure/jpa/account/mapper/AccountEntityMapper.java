@@ -11,10 +11,12 @@ public final class AccountEntityMapper {
     public static Account toDomain(AccountEntity entity) {
         return new Account(
             entity.getAccountId(),
-            entity.getBankName(),
+            entity.getProviderName(),
             entity.getAccountName(),
-            entity.getAccountType(),
+            entity.getAccountCategory(),
+            entity.getBalanceSide(),
             entity.isActive(),
+            entity.getDisplayOrder(),
             entity.getCreatedAt(),
             entity.getUpdatedAt()
         );
@@ -23,10 +25,12 @@ public final class AccountEntityMapper {
     public static AccountEntity toEntity(Account account) {
         AccountEntity entity = new AccountEntity();
         entity.setAccountId(account.accountId());
-        entity.setBankName(account.bankName());
+        entity.setProviderName(account.providerName());
         entity.setAccountName(account.accountName());
-        entity.setAccountType(account.accountType());
+        entity.setAccountCategory(account.accountCategory());
+        entity.setBalanceSide(account.balanceSide());
         entity.setActive(account.active());
+        entity.setDisplayOrder(account.displayOrder());
         entity.setCreatedAt(account.createdAt());
         entity.setUpdatedAt(account.updatedAt());
         return entity;

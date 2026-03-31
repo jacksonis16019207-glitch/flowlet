@@ -48,7 +48,12 @@ export function GoalBucketList({
               <span className="type-chip">口座ID #{goalBucket.accountId}</span>
             </div>
             <h3>{goalBucket.bucketName}</h3>
-            <p>{account ? `${account.bankName} / ${account.accountName}` : '親口座不明'}</p>
+            <p>
+              {account
+                ? `${account.providerName} / ${account.accountName}`
+                : '親口座不明'}
+            </p>
+            <p>残高 {formatMoney(goalBucket.currentBalance)}</p>
             <time dateTime={goalBucket.createdAt}>
               登録日時 {new Date(goalBucket.createdAt).toLocaleString('ja-JP')}
             </time>
@@ -57,4 +62,12 @@ export function GoalBucketList({
       })}
     </div>
   )
+}
+
+function formatMoney(value: string) {
+  return new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
+    maximumFractionDigits: 0,
+  }).format(Number(value))
 }

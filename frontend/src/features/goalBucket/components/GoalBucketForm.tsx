@@ -49,7 +49,7 @@ export function GoalBucketForm({
           ) : null}
           {accounts.map((account) => (
             <option key={account.accountId} value={account.accountId}>
-              {account.bankName} / {account.accountName}
+              {account.providerName} / {account.accountName}
             </option>
           ))}
         </select>

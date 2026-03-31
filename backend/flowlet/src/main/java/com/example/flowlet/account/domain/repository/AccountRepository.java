@@ -1,9 +1,10 @@
 package com.example.flowlet.account.domain.repository;
 
 import com.example.flowlet.account.domain.model.Account;
-import com.example.flowlet.account.domain.model.AccountType;
+import com.example.flowlet.account.domain.model.AccountCategory;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface AccountRepository {
 
@@ -11,7 +12,13 @@ public interface AccountRepository {
 
     boolean existsById(Long accountId);
 
-    boolean existsByBankNameAndAccountNameAndAccountType(String bankName, String accountName, AccountType accountType);
+    Optional<Account> findById(Long accountId);
+
+    boolean existsByProviderNameAndAccountNameAndAccountCategory(
+        String providerName,
+        String accountName,
+        AccountCategory accountCategory
+    );
 
     Account save(Account account);
 

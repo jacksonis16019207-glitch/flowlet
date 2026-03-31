@@ -1,13 +1,14 @@
 package com.example.flowlet.infrastructure.jpa.account.repository;
 
 import com.example.flowlet.account.domain.model.Account;
-import com.example.flowlet.account.domain.model.AccountType;
+import com.example.flowlet.account.domain.model.AccountCategory;
 import com.example.flowlet.account.domain.repository.AccountRepository;
 import com.example.flowlet.infrastructure.jpa.account.entity.AccountEntity;
 import com.example.flowlet.infrastructure.jpa.account.mapper.AccountEntityMapper;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class JpaAccountRepository implements AccountRepository {
@@ -31,8 +32,22 @@ public class JpaAccountRepository implements AccountRepository {
     }
 
     @Override
-    public boolean existsByBankNameAndAccountNameAndAccountType(String bankName, String accountName, AccountType accountType) {
-        return springDataAccountRepository.existsByBankNameAndAccountNameAndAccountType(bankName, accountName, accountType);
+    public Optional<Account> findById(Long accountId) {
+        return springDataAccountRepository.findById(accountId)
+            .map(AccountEntityMapper::toDomain);
+    }
+
+    @Override
+    public boolean existsByProviderNameAndAccountNameAndAccountCategory(
+        String providerName,
+        String accountName,
+        AccountCategory accountCategory
+    ) {
+        return springDataAccountRepository.existsByProviderNameAndAccountNameAndAccountCategory(
+            providerName,
+            accountName,
+            accountCategory
+        );
     }
 
     @Override

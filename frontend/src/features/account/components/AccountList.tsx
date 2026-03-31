@@ -1,4 +1,8 @@
-import { accountTypeLabels, type Account } from '../types/account'
+import {
+  accountCategoryLabels,
+  balanceSideLabels,
+  type Account,
+} from '../types/account'
 
 type AccountListProps = {
   accounts: Account[]
@@ -36,11 +40,25 @@ export function AccountList({
               {account.active ? '利用中' : '停止中'}
             </span>
             <span className="type-chip">
-              {accountTypeLabels[account.accountType]}
+              {accountCategoryLabels[account.accountCategory]}
             </span>
           </div>
           <h3>{account.accountName}</h3>
-          <p>{account.bankName}</p>
+          <p>{account.providerName}</p>
+          <p>
+            {balanceSideLabels[account.balanceSide]} / 表示順 {account.displayOrder}
+          </p>
+          <p>
+            残高 {formatMoney(account.currentBalance)} / 未配分{' '}
+            {formatMoney(account.unallocatedBalance)}
+          </p>
+          {account.creditCardProfile ? (
+            <p>
+              引落口座ID #{account.creditCardProfile.paymentAccountId} / 締め日{' '}
+              {account.creditCardProfile.closingDay} / 支払日{' '}
+              {account.creditCardProfile.paymentDay}
+            </p>
+          ) : null}
           <time dateTime={account.createdAt}>
             登録日時 {new Date(account.createdAt).toLocaleString('ja-JP')}
           </time>
@@ -48,4 +66,12 @@ export function AccountList({
       ))}
     </div>
   )
+}
+
+function formatMoney(value: string) {
+  return new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
+    maximumFractionDigits: 0,
+  }).format(Number(value))
 }

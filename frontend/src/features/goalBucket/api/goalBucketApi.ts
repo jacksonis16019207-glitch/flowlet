@@ -4,8 +4,26 @@ import type {
   GoalBucket,
 } from '../types/goalBucket'
 
-export function fetchGoalBuckets(): Promise<GoalBucket[]> {
-  return requestJson<GoalBucket[]>('/api/goal-buckets')
+type FetchGoalBucketsParams = {
+  accountId?: number
+  activeOnly?: boolean
+}
+
+export function fetchGoalBuckets(
+  params?: FetchGoalBucketsParams,
+): Promise<GoalBucket[]> {
+  const searchParams = new URLSearchParams()
+
+  if (params?.accountId) {
+    searchParams.set('accountId', String(params.accountId))
+  }
+
+  if (params?.activeOnly) {
+    searchParams.set('activeOnly', 'true')
+  }
+
+  const query = searchParams.toString()
+  return requestJson<GoalBucket[]>(`/api/goal-buckets${query ? `?${query}` : ''}`)
 }
 
 export function createGoalBucket(

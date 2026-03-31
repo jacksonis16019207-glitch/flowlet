@@ -1,13 +1,17 @@
 import type { FormEvent } from 'react'
 import {
-  accountTypeLabels,
-  type AccountType,
+  accountCategoryLabels,
+  balanceSideLabels,
+  paymentDateAdjustmentRuleLabels,
+  type Account,
+  type AccountCategory,
   type CreateAccountInput,
 } from '../types/account'
 
 type AccountFormField = keyof CreateAccountInput
 
 type AccountFormProps = {
+  accounts: Account[]
   value: CreateAccountInput
   submitting: boolean
   submitErrorMessage: string
@@ -17,6 +21,7 @@ type AccountFormProps = {
 }
 
 export function AccountForm({
+  accounts,
   value,
   submitting,
   submitErrorMessage,
@@ -33,22 +38,22 @@ export function AccountForm({
       ) : null}
 
       <label>
-        銀行名
+        提供元名
         <input
-          aria-invalid={fieldErrors.bankName ? 'true' : 'false'}
-          value={value.bankName}
+          aria-invalid={fieldErrors.providerName ? 'true' : 'false'}
+          value={value.providerName}
           onChange={(event) =>
             onChange({
               ...value,
-              bankName: event.target.value,
+              providerName: event.target.value,
             })
           }
-          placeholder="三菱UFJ銀行"
+          placeholder="住信SBIネット銀行"
           maxLength={100}
           required
         />
-        {fieldErrors.bankName ? (
-          <span className="field-error">{fieldErrors.bankName}</span>
+        {fieldErrors.providerName ? (
+          <span className="field-error">{fieldErrors.providerName}</span>
         ) : null}
       </label>
 
@@ -63,7 +68,7 @@ export function AccountForm({
               accountName: event.target.value,
             })
           }
-          placeholder="生活口座"
+          placeholder="メイン口座"
           maxLength={100}
           required
         />
@@ -73,25 +78,166 @@ export function AccountForm({
       </label>
 
       <label>
-        口座種別
+        口座区分
         <select
-          aria-invalid={fieldErrors.accountType ? 'true' : 'false'}
-          value={value.accountType}
+          aria-invalid={fieldErrors.accountCategory ? 'true' : 'false'}
+          value={value.accountCategory}
           onChange={(event) =>
             onChange({
               ...value,
-              accountType: event.target.value as AccountType,
+              accountCategory: event.target.value as AccountCategory,
+              creditCardProfile:
+                event.target.value === 'CREDIT_CARD'
+                  ? {
+                      paymentAccountId: accounts[0]?.accountId ?? 0,
+                      closingDay: 25,
+                      paymentDay: 27,
+                      paymentDateAdjustmentRule: 'NEXT_BUSINESS_DAY',
+                    }
+                  : null,
             })
           }
         >
-          <option value="CHECKING">{accountTypeLabels.CHECKING}</option>
-          <option value="SAVINGS">{accountTypeLabels.SAVINGS}</option>
-          <option value="OTHER">{accountTypeLabels.OTHER}</option>
+          {Object.entries(accountCategoryLabels).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
         </select>
-        {fieldErrors.accountType ? (
-          <span className="field-error">{fieldErrors.accountType}</span>
+        {fieldErrors.accountCategory ? (
+          <span className="field-error">{fieldErrors.accountCategory}</span>
         ) : null}
       </label>
+
+      <label>
+        残高区分
+        <select
+          aria-invalid={fieldErrors.balanceSide ? 'true' : 'false'}
+          value={value.balanceSide}
+          onChange={(event) =>
+            onChange({
+              ...value,
+              balanceSide: event.target.value as CreateAccountInput['balanceSide'],
+            })
+          }
+        >
+          {Object.entries(balanceSideLabels).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+        {fieldErrors.balanceSide ? (
+          <span className="field-error">{fieldErrors.balanceSide}</span>
+        ) : null}
+      </label>
+
+      <label>
+        表示順
+        <input
+          type="number"
+          value={value.displayOrder}
+          onChange={(event) =>
+            onChange({
+              ...value,
+              displayOrder: Number(event.target.value),
+            })
+          }
+        />
+      </label>
+
+      {value.accountCategory === 'CREDIT_CARD' && value.creditCardProfile ? (
+        <div className="subform-grid">
+          <label>
+            引き落とし元口座
+            <select
+              value={value.creditCardProfile.paymentAccountId}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  creditCardProfile: {
+                    ...value.creditCardProfile!,
+                    paymentAccountId: Number(event.target.value),
+                  },
+                })
+              }
+            >
+              {accounts
+                .filter((account) => account.accountCategory !== 'CREDIT_CARD')
+                .map((account) => (
+                  <option key={account.accountId} value={account.accountId}>
+                    {account.providerName} / {account.accountName}
+                  </option>
+                ))}
+            </select>
+          </label>
+
+          <label>
+            締め日
+            <input
+              type="number"
+              min={1}
+              max={31}
+              value={value.creditCardProfile.closingDay}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  creditCardProfile: {
+                    ...value.creditCardProfile!,
+                    closingDay: Number(event.target.value),
+                  },
+                })
+              }
+            />
+          </label>
+
+          <label>
+            支払日
+            <input
+              type="number"
+              min={1}
+              max={31}
+              value={value.creditCardProfile.paymentDay}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  creditCardProfile: {
+                    ...value.creditCardProfile!,
+                    paymentDay: Number(event.target.value),
+                  },
+                })
+              }
+            />
+          </label>
+
+          <label>
+            支払日補正
+            <select
+              value={value.creditCardProfile.paymentDateAdjustmentRule}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  creditCardProfile: {
+                    ...value.creditCardProfile!,
+                    paymentDateAdjustmentRule:
+                      event.target.value as NonNullable<
+                        CreateAccountInput['creditCardProfile']
+                      >['paymentDateAdjustmentRule'],
+                  },
+                })
+              }
+            >
+              {Object.entries(paymentDateAdjustmentRuleLabels).map(
+                ([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+        </div>
+      ) : null}
 
       <label className="checkbox-row">
         <input

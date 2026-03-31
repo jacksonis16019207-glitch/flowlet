@@ -1,7 +1,8 @@
 package com.example.flowlet.account;
 
 import com.example.flowlet.account.domain.model.Account;
-import com.example.flowlet.account.domain.model.AccountType;
+import com.example.flowlet.account.domain.model.AccountCategory;
+import com.example.flowlet.account.domain.model.BalanceSide;
 import com.example.flowlet.account.domain.repository.AccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,24 +48,25 @@ class AccountControllerTest {
     @Test
     void postAccountsCreatesAnAccount() throws Exception {
         String request = """
-            {"bankName":"MUFG","accountName":"Main Account","accountType":"CHECKING","active":true}
+            {"providerName":"MUFG","accountName":"Main Account","accountCategory":"BANK","balanceSide":"ASSET","active":true,"displayOrder":10}
             """;
 
         mockMvc.perform(post("/api/accounts")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(request))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.bankName").value("MUFG"))
+            .andExpect(jsonPath("$.providerName").value("MUFG"))
             .andExpect(jsonPath("$.accountName").value("Main Account"))
-            .andExpect(jsonPath("$.accountType").value("CHECKING"))
-            .andExpect(jsonPath("$.active").value(true))
+            .andExpect(jsonPath("$.accountCategory").value("BANK"))
+            .andExpect(jsonPath("$.balanceSide").value("ASSET"))
+            .andExpect(jsonPath("$.displayOrder").value(10))
             .andExpect(jsonPath("$.createdAt").value("2026-03-31T10:23:45"));
     }
 
     @Test
     void postAccountsReturnsValidationErrors() throws Exception {
         String request = """
-            {"bankName":"","accountName":"%s","active":true}
+            {"providerName":"","accountName":"%s","active":true}
             """.formatted("a".repeat(101));
 
         mockMvc.perform(post("/api/accounts")
@@ -73,9 +75,10 @@ class AccountControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
             .andExpect(jsonPath("$.message").value("入力内容に誤りがあります。"))
-            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"bankName\")].message").value("銀行名は必須です。"))
+            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"providerName\")].message").value("提供元名は必須です。"))
             .andExpect(jsonPath("$.fieldErrors[?(@.field == \"accountName\")].message").value("口座名は100文字以内で入力してください。"))
-            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"accountType\")].message").value("口座種別は必須です。"));
+            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"accountCategory\")].message").value("口座区分は必須です。"))
+            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"balanceSide\")].message").value("残高区分は必須です。"));
     }
 
     @Test
@@ -84,14 +87,16 @@ class AccountControllerTest {
             null,
             "MUFG",
             "Main Account",
-            AccountType.CHECKING,
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
             true,
+            10,
             LocalDateTime.now(),
             LocalDateTime.now()
         ));
 
         String request = """
-            {"bankName":"MUFG","accountName":"Main Account","accountType":"CHECKING","active":true}
+            {"providerName":"MUFG","accountName":"Main Account","accountCategory":"BANK","balanceSide":"ASSET","active":true,"displayOrder":10}
             """;
 
         mockMvc.perform(post("/api/accounts")
@@ -109,17 +114,19 @@ class AccountControllerTest {
             null,
             "SBI",
             "Hyper Savings",
-            AccountType.SAVINGS,
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
             true,
+            20,
             LocalDateTime.now(),
             LocalDateTime.now()
         ));
 
         mockMvc.perform(get("/api/accounts"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].bankName").value("SBI"))
+            .andExpect(jsonPath("$[0].providerName").value("SBI"))
             .andExpect(jsonPath("$[0].accountName").value("Hyper Savings"))
-            .andExpect(jsonPath("$[0].accountType").value("SAVINGS"));
+            .andExpect(jsonPath("$[0].accountCategory").value("BANK"));
     }
 
     @TestConfiguration

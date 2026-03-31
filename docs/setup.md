@@ -78,6 +78,11 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 - 開発時は `frontend` と `backend` を別プロセスで起動する
 - backend は `FLOWLET_DB_*` を env から受け取る
 - 本番構成では Docker image build の中で frontend build を含め、app コンテナだけを公開する
-- `m_account` の初期スキーマは Flyway migration で管理する
-- 開発環境では backend を `dev` profile で起動すると、Flyway が `m_account` のダミーデータを投入する
-- 本番環境の `m_account` データは自動投入せず、必要な場合だけ `backend/db/local/seed_m_account.personal.sql` を手動適用する
+- `m_account`、`m_credit_card_profile`、`m_goal_bucket`、`m_category`、`m_subcategory`、`t_transaction`、`t_goal_bucket_allocation` の初期スキーマは Flyway migration で管理する
+- 開発環境では backend を `dev` profile で起動すると、Flyway が口座、GoalBucket、カテゴリ、取引、配分のダミーデータを投入する
+- 今回の変更で migration を作り直したため、既存の開発 DB を使い回す場合はコンテナとボリュームを落として再作成する
+
+```powershell
+docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml down -v
+docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml up -d
+```

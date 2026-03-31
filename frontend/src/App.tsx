@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { AccountPage } from './pages/accounts/AccountPage'
 import { GoalBucketPage } from './pages/goalBuckets/GoalBucketPage'
+import { TransactionPage } from './pages/transactions/TransactionPage'
 import './App.css'
 
 function App() {
-  const [page, setPage] = useState<'accounts' | 'goalBuckets'>('accounts')
+  const [page, setPage] = useState<'accounts' | 'goalBuckets' | 'transactions'>(
+    'accounts',
+  )
 
   return (
     <>
@@ -23,8 +26,17 @@ function App() {
         >
           目的別口座
         </button>
+        <button
+          type="button"
+          className={page === 'transactions' ? 'active' : ''}
+          onClick={() => setPage('transactions')}
+        >
+          取引
+        </button>
       </nav>
-      {page === 'accounts' ? <AccountPage /> : <GoalBucketPage />}
+      {page === 'accounts' ? <AccountPage /> : null}
+      {page === 'goalBuckets' ? <GoalBucketPage /> : null}
+      {page === 'transactions' ? <TransactionPage /> : null}
     </>
   )
 }

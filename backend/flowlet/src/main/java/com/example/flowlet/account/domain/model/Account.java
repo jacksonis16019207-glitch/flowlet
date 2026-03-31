@@ -4,10 +4,12 @@ import java.time.LocalDateTime;
 
 public record Account(
     Long accountId,
-    String bankName,
+    String providerName,
     String accountName,
-    AccountType accountType,
+    AccountCategory accountCategory,
+    BalanceSide balanceSide,
     boolean active,
+    Integer displayOrder,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {

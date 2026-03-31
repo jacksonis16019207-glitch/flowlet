@@ -7,6 +7,7 @@ import com.example.flowlet.infrastructure.jpa.goalbucket.mapper.GoalBucketEntity
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class JpaGoalBucketRepository implements GoalBucketRepository {
@@ -22,6 +23,17 @@ public class JpaGoalBucketRepository implements GoalBucketRepository {
         return springDataGoalBucketRepository.findAll().stream()
             .map(GoalBucketEntityMapper::toDomain)
             .toList();
+    }
+
+    @Override
+    public boolean existsById(Long goalBucketId) {
+        return springDataGoalBucketRepository.existsById(goalBucketId);
+    }
+
+    @Override
+    public Optional<GoalBucket> findById(Long goalBucketId) {
+        return springDataGoalBucketRepository.findById(goalBucketId)
+            .map(GoalBucketEntityMapper::toDomain);
     }
 
     @Override

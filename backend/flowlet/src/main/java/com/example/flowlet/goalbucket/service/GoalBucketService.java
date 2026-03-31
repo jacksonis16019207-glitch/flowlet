@@ -7,6 +7,7 @@ import com.example.flowlet.goalbucket.exception.AccountNotFoundException;
 import com.example.flowlet.goalbucket.exception.GoalBucketAlreadyExistsException;
 import com.example.flowlet.presentation.goalbucket.dto.CreateGoalBucketRequest;
 import com.example.flowlet.presentation.goalbucket.dto.GoalBucketResponse;
+import com.example.flowlet.shared.util.BalanceCalculator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,25 +21,33 @@ public class GoalBucketService {
 
     private final GoalBucketRepository goalBucketRepository;
     private final AccountRepository accountRepository;
+    private final BalanceCalculator balanceCalculator;
     private final Clock clock;
 
     public GoalBucketService(
         GoalBucketRepository goalBucketRepository,
         AccountRepository accountRepository,
+        BalanceCalculator balanceCalculator,
         Clock clock
     ) {
         this.goalBucketRepository = goalBucketRepository;
         this.accountRepository = accountRepository;
+        this.balanceCalculator = balanceCalculator;
         this.clock = clock;
     }
 
     @Transactional(readOnly = true)
-    public List<GoalBucketResponse> findAll() {
+    public List<GoalBucketResponse> findAll(Long accountId, Boolean activeOnly) {
         return goalBucketRepository.findAll().stream()
+            .filter(goalBucket -> accountId == null || goalBucket.accountId().equals(accountId))
+            .filter(goalBucket -> activeOnly == null || !activeOnly || goalBucket.active())
             .sorted(Comparator
                 .comparing(GoalBucket::createdAt).reversed()
                 .thenComparing(GoalBucket::goalBucketId, Comparator.nullsLast(Comparator.reverseOrder())))
-            .map(GoalBucketResponse::from)
+            .map(goalBucket -> GoalBucketResponse.from(
+                goalBucket,
+                balanceCalculator.calculateGoalBucketBalance(goalBucket.goalBucketId())
+            ))
             .toList();
     }
 
@@ -65,7 +74,8 @@ public class GoalBucketService {
             now
         );
 
-        return GoalBucketResponse.from(goalBucketRepository.save(goalBucket));
+        GoalBucket savedGoalBucket = goalBucketRepository.save(goalBucket);
+        return GoalBucketResponse.from(savedGoalBucket, balanceCalculator.calculateGoalBucketBalance(savedGoalBucket.goalBucketId()));
     }
 
     @Transactional

@@ -1,6 +1,7 @@
 package com.example.flowlet.infrastructure.jpa.account.entity;
 
-import com.example.flowlet.account.domain.model.AccountType;
+import com.example.flowlet.account.domain.model.AccountCategory;
+import com.example.flowlet.account.domain.model.BalanceSide;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,18 +22,25 @@ public class AccountEntity {
     @Column(name = "account_id")
     private Long accountId;
 
-    @Column(name = "bank_name", nullable = false, length = 100)
-    private String bankName;
+    @Column(name = "provider_name", nullable = false, length = 100)
+    private String providerName;
 
     @Column(name = "account_name", nullable = false, length = 100)
     private String accountName;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "account_type", nullable = false, length = 50)
-    private AccountType accountType;
+    @Column(name = "account_category", nullable = false, length = 50)
+    private AccountCategory accountCategory;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "balance_side", nullable = false, length = 50)
+    private BalanceSide balanceSide;
 
     @Column(name = "is_active", nullable = false)
     private boolean active;
+
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -48,12 +56,12 @@ public class AccountEntity {
         this.accountId = accountId;
     }
 
-    public String getBankName() {
-        return bankName;
+    public String getProviderName() {
+        return providerName;
     }
 
-    public void setBankName(String bankName) {
-        this.bankName = bankName;
+    public void setProviderName(String providerName) {
+        this.providerName = providerName;
     }
 
     public String getAccountName() {
@@ -64,12 +72,20 @@ public class AccountEntity {
         this.accountName = accountName;
     }
 
-    public AccountType getAccountType() {
-        return accountType;
+    public AccountCategory getAccountCategory() {
+        return accountCategory;
     }
 
-    public void setAccountType(AccountType accountType) {
-        this.accountType = accountType;
+    public void setAccountCategory(AccountCategory accountCategory) {
+        this.accountCategory = accountCategory;
+    }
+
+    public BalanceSide getBalanceSide() {
+        return balanceSide;
+    }
+
+    public void setBalanceSide(BalanceSide balanceSide) {
+        this.balanceSide = balanceSide;
     }
 
     public boolean isActive() {
@@ -78,6 +94,14 @@ public class AccountEntity {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public Integer getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public void setDisplayOrder(Integer displayOrder) {
+        this.displayOrder = displayOrder;
     }
 
     public LocalDateTime getCreatedAt() {
