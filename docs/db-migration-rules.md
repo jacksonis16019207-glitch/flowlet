@@ -45,3 +45,8 @@
 - Flyway migration: `backend/flowlet/src/main/resources/db/migration/`
 - 開発用ダミーデータ: `infra/sql/dev-seed/`
 - 共通マスタデータ: `infra/sql/master-data/`
+
+## 追加ルール
+
+- テーブル再作成を行う migration では、再作成前に旧テーブルを `drop table` する手順を必ず含める。
+- 全テーブルで `created_at` と `updated_at` は末尾 2 列に固定する。
