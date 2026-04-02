@@ -79,10 +79,21 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 - backend は `FLOWLET_DB_*` を env から受け取る
 - 本番構成では Docker image build の中で frontend build を含め、app コンテナだけを公開する
 - `m_account`、`m_credit_card_profile`、`m_goal_bucket`、`m_category`、`m_subcategory`、`t_transaction`、`t_goal_bucket_allocation` の初期スキーマは Flyway migration で管理する
-- 開発環境では backend を `dev` profile で起動すると、Flyway が口座、GoalBucket、カテゴリ、取引、配分のダミーデータを投入する
-- 今回の変更で migration を作り直したため、既存の開発 DB を使い回す場合はコンテナとボリュームを落として再作成する
+- DB マイグレーション運用ルールは [db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/db-migration-rules.md) を参照する
+- 開発用ダミーデータは `infra/sql/dev-seed/`、固定マスタデータは `infra/sql/master-data/` の SQL を手動で投入する
 
 ```powershell
 docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml down -v
 docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml up -d
+```
+
+### seed SQL の投入例
+
+固定マスタデータを先に投入し、その後で開発用ダミーデータを投入します。
+
+```powershell
+Get-Content infra/sql/master-data/001_insert_category_master.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
+Get-Content infra/sql/dev-seed/001_insert_dev_accounts.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
+Get-Content infra/sql/dev-seed/002_insert_dev_goal_buckets.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
+Get-Content infra/sql/dev-seed/003_insert_dev_transactions.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
 ```

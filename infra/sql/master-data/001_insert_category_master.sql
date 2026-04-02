@@ -50,4 +50,4 @@ where not exists (
     from flowlet.m_subcategory existing
     where existing.category_id = category.category_id
       and existing.subcategory_name = seed.subcategory_name
-  );
+);
