@@ -321,6 +321,119 @@
   align-items: end;
 }
 
+.category-management {
+  display: grid;
+  gap: 24px;
+}
+
+.category-type-group {
+  display: grid;
+  gap: 16px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.section-heading h3,
+.section-heading h4 {
+  margin: 0;
+}
+
+.section-heading span {
+  color: #7a6b5c;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.category-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.category-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-button,
+.button-row button {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.action-button,
+.button-row button.secondary {
+  background: #efe3d5;
+  color: #684927;
+}
+
+.action-button.danger {
+  background: #f4d9d7;
+  color: #8c3931;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.button-row button {
+  color: #fff7ef;
+  background: linear-gradient(135deg, #b6641f, #d9893a);
+}
+
+.button-row button.secondary {
+  color: #684927;
+}
+
+.nested-panel {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(91, 61, 25, 0.12);
+}
+
+.nested-form {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 248, 239, 0.72);
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.subcategory-list {
+  display: grid;
+  gap: 12px;
+}
+
+.subcategory-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(91, 61, 25, 0.1);
+}
+
+.subcategory-item p {
+  margin: 6px 0 0;
+  color: #65584b;
+}
+
 @media (max-width: 960px) {
   .top-nav {
     justify-content: flex-start;
@@ -347,6 +460,15 @@
 
   .allocation-row {
     grid-template-columns: 1fr;
+  }
+
+  .subcategory-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .category-actions {
+    justify-content: flex-start;
   }
 }
 

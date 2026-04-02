@@ -4,4 +4,8 @@ import com.example.flowlet.infrastructure.jpa.transaction.entity.TransactionEnti
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SpringDataTransactionRepository extends JpaRepository<TransactionEntity, Long> {
+
+    boolean existsByCategoryId(Long categoryId);
+
+    boolean existsBySubcategoryId(Long subcategoryId);
 }

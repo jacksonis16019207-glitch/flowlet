@@ -102,8 +102,8 @@ export function TransactionPage() {
       ] = await Promise.all([
         fetchAccounts(),
         fetchGoalBuckets(),
-        fetchCategories(),
-        fetchSubcategories(),
+        fetchCategories(undefined, true),
+        fetchSubcategories(undefined, true),
         fetchTransactions(),
         fetchGoalBucketAllocations(),
       ])
