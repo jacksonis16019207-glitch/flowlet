@@ -69,6 +69,47 @@ create table flowlet.t_goal_bucket_allocation (
 );
 
 comment on table flowlet.m_category is 'カテゴリマスタ';
+comment on column flowlet.m_category.category_id is 'カテゴリID';
+comment on column flowlet.m_category.category_name is 'カテゴリ名';
+comment on column flowlet.m_category.category_type is 'カテゴリ種別';
+comment on column flowlet.m_category.display_order is '表示順';
+comment on column flowlet.m_category.is_active is '利用中フラグ';
+comment on column flowlet.m_category.created_at is '作成日時';
+comment on column flowlet.m_category.updated_at is '更新日時';
+
 comment on table flowlet.m_subcategory is 'サブカテゴリマスタ';
+comment on column flowlet.m_subcategory.subcategory_id is 'サブカテゴリID';
+comment on column flowlet.m_subcategory.category_id is '親カテゴリID';
+comment on column flowlet.m_subcategory.subcategory_name is 'サブカテゴリ名';
+comment on column flowlet.m_subcategory.display_order is '表示順';
+comment on column flowlet.m_subcategory.is_active is '利用中フラグ';
+comment on column flowlet.m_subcategory.created_at is '作成日時';
+comment on column flowlet.m_subcategory.updated_at is '更新日時';
+
 comment on table flowlet.t_transaction is '取引明細';
+comment on column flowlet.t_transaction.transaction_id is '取引ID';
+comment on column flowlet.t_transaction.account_id is '口座ID';
+comment on column flowlet.t_transaction.goal_bucket_id is '目的別口座ID';
+comment on column flowlet.t_transaction.category_id is 'カテゴリID';
+comment on column flowlet.t_transaction.subcategory_id is 'サブカテゴリID';
+comment on column flowlet.t_transaction.transaction_type is '取引種別';
+comment on column flowlet.t_transaction.transaction_date is '取引日';
+comment on column flowlet.t_transaction.amount is '金額';
+comment on column flowlet.t_transaction.description is '摘要';
+comment on column flowlet.t_transaction.note is 'メモ';
+comment on column flowlet.t_transaction.transfer_group_id is '振替グループID';
+comment on column flowlet.t_transaction.created_at is '作成日時';
+comment on column flowlet.t_transaction.updated_at is '更新日時';
+
 comment on table flowlet.t_goal_bucket_allocation is '目的別口座配分';
+comment on column flowlet.t_goal_bucket_allocation.allocation_id is '配分ID';
+comment on column flowlet.t_goal_bucket_allocation.account_id is '口座ID';
+comment on column flowlet.t_goal_bucket_allocation.from_goal_bucket_id is '配分元目的別口座ID';
+comment on column flowlet.t_goal_bucket_allocation.to_goal_bucket_id is '配分先目的別口座ID';
+comment on column flowlet.t_goal_bucket_allocation.allocation_date is '配分日';
+comment on column flowlet.t_goal_bucket_allocation.amount is '金額';
+comment on column flowlet.t_goal_bucket_allocation.description is '摘要';
+comment on column flowlet.t_goal_bucket_allocation.note is 'メモ';
+comment on column flowlet.t_goal_bucket_allocation.linked_transfer_group_id is '連携振替グループID';
+comment on column flowlet.t_goal_bucket_allocation.created_at is '作成日時';
+comment on column flowlet.t_goal_bucket_allocation.updated_at is '更新日時';
