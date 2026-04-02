@@ -81,6 +81,7 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 - `m_account`、`m_credit_card_profile`、`m_goal_bucket`、`m_category`、`m_subcategory`、`t_transaction`、`t_goal_bucket_allocation` の初期スキーマは Flyway migration で管理する
 - DB マイグレーション運用ルールは [db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/db-migration-rules.md) を参照する
 - 開発用ダミーデータは `infra/sql/dev-seed/`、固定マスタデータは `infra/sql/master-data/` の SQL を手動で投入する
+- `infra/sql/master-data/001_insert_m_category.sql` と `infra/sql/master-data/002_insert_m_subcategory.sql` は、本番初期設定でも使えるようにカテゴリ体系を広めに用意している
 
 ```powershell
 docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml down -v
