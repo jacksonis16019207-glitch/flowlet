@@ -11,78 +11,10 @@ create table flowlet.m_goal_bucket (
         unique (account_id, bucket_name)
 );
 
-create table flowlet.m_category (
-    category_id bigserial primary key,
-    category_name varchar(100) not null,
-    category_type varchar(50) not null,
-    display_order integer not null default 0,
-    is_active boolean not null default true,
-    created_at timestamp not null default current_timestamp,
-    updated_at timestamp not null default current_timestamp,
-    constraint uk_m_category_category_name_category_type
-        unique (category_name, category_type)
-);
-
-create table flowlet.m_subcategory (
-    subcategory_id bigserial primary key,
-    category_id bigint not null,
-    subcategory_name varchar(100) not null,
-    display_order integer not null default 0,
-    is_active boolean not null default true,
-    created_at timestamp not null default current_timestamp,
-    updated_at timestamp not null default current_timestamp,
-    constraint fk_m_subcategory_category_id
-        foreign key (category_id) references flowlet.m_category(category_id),
-    constraint uk_m_subcategory_category_id_subcategory_name
-        unique (category_id, subcategory_name)
-);
-
-create table flowlet.t_transaction (
-    transaction_id bigserial primary key,
-    account_id bigint not null,
-    goal_bucket_id bigint,
-    category_id bigint not null,
-    subcategory_id bigint,
-    transaction_type varchar(50) not null,
-    transaction_date date not null,
-    amount numeric(19, 2) not null,
-    description varchar(100) not null,
-    note varchar(500),
-    transfer_group_id uuid,
-    created_at timestamp not null default current_timestamp,
-    updated_at timestamp not null default current_timestamp,
-    constraint fk_t_transaction_account_id
-        foreign key (account_id) references flowlet.m_account(account_id),
-    constraint fk_t_transaction_goal_bucket_id
-        foreign key (goal_bucket_id) references flowlet.m_goal_bucket(goal_bucket_id),
-    constraint fk_t_transaction_category_id
-        foreign key (category_id) references flowlet.m_category(category_id),
-    constraint fk_t_transaction_subcategory_id
-        foreign key (subcategory_id) references flowlet.m_subcategory(subcategory_id)
-);
-
-create table flowlet.t_goal_bucket_allocation (
-    allocation_id bigserial primary key,
-    account_id bigint not null,
-    from_goal_bucket_id bigint,
-    to_goal_bucket_id bigint,
-    allocation_date date not null,
-    amount numeric(19, 2) not null,
-    description varchar(100) not null,
-    note varchar(500),
-    linked_transfer_group_id uuid,
-    created_at timestamp not null default current_timestamp,
-    updated_at timestamp not null default current_timestamp,
-    constraint fk_t_goal_bucket_allocation_account_id
-        foreign key (account_id) references flowlet.m_account(account_id),
-    constraint fk_t_goal_bucket_allocation_from_goal_bucket_id
-        foreign key (from_goal_bucket_id) references flowlet.m_goal_bucket(goal_bucket_id),
-    constraint fk_t_goal_bucket_allocation_to_goal_bucket_id
-        foreign key (to_goal_bucket_id) references flowlet.m_goal_bucket(goal_bucket_id)
-);
-
 comment on table flowlet.m_goal_bucket is '目的別口座マスタ';
-comment on table flowlet.m_category is 'カテゴリマスタ';
-comment on table flowlet.m_subcategory is 'サブカテゴリマスタ';
-comment on table flowlet.t_transaction is '取引明細';
-comment on table flowlet.t_goal_bucket_allocation is '目的別口座配分';
+comment on column flowlet.m_goal_bucket.goal_bucket_id is '目的別口座ID';
+comment on column flowlet.m_goal_bucket.account_id is '親口座ID';
+comment on column flowlet.m_goal_bucket.bucket_name is '目的別口座名';
+comment on column flowlet.m_goal_bucket.is_active is '利用中フラグ';
+comment on column flowlet.m_goal_bucket.created_at is '作成日時';
+comment on column flowlet.m_goal_bucket.updated_at is '更新日時';
