@@ -6,12 +6,18 @@ import { TransactionPage } from './pages/transactions/TransactionPage'
 import './App.css'
 
 function App() {
+  const isDevelopment = import.meta.env.DEV
   const [page, setPage] = useState<
     'accounts' | 'goalBuckets' | 'categories' | 'transactions'
   >('accounts')
 
   return (
     <>
+      {isDevelopment ? (
+        <div className="environment-banner" role="status" aria-live="polite">
+          DEVELOPMENT
+        </div>
+      ) : null}
       <nav className="top-nav" aria-label="Main navigation">
         <button
           type="button"
