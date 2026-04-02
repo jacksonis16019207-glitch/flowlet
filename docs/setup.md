@@ -49,13 +49,21 @@ $env:SPRING_PROFILES_ACTIVE="dev"
 
 ## 本番確認
 
-### DB と app を Docker で起動
+### 初回起動または再 build が必要なとき
 
 ```powershell
 docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --build
 ```
 
-`flowlet-prod` は `restart: unless-stopped` を設定しているため、Docker Desktop の `Start Docker Desktop when you sign in to your computer` を有効にしておけば、OS 再起動後も自動復帰しやすくなります。停止したい場合だけこのコマンドで本番用コンテナを起動してください。開発中は不要です。
+frontend または backend の変更を反映したいときだけ `--build` を付けます。Dockerfile では `npm` と `Gradle` の依存キャッシュを使うため、2回目以降の build 時間を短縮しやすくしています。
+
+### 通常起動
+
+```powershell
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d
+```
+
+イメージ変更がない再起動は `--build` を付けずに起動します。`flowlet-prod` は `restart: unless-stopped` を設定しているため、Docker Desktop の `Start Docker Desktop when you sign in to your computer` を有効にしておけば、OS 再起動後も自動復帰しやすくなります。停止したい場合だけこのコマンドで本番用コンテナを起動してください。開発中は不要です。
 
 ### URL
 
@@ -70,6 +78,7 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 ```
 
 `docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down` を実行すると、本番確認用のコンテナは停止されます。次回起動時は `up -d --build` が必要です。
+`app` のイメージを作り直していない場合は、次回起動を `up -d` にできます。
 
 ## 補足
 
@@ -78,6 +87,7 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 - 開発時は `frontend` と `backend` を別プロセスで起動する
 - backend は `FLOWLET_DB_*` を env から受け取る
 - 本番構成では Docker image build の中で frontend build を含め、app コンテナだけを公開する
+- 本番再起動でコード変更がない場合は `up -d` を優先し、`up -d --build` は初回起動または変更反映時だけ使う
 - `m_account`、`m_credit_card_profile`、`m_goal_bucket`、`m_category`、`m_subcategory`、`t_transaction`、`t_goal_bucket_allocation` の初期スキーマは Flyway migration で管理する
 - DB マイグレーション運用ルールは [db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/db-migration-rules.md) を参照する
 - 開発用ダミーデータは `infra/sql/dev-seed/`、固定マスタデータは `infra/sql/master-data/` の SQL を手動で投入する
