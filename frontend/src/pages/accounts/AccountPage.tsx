@@ -16,6 +16,7 @@ const initialForm: CreateAccountInput = {
   accountName: '',
   accountCategory: 'BANK',
   balanceSide: 'ASSET',
+  initialBalance: '0',
   active: true,
   displayOrder: 10,
   creditCardProfile: null,
@@ -111,6 +112,7 @@ export function AccountPage() {
       accountName: account.accountName,
       accountCategory: account.accountCategory,
       balanceSide: account.balanceSide,
+      initialBalance: account.initialBalance,
       active: account.active,
       displayOrder: account.displayOrder,
       creditCardProfile: account.creditCardProfile
@@ -233,6 +235,7 @@ function isAccountFormField(value: string): value is AccountFormField {
     value === 'accountName' ||
     value === 'accountCategory' ||
     value === 'balanceSide' ||
+    value === 'initialBalance' ||
     value === 'active' ||
     value === 'displayOrder' ||
     value === 'creditCardProfile'

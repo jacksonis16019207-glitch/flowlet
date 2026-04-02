@@ -27,6 +27,7 @@ export type Account = {
   accountName: string
   accountCategory: AccountCategory
   balanceSide: BalanceSide
+  initialBalance: string
   active: boolean
   displayOrder: number
   currentBalance: string
@@ -41,6 +42,7 @@ export type CreateAccountInput = {
   accountName: string
   accountCategory: AccountCategory
   balanceSide: BalanceSide
+  initialBalance: string
   active: boolean
   displayOrder: number
   creditCardProfile: CreditCardProfile | null

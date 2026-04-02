@@ -54,6 +54,7 @@ export function AccountList({
           <p>
             {balanceSideLabels[account.balanceSide]} / 表示順 {account.displayOrder}
           </p>
+          <p>初期残高 {formatMoney(account.initialBalance)}</p>
           <p>
             残高 {formatMoney(account.currentBalance)} / 未配分{' '}
             {formatMoney(account.unallocatedBalance)}

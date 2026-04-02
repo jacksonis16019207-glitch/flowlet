@@ -15,6 +15,7 @@ public final class AccountEntityMapper {
             entity.getAccountName(),
             entity.getAccountCategory(),
             entity.getBalanceSide(),
+            entity.getInitialBalance(),
             entity.isActive(),
             entity.getDisplayOrder(),
             entity.getCreatedAt(),
@@ -29,6 +30,7 @@ public final class AccountEntityMapper {
         entity.setAccountName(account.accountName());
         entity.setAccountCategory(account.accountCategory());
         entity.setBalanceSide(account.balanceSide());
+        entity.setInitialBalance(account.initialBalance());
         entity.setActive(account.active());
         entity.setDisplayOrder(account.displayOrder());
         entity.setCreatedAt(account.createdAt());

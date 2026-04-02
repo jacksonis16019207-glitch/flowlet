@@ -7,6 +7,7 @@ import com.example.flowlet.account.domain.repository.AccountRepository;
 import com.example.flowlet.transaction.domain.model.GoalBucketAllocation;
 import com.example.flowlet.transaction.domain.repository.GoalBucketAllocationRepository;
 import com.example.flowlet.goalbucket.domain.repository.GoalBucketRepository;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -65,6 +66,7 @@ class GoalBucketControllerTest {
             "Main Account",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             10,
             LocalDateTime.now(),
@@ -123,6 +125,7 @@ class GoalBucketControllerTest {
             "Hyper Savings",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             20,
             LocalDateTime.now(),
@@ -150,6 +153,7 @@ class GoalBucketControllerTest {
             "Main",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             20,
             LocalDateTime.now(),
@@ -182,6 +186,7 @@ class GoalBucketControllerTest {
             "Main",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             20,
             LocalDateTime.now(),

@@ -30,10 +30,14 @@ public class BalanceCalculator {
     }
 
     public BigDecimal calculateAccountBalance(Long accountId, BalanceSide balanceSide) {
+        return calculateAccountBalance(accountId, balanceSide, BigDecimal.ZERO);
+    }
+
+    public BigDecimal calculateAccountBalance(Long accountId, BalanceSide balanceSide, BigDecimal initialBalance) {
         return transactionRepository.findAll().stream()
             .filter(transaction -> transaction.accountId().equals(accountId))
             .map(transaction -> calculateAccountDelta(balanceSide, transaction))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .reduce(initialBalance, BigDecimal::add);
     }
 
     public BigDecimal calculateGoalBucketBalance(Long goalBucketId) {
@@ -59,7 +63,11 @@ public class BalanceCalculator {
     }
 
     public BigDecimal calculateUnallocatedBalance(Long accountId, BalanceSide balanceSide) {
-        BigDecimal accountBalance = calculateAccountBalance(accountId, balanceSide);
+        return calculateUnallocatedBalance(accountId, balanceSide, BigDecimal.ZERO);
+    }
+
+    public BigDecimal calculateUnallocatedBalance(Long accountId, BalanceSide balanceSide, BigDecimal initialBalance) {
+        BigDecimal accountBalance = calculateAccountBalance(accountId, balanceSide, initialBalance);
         BigDecimal allocated = goalBucketRepository.findAll().stream()
             .filter(goalBucket -> goalBucket.accountId().equals(accountId))
             .map(GoalBucket::goalBucketId)

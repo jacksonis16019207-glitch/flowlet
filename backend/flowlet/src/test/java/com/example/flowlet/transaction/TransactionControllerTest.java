@@ -22,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -74,6 +75,7 @@ class TransactionControllerTest {
             "Main",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             10,
             LocalDateTime.now(),
@@ -85,6 +87,7 @@ class TransactionControllerTest {
             "Savings",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             20,
             LocalDateTime.now(),
@@ -144,6 +147,7 @@ class TransactionControllerTest {
             "Main",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             10,
             LocalDateTime.now(),
@@ -155,6 +159,7 @@ class TransactionControllerTest {
             "Savings",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             20,
             LocalDateTime.now(),

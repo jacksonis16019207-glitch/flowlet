@@ -38,6 +38,7 @@
 | `provider_name` | 提供元名 |
 | `account_category` | 管理対象区分 |
 | `balance_side` | 残高区分 |
+| `initial_balance` | 取引登録前の初期残高 |
 | `is_active` | 利用中フラグ |
 | `display_order` | 表示順 |
 | `created_at` | 作成日時 |
@@ -201,7 +202,7 @@
 
 ## balance_side と残高計算
 
-`Transaction` の意味は口座種別ごとに変えず、残高への反映だけを `balance_side` で変える。
+`Transaction` の意味は口座種別ごとに変えず、残高への反映だけを `balance_side` で変える。`Account` には `initial_balance` を持たせ、現在残高は「初期残高 + 取引差分」で計算する。
 
 ### ASSET
 

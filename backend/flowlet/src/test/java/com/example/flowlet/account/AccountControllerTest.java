@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -56,7 +57,7 @@ class AccountControllerTest {
     @Test
     void postAccountsCreatesAnAccount() throws Exception {
         String request = """
-            {"providerName":"MUFG","accountName":"Main Account","accountCategory":"BANK","balanceSide":"ASSET","active":true,"displayOrder":10}
+            {"providerName":"MUFG","accountName":"Main Account","accountCategory":"BANK","balanceSide":"ASSET","initialBalance":120000,"active":true,"displayOrder":10}
             """;
 
         mockMvc.perform(post("/api/accounts")
@@ -67,6 +68,8 @@ class AccountControllerTest {
             .andExpect(jsonPath("$.accountName").value("Main Account"))
             .andExpect(jsonPath("$.accountCategory").value("BANK"))
             .andExpect(jsonPath("$.balanceSide").value("ASSET"))
+            .andExpect(jsonPath("$.initialBalance").value(120000))
+            .andExpect(jsonPath("$.currentBalance").value(120000))
             .andExpect(jsonPath("$.displayOrder").value(10))
             .andExpect(jsonPath("$.createdAt").value("2026-03-31T10:23:45"));
     }
@@ -74,7 +77,7 @@ class AccountControllerTest {
     @Test
     void postAccountsReturnsValidationErrors() throws Exception {
         String request = """
-            {"providerName":"","accountName":"%s","active":true}
+            {"providerName":"","accountName":"%s","initialBalance":-1,"active":true}
             """.formatted("a".repeat(101));
 
         mockMvc.perform(post("/api/accounts")
@@ -86,7 +89,8 @@ class AccountControllerTest {
             .andExpect(jsonPath("$.fieldErrors[?(@.field == \"providerName\")].message").value("提供元名は必須です。"))
             .andExpect(jsonPath("$.fieldErrors[?(@.field == \"accountName\")].message").value("口座名は100文字以内で入力してください。"))
             .andExpect(jsonPath("$.fieldErrors[?(@.field == \"accountCategory\")].message").value("口座区分は必須です。"))
-            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"balanceSide\")].message").value("残高区分は必須です。"));
+            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"balanceSide\")].message").value("残高区分は必須です。"))
+            .andExpect(jsonPath("$.fieldErrors[?(@.field == \"initialBalance\")].message").value("初期残高は0以上で入力してください。"));
     }
 
     @Test
@@ -97,6 +101,7 @@ class AccountControllerTest {
             "Main Account",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             10,
             LocalDateTime.now(),
@@ -104,7 +109,7 @@ class AccountControllerTest {
         ));
 
         String request = """
-            {"providerName":"MUFG","accountName":"Main Account","accountCategory":"BANK","balanceSide":"ASSET","active":true,"displayOrder":10}
+            {"providerName":"MUFG","accountName":"Main Account","accountCategory":"BANK","balanceSide":"ASSET","initialBalance":0,"active":true,"displayOrder":10}
             """;
 
         mockMvc.perform(post("/api/accounts")
@@ -124,6 +129,7 @@ class AccountControllerTest {
             "Hyper Savings",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.valueOf(50000),
             true,
             20,
             LocalDateTime.now(),
@@ -134,7 +140,9 @@ class AccountControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].providerName").value("SBI"))
             .andExpect(jsonPath("$[0].accountName").value("Hyper Savings"))
-            .andExpect(jsonPath("$[0].accountCategory").value("BANK"));
+            .andExpect(jsonPath("$[0].accountCategory").value("BANK"))
+            .andExpect(jsonPath("$[0].initialBalance").value(50000))
+            .andExpect(jsonPath("$[0].currentBalance").value(50000));
     }
 
     @Test
@@ -145,6 +153,7 @@ class AccountControllerTest {
             "Main",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             10,
             LocalDateTime.now(),
@@ -154,11 +163,12 @@ class AccountControllerTest {
         mockMvc.perform(put("/api/accounts/{accountId}", account.accountId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"providerName":"住信SBI","accountName":"Main Updated","accountCategory":"BANK","balanceSide":"ASSET","active":true,"displayOrder":30}
+                    {"providerName":"住信SBI","accountName":"Main Updated","accountCategory":"BANK","balanceSide":"ASSET","initialBalance":30000,"active":true,"displayOrder":30}
                     """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.providerName").value("住信SBI"))
             .andExpect(jsonPath("$.accountName").value("Main Updated"))
+            .andExpect(jsonPath("$.initialBalance").value(30000))
             .andExpect(jsonPath("$.displayOrder").value(30));
     }
 
@@ -170,6 +180,7 @@ class AccountControllerTest {
             "Main",
             AccountCategory.BANK,
             BalanceSide.ASSET,
+            BigDecimal.ZERO,
             true,
             10,
             LocalDateTime.now(),

@@ -221,6 +221,7 @@ class CategoryControllerTest {
         account.setAccountName("メイン口座");
         account.setAccountCategory(AccountCategory.BANK);
         account.setBalanceSide(BalanceSide.ASSET);
+        account.setInitialBalance(BigDecimal.ZERO);
         account.setActive(true);
         account.setDisplayOrder(10);
         account.setCreatedAt(LocalDateTime.now());

@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -35,6 +36,9 @@ public class AccountEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "balance_side", nullable = false, length = 50)
     private BalanceSide balanceSide;
+
+    @Column(name = "initial_balance", nullable = false, precision = 19, scale = 2)
+    private BigDecimal initialBalance;
 
     @Column(name = "is_active", nullable = false)
     private boolean active;
@@ -86,6 +90,14 @@ public class AccountEntity {
 
     public void setBalanceSide(BalanceSide balanceSide) {
         this.balanceSide = balanceSide;
+    }
+
+    public BigDecimal getInitialBalance() {
+        return initialBalance;
+    }
+
+    public void setInitialBalance(BigDecimal initialBalance) {
+        this.initialBalance = initialBalance;
     }
 
     public boolean isActive() {

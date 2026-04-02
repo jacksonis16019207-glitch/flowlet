@@ -133,6 +133,26 @@ export function AccountForm({
       </label>
 
       <label>
+        初期残高
+        <input
+          type="number"
+          min="0"
+          step="1"
+          aria-invalid={fieldErrors.initialBalance ? 'true' : 'false'}
+          value={value.initialBalance}
+          onChange={(event) =>
+            onChange({
+              ...value,
+              initialBalance: event.target.value,
+            })
+          }
+        />
+        {fieldErrors.initialBalance ? (
+          <span className="field-error">{fieldErrors.initialBalance}</span>
+        ) : null}
+      </label>
+
+      <label>
         表示順
         <input
           type="number"

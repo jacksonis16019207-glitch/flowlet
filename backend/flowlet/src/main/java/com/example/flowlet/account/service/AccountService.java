@@ -104,6 +104,7 @@ public class AccountService {
             accountName,
             request.getAccountCategory(),
             request.getBalanceSide(),
+            request.getInitialBalance(),
             request.isActive(),
             request.getDisplayOrder() == null ? 0 : request.getDisplayOrder(),
             now,
@@ -153,6 +154,7 @@ public class AccountService {
         accountEntity.setAccountName(accountName);
         accountEntity.setAccountCategory(request.getAccountCategory());
         accountEntity.setBalanceSide(request.getBalanceSide());
+        accountEntity.setInitialBalance(request.getInitialBalance());
         accountEntity.setActive(request.isActive());
         accountEntity.setDisplayOrder(request.getDisplayOrder() == null ? 0 : request.getDisplayOrder());
         accountEntity.setUpdatedAt(LocalDateTime.now(clock));
@@ -261,8 +263,16 @@ public class AccountService {
     }
 
     private AccountResponse toResponse(Account account, CreditCardProfile creditCardProfile) {
-        BigDecimal currentBalance = balanceCalculator.calculateAccountBalance(account.accountId(), account.balanceSide());
-        BigDecimal unallocatedBalance = balanceCalculator.calculateUnallocatedBalance(account.accountId(), account.balanceSide());
+        BigDecimal currentBalance = balanceCalculator.calculateAccountBalance(
+            account.accountId(),
+            account.balanceSide(),
+            account.initialBalance()
+        );
+        BigDecimal unallocatedBalance = balanceCalculator.calculateUnallocatedBalance(
+            account.accountId(),
+            account.balanceSide(),
+            account.initialBalance()
+        );
         CreditCardProfileResponse creditCardProfileResponse = creditCardProfile == null
             ? null
             : CreditCardProfileResponse.from(creditCardProfile);

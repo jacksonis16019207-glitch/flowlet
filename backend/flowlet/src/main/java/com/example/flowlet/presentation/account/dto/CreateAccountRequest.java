@@ -4,11 +4,14 @@ import com.example.flowlet.account.domain.model.AccountCategory;
 import com.example.flowlet.account.domain.model.BalanceSide;
 import com.example.flowlet.account.domain.model.PaymentDateAdjustmentRule;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
 
 public class CreateAccountRequest {
 
@@ -25,6 +28,10 @@ public class CreateAccountRequest {
 
     @NotNull(message = "{validation.account.balanceSide.notNull}")
     private BalanceSide balanceSide;
+
+    @NotNull(message = "{validation.account.initialBalance.notNull}")
+    @DecimalMin(value = "0", message = "{validation.account.initialBalance.min}")
+    private BigDecimal initialBalance = BigDecimal.ZERO;
 
     private boolean active = true;
 
@@ -63,6 +70,14 @@ public class CreateAccountRequest {
 
     public void setBalanceSide(BalanceSide balanceSide) {
         this.balanceSide = balanceSide;
+    }
+
+    public BigDecimal getInitialBalance() {
+        return initialBalance;
+    }
+
+    public void setInitialBalance(BigDecimal initialBalance) {
+        this.initialBalance = initialBalance;
     }
 
     public boolean isActive() {

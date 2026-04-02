@@ -101,8 +101,11 @@
     "providerName": "住信SBIネット銀行",
     "accountCategory": "BANK",
     "balanceSide": "ASSET",
+    "initialBalance": 120000,
     "active": true,
     "displayOrder": 10,
+    "currentBalance": 120000,
+    "unallocatedBalance": 120000,
     "createdAt": "2026-04-01T00:00:00Z",
     "updatedAt": "2026-04-01T00:00:00Z"
   }

@@ -1,5 +1,6 @@
 package com.example.flowlet.account.domain.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record Account(
@@ -8,6 +9,7 @@ public record Account(
     String accountName,
     AccountCategory accountCategory,
     BalanceSide balanceSide,
+    BigDecimal initialBalance,
     boolean active,
     Integer displayOrder,
     LocalDateTime createdAt,
