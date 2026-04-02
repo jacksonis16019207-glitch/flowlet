@@ -214,16 +214,13 @@ Category / Subcategory:
 
 ### 配置方針
 
-候補:
-
-- `backend/db/seed/`
-- `backend/flowlet/src/main/resources/`
-
 現時点のおすすめ:
 
-- DB seed として管理する
+- 開発用ダミーデータは `infra/sql/dev-seed/` に置く
+- 固定マスタデータは `infra/sql/master-data/` に置く
 - ローカル開発で何度でも流し直せる形にする
 - 本番投入用データとは分ける
+- migration にはダミーデータを含めず、Flyway は構造変更だけに使う
 
 ### 完了条件
 
@@ -252,6 +249,5 @@ Category / Subcategory:
 
 ## 保留事項
 
-- ダミーデータ投入方法を migration と seed スクリプトのどちらに寄せるか
 - 取引画面内に残高サマリを先に出すか、ダッシュボードへ分けるか
 - クレジットカード請求確定モデルを別タスクでいつ切り出すか
