@@ -3,12 +3,22 @@ import type { Dispatch, FormEvent, SetStateAction } from 'react'
 import { fetchAccounts } from '../../features/account/api/accountApi'
 import type { Account } from '../../features/account/types/account'
 import {
+  createCategory,
+  createSubcategory,
   fetchCategories,
   fetchSubcategories,
 } from '../../features/category/api/categoryApi'
-import type { Category, Subcategory } from '../../features/category/types/category'
+import {
+  categoryTypeLabels,
+  type Category,
+  type CategoryType,
+  type CategoryUpsertInput,
+  type Subcategory,
+  type SubcategoryUpsertInput,
+} from '../../features/category/types/category'
 import { fetchGoalBuckets } from '../../features/goalBucket/api/goalBucketApi'
 import type { GoalBucket } from '../../features/goalBucket/types/goalBucket'
+import { ApiRequestError } from '../../shared/lib/api/client'
 import {
   createGoalBucketAllocations,
   createTransaction,
@@ -27,6 +37,7 @@ import type {
 
 type TransactionTab = 'transaction' | 'transfer' | 'allocation'
 type AllocationMode = 'amount' | 'ratio'
+type QuickCreateContext = 'transaction' | 'transfer'
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -52,6 +63,20 @@ const initialTransferForm: CreateTransferInput = {
   amount: '',
   description: '',
   note: '',
+}
+
+const initialQuickCategoryForm: CategoryUpsertInput = {
+  categoryName: '',
+  categoryType: 'EXPENSE',
+  displayOrder: 10,
+  active: true,
+}
+
+const initialQuickSubcategoryForm: SubcategoryUpsertInput = {
+  categoryId: 0,
+  subcategoryName: '',
+  displayOrder: 10,
+  active: true,
 }
 
 export function TransactionPage() {
@@ -82,6 +107,11 @@ export function TransactionPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [quickCategoryForm, setQuickCategoryForm] = useState(initialQuickCategoryForm)
+  const [quickSubcategoryForm, setQuickSubcategoryForm] = useState(initialQuickSubcategoryForm)
+  const [quickCategoryErrorMessage, setQuickCategoryErrorMessage] = useState('')
+  const [quickSubcategoryErrorMessage, setQuickSubcategoryErrorMessage] = useState('')
+  const [quickSubmitting, setQuickSubmitting] = useState(false)
 
   useEffect(() => {
     void loadPageData()
@@ -290,6 +320,76 @@ export function TransactionPage() {
     }
   }
 
+  async function handleQuickCreateCategory(context: QuickCreateContext) {
+    setQuickSubmitting(true)
+    setQuickCategoryErrorMessage('')
+
+    try {
+      const createdCategory = await createCategory(quickCategoryForm)
+      await loadPageData()
+
+      if (context === 'transaction') {
+        setTransactionForm((current) => ({
+          ...current,
+          categoryId: createdCategory.categoryId,
+          subcategoryId: null,
+        }))
+      } else {
+        setTransferForm((current) => ({
+          ...current,
+          categoryId: createdCategory.categoryId,
+          subcategoryId: null,
+        }))
+      }
+
+      setQuickSubcategoryForm((current) => ({
+        ...current,
+        categoryId: createdCategory.categoryId,
+      }))
+      setQuickCategoryForm((current) => ({
+        ...current,
+        categoryName: '',
+      }))
+    } catch (error) {
+      setQuickCategoryErrorMessage(resolveQuickCreateErrorMessage(error))
+    } finally {
+      setQuickSubmitting(false)
+    }
+  }
+
+  async function handleQuickCreateSubcategory(context: QuickCreateContext) {
+    setQuickSubmitting(true)
+    setQuickSubcategoryErrorMessage('')
+
+    try {
+      const createdSubcategory = await createSubcategory(quickSubcategoryForm)
+      await loadPageData()
+
+      if (context === 'transaction') {
+        setTransactionForm((current) => ({
+          ...current,
+          categoryId: createdSubcategory.categoryId,
+          subcategoryId: createdSubcategory.subcategoryId,
+        }))
+      } else {
+        setTransferForm((current) => ({
+          ...current,
+          categoryId: createdSubcategory.categoryId,
+          subcategoryId: createdSubcategory.subcategoryId,
+        }))
+      }
+
+      setQuickSubcategoryForm((current) => ({
+        ...current,
+        subcategoryName: '',
+      }))
+    } catch (error) {
+      setQuickSubcategoryErrorMessage(resolveQuickCreateErrorMessage(error))
+    } finally {
+      setQuickSubmitting(false)
+    }
+  }
+
   return (
     <main className="app-shell">
       <section className="hero-panel">
@@ -350,6 +450,18 @@ export function TransactionPage() {
               goalBuckets.filter(
                 (goalBucket) => goalBucket.accountId === transactionForm.accountId,
               ),
+              {
+                context: 'transaction',
+                quickCategoryForm,
+                quickSubcategoryForm,
+                quickCategoryErrorMessage,
+                quickSubcategoryErrorMessage,
+                quickSubmitting,
+                onQuickCategoryFormChange: setQuickCategoryForm,
+                onQuickSubcategoryFormChange: setQuickSubcategoryForm,
+                onQuickCreateCategory: handleQuickCreateCategory,
+                onQuickCreateSubcategory: handleQuickCreateSubcategory,
+              },
             )}
             <button type="submit" disabled={submitting}>
               {submitting ? '登録中...' : '通常取引を登録'}
@@ -444,6 +556,19 @@ export function TransactionPage() {
                 ))}
               </select>
             </label>
+            <QuickCategoryCreator
+              context="transfer"
+              categoryOptions={transferCategories}
+              quickCategoryForm={quickCategoryForm}
+              quickSubcategoryForm={quickSubcategoryForm}
+              quickCategoryErrorMessage={quickCategoryErrorMessage}
+              quickSubcategoryErrorMessage={quickSubcategoryErrorMessage}
+              quickSubmitting={quickSubmitting}
+              onQuickCategoryFormChange={setQuickCategoryForm}
+              onQuickSubcategoryFormChange={setQuickSubcategoryForm}
+              onQuickCreateCategory={handleQuickCreateCategory}
+              onQuickCreateSubcategory={handleQuickCreateSubcategory}
+            />
             <label>
               サブカテゴリ
               <select
@@ -809,6 +934,7 @@ function renderCommonTransactionFields(
   categories: Category[],
   subcategories: Subcategory[],
   goalBuckets: GoalBucket[],
+  quickCreateProps: QuickCreateSharedProps,
 ) {
   return (
     <>
@@ -886,6 +1012,10 @@ function renderCommonTransactionFields(
           ))}
         </select>
       </label>
+      <QuickCategoryCreator
+        {...quickCreateProps}
+        categoryOptions={categories}
+      />
       <label>
         サブカテゴリ
         <select
@@ -960,6 +1090,136 @@ function renderCommonTransactionFields(
   )
 }
 
+type QuickCategoryCreatorProps = {
+  context: QuickCreateContext
+  categoryOptions: Category[]
+  quickCategoryForm: CategoryUpsertInput
+  quickSubcategoryForm: SubcategoryUpsertInput
+  quickCategoryErrorMessage: string
+  quickSubcategoryErrorMessage: string
+  quickSubmitting: boolean
+  onQuickCategoryFormChange: Dispatch<SetStateAction<CategoryUpsertInput>>
+  onQuickSubcategoryFormChange: Dispatch<SetStateAction<SubcategoryUpsertInput>>
+  onQuickCreateCategory: (context: QuickCreateContext) => Promise<void>
+  onQuickCreateSubcategory: (context: QuickCreateContext) => Promise<void>
+}
+
+type QuickCreateSharedProps = Omit<QuickCategoryCreatorProps, 'categoryOptions'>
+
+function QuickCategoryCreator({
+  context,
+  categoryOptions,
+  quickCategoryForm,
+  quickSubcategoryForm,
+  quickCategoryErrorMessage,
+  quickSubcategoryErrorMessage,
+  quickSubmitting,
+  onQuickCategoryFormChange,
+  onQuickSubcategoryFormChange,
+  onQuickCreateCategory,
+  onQuickCreateSubcategory,
+}: QuickCategoryCreatorProps) {
+  return (
+    <div className="quick-create-panel">
+      <p className="eyebrow">候補になければその場で追加</p>
+      <div className="quick-create-grid">
+        <label>
+          新規カテゴリ名
+          <input
+            value={quickCategoryForm.categoryName}
+            onChange={(event) =>
+              onQuickCategoryFormChange((current) => ({
+                ...current,
+                categoryName: event.target.value,
+              }))
+            }
+            placeholder="例: 日用品"
+            maxLength={100}
+          />
+        </label>
+        <label>
+          種別
+          <select
+            value={quickCategoryForm.categoryType}
+            onChange={(event) =>
+              onQuickCategoryFormChange((current) => ({
+                ...current,
+                categoryType: event.target.value as CategoryType,
+              }))
+            }
+          >
+            {Object.entries(categoryTypeLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          disabled={quickSubmitting || !quickCategoryForm.categoryName.trim()}
+          onClick={() => void onQuickCreateCategory(context)}
+        >
+          カテゴリを追加
+        </button>
+      </div>
+      {quickCategoryErrorMessage ? (
+        <p className="field-error">{quickCategoryErrorMessage}</p>
+      ) : null}
+
+      <div className="quick-create-grid">
+        <label>
+          新規サブカテゴリ名
+          <input
+            value={quickSubcategoryForm.subcategoryName}
+            onChange={(event) =>
+              onQuickSubcategoryFormChange((current) => ({
+                ...current,
+                subcategoryName: event.target.value,
+              }))
+            }
+            placeholder="例: ドラッグストア"
+            maxLength={100}
+          />
+        </label>
+        <label>
+          親カテゴリ
+          <select
+            value={quickSubcategoryForm.categoryId}
+            onChange={(event) =>
+              onQuickSubcategoryFormChange((current) => ({
+                ...current,
+                categoryId: Number(event.target.value),
+              }))
+            }
+          >
+            <option value={0}>親カテゴリを選択</option>
+            {categoryOptions.map((category) => (
+              <option key={category.categoryId} value={category.categoryId}>
+                {category.categoryName}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          disabled={
+            quickSubmitting ||
+            !quickSubcategoryForm.subcategoryName.trim() ||
+            !quickSubcategoryForm.categoryId
+          }
+          onClick={() => void onQuickCreateSubcategory(context)}
+        >
+          サブカテゴリを追加
+        </button>
+      </div>
+      {quickSubcategoryErrorMessage ? (
+        <p className="field-error">{quickSubcategoryErrorMessage}</p>
+      ) : null}
+    </div>
+  )
+}
+
 function buildAllocationPayload(
   accountId: number,
   fromGoalBucketId: number | null,
@@ -1003,4 +1263,12 @@ function formatMoney(value: string) {
     currency: 'JPY',
     maximumFractionDigits: 0,
   }).format(Number(value))
+}
+
+function resolveQuickCreateErrorMessage(error: unknown) {
+  if (error instanceof ApiRequestError) {
+    return error.message
+  }
+
+  return 'その場登録に失敗しました。入力内容とバックエンドの状態を確認してください。'
 }
