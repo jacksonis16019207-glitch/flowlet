@@ -2,12 +2,16 @@ package com.example.flowlet.presentation.goalbucketallocation.controller;
 
 import com.example.flowlet.application.service.GoalBucketAllocationApplicationService;
 import com.example.flowlet.presentation.goalbucketallocation.dto.CreateGoalBucketAllocationsRequest;
+import com.example.flowlet.presentation.goalbucketallocation.dto.DeleteGoalBucketAllocationResponse;
 import com.example.flowlet.presentation.goalbucketallocation.dto.GoalBucketAllocationBatchResponse;
 import com.example.flowlet.presentation.goalbucketallocation.dto.GoalBucketAllocationResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,5 +55,18 @@ public class GoalBucketAllocationController {
     @ResponseStatus(HttpStatus.CREATED)
     public GoalBucketAllocationBatchResponse create(@Valid @RequestBody CreateGoalBucketAllocationsRequest request) {
         return goalBucketAllocationApplicationService.create(request);
+    }
+
+    @PutMapping("/{allocationId}")
+    public GoalBucketAllocationResponse update(
+        @PathVariable Long allocationId,
+        @Valid @RequestBody CreateGoalBucketAllocationsRequest request
+    ) {
+        return goalBucketAllocationApplicationService.update(allocationId, request);
+    }
+
+    @DeleteMapping("/{allocationId}")
+    public DeleteGoalBucketAllocationResponse delete(@PathVariable Long allocationId) {
+        return goalBucketAllocationApplicationService.delete(allocationId);
     }
 }

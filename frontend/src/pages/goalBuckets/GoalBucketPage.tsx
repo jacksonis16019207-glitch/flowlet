@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   createGoalBucket,
+  deleteGoalBucket,
   fetchGoalBuckets,
+  updateGoalBucket,
 } from '../../features/goalBucket/api/goalBucketApi'
 import { GoalBucketForm } from '../../features/goalBucket/components/GoalBucketForm'
 import { GoalBucketList } from '../../features/goalBucket/components/GoalBucketList'
@@ -26,6 +28,12 @@ export function GoalBucketPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [goalBuckets, setGoalBuckets] = useState<GoalBucket[]>([])
   const [form, setForm] = useState<CreateGoalBucketInput>(emptyForm)
+  const [editingGoalBucketId, setEditingGoalBucketId] = useState<number | null>(
+    null,
+  )
+  const [deletingGoalBucketId, setDeletingGoalBucketId] = useState<number | null>(
+    null,
+  )
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -50,11 +58,11 @@ export function GoalBucketPage() {
 
       setAccounts(accountData)
       setGoalBuckets(goalBucketData)
-      setForm({
-        accountId: accountData[0]?.accountId ?? 0,
-        bucketName: '',
-        active: true,
-      })
+      setForm((current) => ({
+        accountId: current.accountId || accountData[0]?.accountId || 0,
+        bucketName: current.bucketName,
+        active: current.active,
+      }))
     } catch {
       setErrorMessage(
         '目的別口座の取得に失敗しました。バックエンドの状態を確認してください。',
@@ -71,16 +79,14 @@ export function GoalBucketPage() {
     setFieldErrors({})
 
     try {
-      const createdGoalBucket = await createGoalBucket(form)
-      setGoalBuckets((currentGoalBuckets) => [
-        createdGoalBucket,
-        ...currentGoalBuckets,
-      ])
-      setForm((currentForm) => ({
-        accountId: currentForm.accountId,
-        bucketName: '',
-        active: true,
-      }))
+      if (editingGoalBucketId == null) {
+        await createGoalBucket(form)
+      } else {
+        await updateGoalBucket(editingGoalBucketId, form)
+      }
+
+      await loadPageData()
+      resetForm()
     } catch (error) {
       if (error instanceof ApiRequestError) {
         if (error.code === 'VALIDATION_ERROR') {
@@ -103,12 +109,62 @@ export function GoalBucketPage() {
         return
       }
 
-      setSubmitErrorMessage(
-        '目的別口座の登録に失敗しました。入力内容とバックエンドの状態を確認してください。',
-      )
+      setSubmitErrorMessage('目的別口座の保存に失敗しました。')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleEdit(goalBucket: GoalBucket) {
+    setEditingGoalBucketId(goalBucket.goalBucketId)
+    setSubmitErrorMessage('')
+    setFieldErrors({})
+    setForm({
+      accountId: goalBucket.accountId,
+      bucketName: goalBucket.bucketName,
+      active: goalBucket.active,
+    })
+  }
+
+  async function handleDelete(goalBucket: GoalBucket) {
+    const confirmed = window.confirm(
+      `「${goalBucket.bucketName}」を削除します。参照中なら停止状態に切り替わります。`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setDeletingGoalBucketId(goalBucket.goalBucketId)
+    setErrorMessage('')
+
+    try {
+      await deleteGoalBucket(goalBucket.goalBucketId)
+      await loadPageData()
+
+      if (editingGoalBucketId === goalBucket.goalBucketId) {
+        resetForm()
+      }
+    } catch (error) {
+      if (error instanceof ApiRequestError) {
+        setErrorMessage(error.message)
+      } else {
+        setErrorMessage('目的別口座の削除に失敗しました。')
+      }
+    } finally {
+      setDeletingGoalBucketId(null)
+    }
+  }
+
+  function resetForm() {
+    setEditingGoalBucketId(null)
+    setForm({
+      accountId: accounts[0]?.accountId ?? 0,
+      bucketName: '',
+      active: true,
+    })
+    setSubmitErrorMessage('')
+    setFieldErrors({})
   }
 
   return (
@@ -117,7 +173,7 @@ export function GoalBucketPage() {
         <p className="eyebrow">flowlet / 目的別口座</p>
         <h1>目的別口座を登録して管理する</h1>
         <p className="lead">
-          目的別口座を親口座にひも付けて登録し、用途ごとの管理を 1 画面で見えるようにします。
+          目的別口座の追加に加えて、一覧から編集と削除も行えます。
         </p>
         <div className="hero-stats">
           <article>
@@ -125,7 +181,7 @@ export function GoalBucketPage() {
             <strong>{goalBuckets.length}</strong>
           </article>
           <article>
-            <span>選択可能な親口座</span>
+            <span>紐づけ先の口座</span>
             <strong>{accounts.length}</strong>
           </article>
         </div>
@@ -134,9 +190,22 @@ export function GoalBucketPage() {
       <section className="content-grid">
         <section className="panel">
           <div className="panel-heading">
-            <p className="eyebrow">新規目的別口座</p>
-            <h2>目的別口座を登録</h2>
+            <p className="eyebrow">
+              {editingGoalBucketId == null ? '新規目的別口座' : '目的別口座編集'}
+            </p>
+            <h2>
+              {editingGoalBucketId == null
+                ? '目的別口座を登録'
+                : '目的別口座を編集'}
+            </h2>
           </div>
+          {editingGoalBucketId != null ? (
+            <div className="button-row">
+              <button type="button" className="secondary" onClick={resetForm}>
+                新規登録に戻す
+              </button>
+            </div>
+          ) : null}
           <GoalBucketForm
             accounts={accounts}
             value={form}
@@ -158,6 +227,9 @@ export function GoalBucketPage() {
             accounts={accounts}
             loading={loading}
             errorMessage={errorMessage}
+            deletingGoalBucketId={deletingGoalBucketId}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </section>
       </section>

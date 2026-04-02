@@ -8,12 +8,18 @@ type AccountListProps = {
   accounts: Account[]
   loading: boolean
   errorMessage: string
+  deletingAccountId?: number | null
+  onEdit?: (account: Account) => void
+  onDelete?: (account: Account) => void
 }
 
 export function AccountList({
   accounts,
   loading,
   errorMessage,
+  deletingAccountId,
+  onEdit,
+  onDelete,
 }: AccountListProps) {
   if (errorMessage) {
     return <p className="status error">{errorMessage}</p>
@@ -37,7 +43,7 @@ export function AccountList({
         <article key={account.accountId} className="account-card">
           <div className="account-card-header">
             <span className={`badge ${account.active ? 'active' : 'inactive'}`}>
-              {account.active ? '利用中' : '停止中'}
+              {account.active ? '有効' : '停止'}
             </span>
             <span className="type-chip">
               {accountCategoryLabels[account.accountCategory]}
@@ -54,11 +60,28 @@ export function AccountList({
           </p>
           {account.creditCardProfile ? (
             <p>
-              引落口座ID #{account.creditCardProfile.paymentAccountId} / 締め日{' '}
+              支払口座ID #{account.creditCardProfile.paymentAccountId} / 締め日{' '}
               {account.creditCardProfile.closingDay} / 支払日{' '}
               {account.creditCardProfile.paymentDay}
             </p>
           ) : null}
+          <div className="category-actions">
+            <button
+              type="button"
+              className="action-button"
+              onClick={() => onEdit?.(account)}
+            >
+              編集
+            </button>
+            <button
+              type="button"
+              className="action-button danger"
+              disabled={deletingAccountId === account.accountId}
+              onClick={() => onDelete?.(account)}
+            >
+              {deletingAccountId === account.accountId ? '削除中...' : '削除'}
+            </button>
+          </div>
           <time dateTime={account.createdAt}>
             登録日時 {new Date(account.createdAt).toLocaleString('ja-JP')}
           </time>

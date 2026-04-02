@@ -10,7 +10,12 @@ import com.example.flowlet.category.domain.repository.CategoryRepository;
 import com.example.flowlet.category.domain.repository.SubcategoryRepository;
 import com.example.flowlet.goalbucket.domain.model.GoalBucket;
 import com.example.flowlet.goalbucket.domain.repository.GoalBucketRepository;
+import com.example.flowlet.infrastructure.jpa.transaction.entity.TransactionEntity;
+import com.example.flowlet.infrastructure.jpa.transaction.mapper.TransactionEntityMapper;
+import com.example.flowlet.infrastructure.jpa.transaction.repository.SpringDataGoalBucketAllocationRepository;
+import com.example.flowlet.infrastructure.jpa.transaction.repository.SpringDataTransactionRepository;
 import com.example.flowlet.presentation.transaction.dto.CreateTransactionRequest;
+import com.example.flowlet.presentation.transaction.dto.DeleteTransactionResponse;
 import com.example.flowlet.presentation.transaction.dto.TransactionResponse;
 import com.example.flowlet.transaction.domain.model.Transaction;
 import com.example.flowlet.transaction.domain.model.TransactionType;
@@ -35,6 +40,8 @@ public class TransactionService {
     private final GoalBucketRepository goalBucketRepository;
     private final CategoryRepository categoryRepository;
     private final SubcategoryRepository subcategoryRepository;
+    private final SpringDataTransactionRepository springDataTransactionRepository;
+    private final SpringDataGoalBucketAllocationRepository springDataGoalBucketAllocationRepository;
     private final Clock clock;
 
     public TransactionService(
@@ -43,6 +50,8 @@ public class TransactionService {
         GoalBucketRepository goalBucketRepository,
         CategoryRepository categoryRepository,
         SubcategoryRepository subcategoryRepository,
+        SpringDataTransactionRepository springDataTransactionRepository,
+        SpringDataGoalBucketAllocationRepository springDataGoalBucketAllocationRepository,
         Clock clock
     ) {
         this.transactionRepository = transactionRepository;
@@ -50,6 +59,8 @@ public class TransactionService {
         this.goalBucketRepository = goalBucketRepository;
         this.categoryRepository = categoryRepository;
         this.subcategoryRepository = subcategoryRepository;
+        this.springDataTransactionRepository = springDataTransactionRepository;
+        this.springDataGoalBucketAllocationRepository = springDataGoalBucketAllocationRepository;
         this.clock = clock;
     }
 
@@ -112,6 +123,95 @@ public class TransactionService {
             now
         ));
         return toResponses(List.of(saved)).getFirst();
+    }
+
+    @Transactional
+    public TransactionResponse update(Long transactionId, CreateTransactionRequest request) {
+        TransactionEntity transactionEntity = getTransactionEntity(transactionId);
+
+        if (transactionEntity.getTransferGroupId() != null) {
+            throw new BusinessRuleException(
+                HttpStatus.CONFLICT,
+                "TRANSFER_TRANSACTION_UPDATE_NOT_ALLOWED",
+                "error.transaction.transferTransactionUpdateNotAllowed",
+                transactionId
+            );
+        }
+
+        if (request.getTransactionType() != TransactionType.INCOME && request.getTransactionType() != TransactionType.EXPENSE) {
+            throw new BusinessRuleException(HttpStatus.CONFLICT, "TRANSACTION_TYPE_NOT_ALLOWED", "error.transaction.transactionTypeNotAllowed");
+        }
+
+        validateTransactionReferences(
+            request.getAccountId(),
+            request.getGoalBucketId(),
+            request.getCategoryId(),
+            request.getSubcategoryId(),
+            request.getTransactionType()
+        );
+
+        Transaction updated = new Transaction(
+            transactionEntity.getTransactionId(),
+            request.getAccountId(),
+            request.getGoalBucketId(),
+            request.getCategoryId(),
+            request.getSubcategoryId(),
+            request.getTransactionType(),
+            request.getTransactionDate(),
+            request.getAmount(),
+            request.getDescription().trim(),
+            normalizeNote(request.getNote()),
+            null,
+            transactionEntity.getCreatedAt(),
+            LocalDateTime.now(clock)
+        );
+
+        return toResponses(List.of(
+            TransactionEntityMapper.toDomain(
+                springDataTransactionRepository.save(TransactionEntityMapper.toEntity(updated))
+            )
+        )).getFirst();
+    }
+
+    @Transactional
+    public DeleteTransactionResponse delete(Long transactionId) {
+        TransactionEntity transactionEntity = getTransactionEntity(transactionId);
+
+        if (transactionEntity.getTransferGroupId() != null) {
+            List<Long> deletedAllocationIds = springDataGoalBucketAllocationRepository
+                .findByLinkedTransferGroupId(transactionEntity.getTransferGroupId())
+                .stream()
+                .map(allocation -> allocation.getAllocationId())
+                .toList();
+            springDataGoalBucketAllocationRepository.deleteAll(
+                springDataGoalBucketAllocationRepository.findByLinkedTransferGroupId(transactionEntity.getTransferGroupId())
+            );
+
+            List<TransactionEntity> transferTransactions = springDataTransactionRepository.findByTransferGroupId(
+                transactionEntity.getTransferGroupId()
+            );
+            List<Long> deletedTransactionIds = transferTransactions.stream()
+                .map(TransactionEntity::getTransactionId)
+                .toList();
+            springDataTransactionRepository.deleteAll(transferTransactions);
+
+            return new DeleteTransactionResponse(
+                transactionId,
+                "DELETED_TRANSFER_GROUP",
+                transactionEntity.getTransferGroupId(),
+                deletedTransactionIds,
+                deletedAllocationIds
+            );
+        }
+
+        springDataTransactionRepository.delete(transactionEntity);
+        return new DeleteTransactionResponse(
+            transactionId,
+            "DELETED",
+            null,
+            List.of(transactionId),
+            List.of()
+        );
     }
 
     public void validateTransactionReferences(
@@ -206,5 +306,15 @@ public class TransactionService {
             return null;
         }
         return note.trim();
+    }
+
+    private TransactionEntity getTransactionEntity(Long transactionId) {
+        return springDataTransactionRepository.findById(transactionId)
+            .orElseThrow(() -> new BusinessRuleException(
+                HttpStatus.NOT_FOUND,
+                "TRANSACTION_NOT_FOUND",
+                "error.transaction.notFound",
+                transactionId
+            ));
     }
 }

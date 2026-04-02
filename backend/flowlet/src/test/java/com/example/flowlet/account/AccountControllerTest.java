@@ -4,6 +4,8 @@ import com.example.flowlet.account.domain.model.Account;
 import com.example.flowlet.account.domain.model.AccountCategory;
 import com.example.flowlet.account.domain.model.BalanceSide;
 import com.example.flowlet.account.domain.repository.AccountRepository;
+import com.example.flowlet.goalbucket.domain.model.GoalBucket;
+import com.example.flowlet.goalbucket.domain.repository.GoalBucketRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +24,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,8 +44,12 @@ class AccountControllerTest {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private GoalBucketRepository goalBucketRepository;
+
     @BeforeEach
     void setUp() {
+        goalBucketRepository.deleteAll();
         accountRepository.deleteAll();
     }
 
@@ -127,6 +135,64 @@ class AccountControllerTest {
             .andExpect(jsonPath("$[0].providerName").value("SBI"))
             .andExpect(jsonPath("$[0].accountName").value("Hyper Savings"))
             .andExpect(jsonPath("$[0].accountCategory").value("BANK"));
+    }
+
+    @Test
+    void putAccountsUpdatesAnAccount() throws Exception {
+        Account account = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            true,
+            10,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+
+        mockMvc.perform(put("/api/accounts/{accountId}", account.accountId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"providerName":"住信SBI","accountName":"Main Updated","accountCategory":"BANK","balanceSide":"ASSET","active":true,"displayOrder":30}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.providerName").value("住信SBI"))
+            .andExpect(jsonPath("$.accountName").value("Main Updated"))
+            .andExpect(jsonPath("$.displayOrder").value(30));
+    }
+
+    @Test
+    void deleteAccountsDeactivatesReferencedAccount() throws Exception {
+        Account account = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            true,
+            10,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        goalBucketRepository.save(new GoalBucket(
+            null,
+            account.accountId(),
+            "Emergency",
+            true,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+
+        mockMvc.perform(delete("/api/accounts/{accountId}", account.accountId()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.action").value("DEACTIVATED"))
+            .andExpect(jsonPath("$.active").value(false));
+
+        org.assertj.core.api.Assertions.assertThat(accountRepository.findById(account.accountId()))
+            .get()
+            .extracting(Account::active)
+            .isEqualTo(false);
     }
 
     @TestConfiguration

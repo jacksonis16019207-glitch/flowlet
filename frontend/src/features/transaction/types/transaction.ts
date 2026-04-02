@@ -92,6 +92,19 @@ export type TransferResponse = {
   incomingTransaction: Transaction
 }
 
+export type DeleteTransactionResponse = {
+  transactionId: number
+  action: 'DELETED' | 'DELETED_TRANSFER_GROUP'
+  transferGroupId: string | null
+  deletedTransactionIds: number[]
+  deletedAllocationIds: number[]
+}
+
+export type DeleteGoalBucketAllocationResponse = {
+  allocationId: number
+  action: 'DELETED'
+}
+
 export const transactionTypeCategoryMap: Record<
   CreateTransactionInput['transactionType'] | 'TRANSFER',
   CategoryType

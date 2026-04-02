@@ -6,6 +6,9 @@ type GoalBucketListProps = {
   accounts: Account[]
   loading: boolean
   errorMessage: string
+  deletingGoalBucketId?: number | null
+  onEdit?: (goalBucket: GoalBucket) => void
+  onDelete?: (goalBucket: GoalBucket) => void
 }
 
 export function GoalBucketList({
@@ -13,6 +16,9 @@ export function GoalBucketList({
   accounts,
   loading,
   errorMessage,
+  deletingGoalBucketId,
+  onEdit,
+  onDelete,
 }: GoalBucketListProps) {
   if (errorMessage) {
     return <p className="status error">{errorMessage}</p>
@@ -43,7 +49,7 @@ export function GoalBucketList({
               <span
                 className={`badge ${goalBucket.active ? 'active' : 'inactive'}`}
               >
-                {goalBucket.active ? '利用中' : '停止中'}
+                {goalBucket.active ? '有効' : '停止'}
               </span>
               <span className="type-chip">口座ID #{goalBucket.accountId}</span>
             </div>
@@ -51,9 +57,28 @@ export function GoalBucketList({
             <p>
               {account
                 ? `${account.providerName} / ${account.accountName}`
-                : '親口座不明'}
+                : '親口座なし'}
             </p>
             <p>残高 {formatMoney(goalBucket.currentBalance)}</p>
+            <div className="category-actions">
+              <button
+                type="button"
+                className="action-button"
+                onClick={() => onEdit?.(goalBucket)}
+              >
+                編集
+              </button>
+              <button
+                type="button"
+                className="action-button danger"
+                disabled={deletingGoalBucketId === goalBucket.goalBucketId}
+                onClick={() => onDelete?.(goalBucket)}
+              >
+                {deletingGoalBucketId === goalBucket.goalBucketId
+                  ? '削除中...'
+                  : '削除'}
+              </button>
+            </div>
             <time dateTime={goalBucket.createdAt}>
               登録日時 {new Date(goalBucket.createdAt).toLocaleString('ja-JP')}
             </time>

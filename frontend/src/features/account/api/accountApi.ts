@@ -6,6 +6,12 @@ type FetchAccountsParams = {
   accountCategory?: string
 }
 
+export type DeleteAccountResponse = {
+  accountId: number
+  action: 'DEACTIVATED' | 'DELETED'
+  active: boolean
+}
+
 export function fetchAccounts(params?: FetchAccountsParams): Promise<Account[]> {
   const searchParams = new URLSearchParams()
 
@@ -25,5 +31,21 @@ export function createAccount(input: CreateAccountInput): Promise<Account> {
   return requestJson<Account>('/api/accounts', {
     method: 'POST',
     body: JSON.stringify(input),
+  })
+}
+
+export function updateAccount(
+  accountId: number,
+  input: CreateAccountInput,
+): Promise<Account> {
+  return requestJson<Account>(`/api/accounts/${accountId}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteAccount(accountId: number): Promise<DeleteAccountResponse> {
+  return requestJson<DeleteAccountResponse>(`/api/accounts/${accountId}`, {
+    method: 'DELETE',
   })
 }

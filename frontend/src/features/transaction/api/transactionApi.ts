@@ -3,6 +3,8 @@ import type {
   CreateGoalBucketAllocationsInput,
   CreateTransactionInput,
   CreateTransferInput,
+  DeleteGoalBucketAllocationResponse,
+  DeleteTransactionResponse,
   GoalBucketAllocation,
   Transaction,
   TransferResponse,
@@ -18,6 +20,24 @@ export function createTransaction(
   return requestJson<Transaction>('/api/transactions', {
     method: 'POST',
     body: JSON.stringify(input),
+  })
+}
+
+export function updateTransaction(
+  transactionId: number,
+  input: CreateTransactionInput,
+): Promise<Transaction> {
+  return requestJson<Transaction>(`/api/transactions/${transactionId}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteTransaction(
+  transactionId: number,
+): Promise<DeleteTransactionResponse> {
+  return requestJson<DeleteTransactionResponse>(`/api/transactions/${transactionId}`, {
+    method: 'DELETE',
   })
 }
 
@@ -46,4 +66,28 @@ export function createGoalBucketAllocations(
     method: 'POST',
     body: JSON.stringify(input),
   })
+}
+
+export function updateGoalBucketAllocation(
+  allocationId: number,
+  input: CreateGoalBucketAllocationsInput,
+): Promise<GoalBucketAllocation> {
+  return requestJson<GoalBucketAllocation>(
+    `/api/goal-bucket-allocations/${allocationId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    },
+  )
+}
+
+export function deleteGoalBucketAllocation(
+  allocationId: number,
+): Promise<DeleteGoalBucketAllocationResponse> {
+  return requestJson<DeleteGoalBucketAllocationResponse>(
+    `/api/goal-bucket-allocations/${allocationId}`,
+    {
+      method: 'DELETE',
+    },
+  )
 }

@@ -1,12 +1,15 @@
 import { requestJson } from '../../../shared/lib/api/client'
-import type {
-  CreateGoalBucketInput,
-  GoalBucket,
-} from '../types/goalBucket'
+import type { CreateGoalBucketInput, GoalBucket } from '../types/goalBucket'
 
 type FetchGoalBucketsParams = {
   accountId?: number
   activeOnly?: boolean
+}
+
+export type DeleteGoalBucketResponse = {
+  goalBucketId: number
+  action: 'DEACTIVATED' | 'DELETED'
+  active: boolean
 }
 
 export function fetchGoalBuckets(
@@ -33,4 +36,25 @@ export function createGoalBucket(
     method: 'POST',
     body: JSON.stringify(input),
   })
+}
+
+export function updateGoalBucket(
+  goalBucketId: number,
+  input: CreateGoalBucketInput,
+): Promise<GoalBucket> {
+  return requestJson<GoalBucket>(`/api/goal-buckets/${goalBucketId}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteGoalBucket(
+  goalBucketId: number,
+): Promise<DeleteGoalBucketResponse> {
+  return requestJson<DeleteGoalBucketResponse>(
+    `/api/goal-buckets/${goalBucketId}`,
+    {
+      method: 'DELETE',
+    },
+  )
 }

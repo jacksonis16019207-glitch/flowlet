@@ -4,6 +4,8 @@ import com.example.flowlet.account.domain.model.Account;
 import com.example.flowlet.account.domain.model.AccountCategory;
 import com.example.flowlet.account.domain.model.BalanceSide;
 import com.example.flowlet.account.domain.repository.AccountRepository;
+import com.example.flowlet.transaction.domain.model.GoalBucketAllocation;
+import com.example.flowlet.transaction.domain.repository.GoalBucketAllocationRepository;
 import com.example.flowlet.goalbucket.domain.repository.GoalBucketRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -22,7 +24,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,8 +47,12 @@ class GoalBucketControllerTest {
     @Autowired
     private GoalBucketRepository goalBucketRepository;
 
+    @Autowired
+    private GoalBucketAllocationRepository goalBucketAllocationRepository;
+
     @BeforeEach
     void setUp() {
+        goalBucketAllocationRepository.deleteAll();
         goalBucketRepository.deleteAll();
         accountRepository.deleteAll();
     }
@@ -132,6 +140,86 @@ class GoalBucketControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].accountId").value(account.accountId()))
             .andExpect(jsonPath("$[0].bucketName").value("Travel"));
+    }
+
+    @Test
+    void putGoalBucketsUpdatesAGoalBucket() throws Exception {
+        Account account = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            true,
+            20,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        Long goalBucketId = goalBucketRepository.save(new com.example.flowlet.goalbucket.domain.model.GoalBucket(
+            null,
+            account.accountId(),
+            "Travel",
+            true,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        )).goalBucketId();
+
+        mockMvc.perform(put("/api/goal-buckets/{goalBucketId}", goalBucketId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"accountId":%d,"bucketName":"Trip","active":false}
+                    """.formatted(account.accountId())))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.bucketName").value("Trip"))
+            .andExpect(jsonPath("$.active").value(false));
+    }
+
+    @Test
+    void deleteGoalBucketsDeactivatesReferencedGoalBucket() throws Exception {
+        Account account = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            true,
+            20,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        com.example.flowlet.goalbucket.domain.model.GoalBucket goalBucket = goalBucketRepository.save(
+            new com.example.flowlet.goalbucket.domain.model.GoalBucket(
+                null,
+                account.accountId(),
+                "Travel",
+                true,
+                LocalDateTime.now(),
+                LocalDateTime.now()
+            )
+        );
+        goalBucketAllocationRepository.saveAll(java.util.List.of(new GoalBucketAllocation(
+            null,
+            account.accountId(),
+            null,
+            goalBucket.goalBucketId(),
+            java.time.LocalDate.parse("2026-04-01"),
+            java.math.BigDecimal.valueOf(1000),
+            "Seed",
+            null,
+            null,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        )));
+
+        mockMvc.perform(delete("/api/goal-buckets/{goalBucketId}", goalBucket.goalBucketId()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.action").value("DEACTIVATED"))
+            .andExpect(jsonPath("$.active").value(false));
+
+        org.assertj.core.api.Assertions.assertThat(goalBucketRepository.findById(goalBucket.goalBucketId()))
+            .get()
+            .extracting(com.example.flowlet.goalbucket.domain.model.GoalBucket::active)
+            .isEqualTo(false);
     }
 
     @TestConfiguration

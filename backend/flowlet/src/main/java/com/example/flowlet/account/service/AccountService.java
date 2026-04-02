@@ -3,14 +3,23 @@ package com.example.flowlet.account.service;
 import com.example.flowlet.account.domain.model.Account;
 import com.example.flowlet.account.domain.model.AccountCategory;
 import com.example.flowlet.account.domain.model.CreditCardProfile;
-import com.example.flowlet.account.exception.AccountAlreadyExistsException;
-import com.example.flowlet.account.exception.BusinessRuleException;
 import com.example.flowlet.account.domain.repository.AccountRepository;
 import com.example.flowlet.account.domain.repository.CreditCardProfileRepository;
+import com.example.flowlet.account.exception.AccountAlreadyExistsException;
+import com.example.flowlet.account.exception.BusinessRuleException;
+import com.example.flowlet.infrastructure.jpa.account.entity.AccountEntity;
+import com.example.flowlet.infrastructure.jpa.account.mapper.AccountEntityMapper;
+import com.example.flowlet.infrastructure.jpa.account.mapper.CreditCardProfileEntityMapper;
+import com.example.flowlet.infrastructure.jpa.account.repository.SpringDataAccountRepository;
+import com.example.flowlet.infrastructure.jpa.account.repository.SpringDataCreditCardProfileRepository;
+import com.example.flowlet.infrastructure.jpa.goalbucket.repository.SpringDataGoalBucketRepository;
+import com.example.flowlet.infrastructure.jpa.transaction.repository.SpringDataGoalBucketAllocationRepository;
+import com.example.flowlet.infrastructure.jpa.transaction.repository.SpringDataTransactionRepository;
 import com.example.flowlet.presentation.account.dto.AccountResponse;
-import com.example.flowlet.presentation.account.dto.CreditCardProfileResponse;
 import com.example.flowlet.presentation.account.dto.CreateAccountRequest;
 import com.example.flowlet.presentation.account.dto.CreateAccountRequest.CreditCardProfileRequest;
+import com.example.flowlet.presentation.account.dto.CreditCardProfileResponse;
+import com.example.flowlet.presentation.account.dto.DeleteAccountResponse;
 import com.example.flowlet.shared.util.BalanceCalculator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -29,17 +38,32 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final CreditCardProfileRepository creditCardProfileRepository;
+    private final SpringDataAccountRepository springDataAccountRepository;
+    private final SpringDataCreditCardProfileRepository springDataCreditCardProfileRepository;
+    private final SpringDataGoalBucketRepository springDataGoalBucketRepository;
+    private final SpringDataTransactionRepository springDataTransactionRepository;
+    private final SpringDataGoalBucketAllocationRepository springDataGoalBucketAllocationRepository;
     private final BalanceCalculator balanceCalculator;
     private final Clock clock;
 
     public AccountService(
         AccountRepository accountRepository,
         CreditCardProfileRepository creditCardProfileRepository,
+        SpringDataAccountRepository springDataAccountRepository,
+        SpringDataCreditCardProfileRepository springDataCreditCardProfileRepository,
+        SpringDataGoalBucketRepository springDataGoalBucketRepository,
+        SpringDataTransactionRepository springDataTransactionRepository,
+        SpringDataGoalBucketAllocationRepository springDataGoalBucketAllocationRepository,
         BalanceCalculator balanceCalculator,
         Clock clock
     ) {
         this.accountRepository = accountRepository;
         this.creditCardProfileRepository = creditCardProfileRepository;
+        this.springDataAccountRepository = springDataAccountRepository;
+        this.springDataCreditCardProfileRepository = springDataCreditCardProfileRepository;
+        this.springDataGoalBucketRepository = springDataGoalBucketRepository;
+        this.springDataTransactionRepository = springDataTransactionRepository;
+        this.springDataGoalBucketAllocationRepository = springDataGoalBucketAllocationRepository;
         this.balanceCalculator = balanceCalculator;
         this.clock = clock;
     }
@@ -91,6 +115,70 @@ public class AccountService {
     }
 
     @Transactional
+    public AccountResponse update(Long accountId, CreateAccountRequest request) {
+        AccountEntity accountEntity = getAccountEntity(accountId);
+        String providerName = request.getProviderName().trim();
+        String accountName = request.getAccountName().trim();
+        boolean accountInUse = isAccountInUse(accountId);
+
+        springDataAccountRepository.findByProviderNameAndAccountNameAndAccountCategory(
+                providerName,
+                accountName,
+                request.getAccountCategory()
+            )
+            .filter(existing -> !existing.getAccountId().equals(accountId))
+            .ifPresent(existing -> {
+                throw new AccountAlreadyExistsException(providerName, accountName);
+            });
+
+        if (accountInUse && accountEntity.getAccountCategory() != request.getAccountCategory()) {
+            throw new BusinessRuleException(
+                HttpStatus.CONFLICT,
+                "ACCOUNT_CATEGORY_CHANGE_NOT_ALLOWED",
+                "error.account.categoryChangeNotAllowed",
+                accountId
+            );
+        }
+
+        if (accountInUse && accountEntity.getBalanceSide() != request.getBalanceSide()) {
+            throw new BusinessRuleException(
+                HttpStatus.CONFLICT,
+                "ACCOUNT_BALANCE_SIDE_CHANGE_NOT_ALLOWED",
+                "error.account.balanceSideChangeNotAllowed",
+                accountId
+            );
+        }
+
+        accountEntity.setProviderName(providerName);
+        accountEntity.setAccountName(accountName);
+        accountEntity.setAccountCategory(request.getAccountCategory());
+        accountEntity.setBalanceSide(request.getBalanceSide());
+        accountEntity.setActive(request.isActive());
+        accountEntity.setDisplayOrder(request.getDisplayOrder() == null ? 0 : request.getDisplayOrder());
+        accountEntity.setUpdatedAt(LocalDateTime.now(clock));
+
+        Account savedAccount = AccountEntityMapper.toDomain(springDataAccountRepository.save(accountEntity));
+        CreditCardProfile savedCreditCardProfile = upsertCreditCardProfile(savedAccount, request.getCreditCardProfile());
+        return toResponse(savedAccount, savedCreditCardProfile);
+    }
+
+    @Transactional
+    public DeleteAccountResponse delete(Long accountId) {
+        AccountEntity accountEntity = getAccountEntity(accountId);
+
+        if (isAccountInUse(accountId)) {
+            accountEntity.setActive(false);
+            accountEntity.setUpdatedAt(LocalDateTime.now(clock));
+            springDataAccountRepository.save(accountEntity);
+            return new DeleteAccountResponse(accountId, "DEACTIVATED", false);
+        }
+
+        springDataCreditCardProfileRepository.deleteById(accountId);
+        springDataAccountRepository.delete(accountEntity);
+        return new DeleteAccountResponse(accountId, "DELETED", false);
+    }
+
+    @Transactional
     public void deleteAll() {
         creditCardProfileRepository.deleteAll();
         accountRepository.deleteAll();
@@ -105,6 +193,47 @@ public class AccountService {
             return null;
         }
 
+        validateCreditCardProfile(account, request);
+
+        return creditCardProfileRepository.save(new CreditCardProfile(
+            account.accountId(),
+            request.getPaymentAccountId(),
+            request.getClosingDay(),
+            request.getPaymentDay(),
+            request.getPaymentDateAdjustmentRule(),
+            now,
+            now
+        ));
+    }
+
+    private CreditCardProfile upsertCreditCardProfile(Account account, CreditCardProfileRequest request) {
+        CreditCardProfile existingProfile = creditCardProfileRepository.findByAccountId(account.accountId()).orElse(null);
+
+        if (account.accountCategory() != AccountCategory.CREDIT_CARD) {
+            if (existingProfile != null) {
+                springDataCreditCardProfileRepository.deleteById(account.accountId());
+            }
+            return null;
+        }
+
+        validateCreditCardProfile(account, request);
+
+        LocalDateTime now = LocalDateTime.now(clock);
+        CreditCardProfile profile = new CreditCardProfile(
+            account.accountId(),
+            request.getPaymentAccountId(),
+            request.getClosingDay(),
+            request.getPaymentDay(),
+            request.getPaymentDateAdjustmentRule(),
+            existingProfile == null ? now : existingProfile.createdAt(),
+            now
+        );
+        return CreditCardProfileEntityMapper.toDomain(
+            springDataCreditCardProfileRepository.save(CreditCardProfileEntityMapper.toEntity(profile))
+        );
+    }
+
+    private void validateCreditCardProfile(Account account, CreditCardProfileRequest request) {
         if (request == null) {
             throw new BusinessRuleException(
                 HttpStatus.CONFLICT,
@@ -129,16 +258,6 @@ public class AccountService {
                 "error.account.creditCardPaymentAccountInvalid"
             );
         }
-
-        return creditCardProfileRepository.save(new CreditCardProfile(
-            account.accountId(),
-            request.getPaymentAccountId(),
-            request.getClosingDay(),
-            request.getPaymentDay(),
-            request.getPaymentDateAdjustmentRule(),
-            now,
-            now
-        ));
     }
 
     private AccountResponse toResponse(Account account, CreditCardProfile creditCardProfile) {
@@ -148,5 +267,22 @@ public class AccountService {
             ? null
             : CreditCardProfileResponse.from(creditCardProfile);
         return AccountResponse.from(account, currentBalance, unallocatedBalance, creditCardProfileResponse);
+    }
+
+    private AccountEntity getAccountEntity(Long accountId) {
+        return springDataAccountRepository.findById(accountId)
+            .orElseThrow(() -> new BusinessRuleException(
+                HttpStatus.NOT_FOUND,
+                "ACCOUNT_NOT_FOUND",
+                "error.account.notFound",
+                accountId
+            ));
+    }
+
+    private boolean isAccountInUse(Long accountId) {
+        return springDataTransactionRepository.existsByAccountId(accountId)
+            || springDataGoalBucketRepository.existsByAccountId(accountId)
+            || springDataGoalBucketAllocationRepository.existsByAccountId(accountId)
+            || springDataCreditCardProfileRepository.existsByPaymentAccountId(accountId);
     }
 }
