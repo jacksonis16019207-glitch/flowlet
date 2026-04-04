@@ -38,6 +38,12 @@ const emptySubcategoryForm = (categoryId: number): SubcategoryUpsertInput => ({
 
 const categoryTypeOrder: CategoryType[] = ['INCOME', 'EXPENSE', 'TRANSFER']
 
+const categoryTypeDescriptions: Record<CategoryType, string> = {
+  INCOME: '入金系の分類をまとめて管理します。',
+  EXPENSE: '日々の支出入力で使う分類を整えます。',
+  TRANSFER: '口座移動や内部振替の分類を管理します。',
+}
+
 export function CategoryPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [subcategories, setSubcategories] = useState<Subcategory[]>([])
@@ -416,7 +422,12 @@ export function CategoryPage() {
               {groupedCategories.map((group) => (
                 <section key={group.categoryType} className="category-type-group">
                   <div className="section-heading">
-                    <h3>{group.label}</h3>
+                    <div>
+                      <h3>{group.label}</h3>
+                      <p className="section-description">
+                        {categoryTypeDescriptions[group.categoryType]}
+                      </p>
+                    </div>
                     <span>{group.items.length}件</span>
                   </div>
 
