@@ -32,6 +32,7 @@
 9. CSV 取込を MVP に入れる理由と設計方針
 10. 引き落とし不足判定のロジックをどうモデル化するか
 11. モバイルでも見やすい家計・資産管理 UI をどう組み立てるか
+12. 残高集計の次に、月次収支をどう切り出したか
 
 ## 最初に書く記事
 
@@ -61,8 +62,8 @@
 | 作成中 | Java + Spring Boot + React で最初の「口座マスタ管理」を通した話 | `docs/articles/003-first-account-slice.md` |
 | 作成中 | 個人開発アプリを公開するとき、実データをどう避けるか: flowlet のダミーデータ方針 | `docs/articles/004-demo-data-policy.md` |
 | 作成中 | 個人開発で Codex Skills を育てながら進める: flowlet で試しているやり方 | `docs/articles/005-codex-skills-in-personal-dev.md` |
-
 | 下書き中 | flowlet で学んだ、AI コーディング運用を Skill と AGENTS.md に落とし込むやり方 | `docs/articles/006-skill-and-agents-md-for-ai-dev.md` |
+| 下書き中 | 残高集計の次に、月次収支をどう切り出したか: flowlet でやったこと | `docs/articles/007-monthly-cashflow-dashboard.md` |
 
 ## メモ
 
