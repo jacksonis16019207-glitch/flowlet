@@ -24,6 +24,7 @@
   - [monthly-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/monthly-cashflow-api-spec.md) に沿って、月次収支 API、ダッシュボード表示、集計テストが入っている
 - 次の主タスクは P5
   - `ScheduledPayment` の責務整理と API / DB / 画面の初版設計から進める
+  - 初版設計メモとして [scheduled-payment-design.md](/C:/Users/jacks/Documents/flowlet/docs/scheduled-payment-design.md) と [scheduled-payment-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/scheduled-payment-api-spec.md) を追加した
 
 ## 優先順位
 
