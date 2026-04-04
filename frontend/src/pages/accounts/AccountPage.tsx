@@ -9,6 +9,7 @@ import {
 import { AccountForm } from '../../features/account/components/AccountForm'
 import { AccountList } from '../../features/account/components/AccountList'
 import type { Account, CreateAccountInput } from '../../features/account/types/account'
+import { FormModal } from '../../shared/components/FormModal'
 import { ApiRequestError } from '../../shared/lib/api/client'
 
 const initialForm: CreateAccountInput = {
@@ -36,6 +37,7 @@ export function AccountPage() {
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<AccountFormField, string>>
   >({})
+  const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
     void loadAccounts()
@@ -71,7 +73,7 @@ export function AccountPage() {
       }
 
       await loadAccounts()
-      resetForm()
+      closeModal()
     } catch (error) {
       if (error instanceof ApiRequestError) {
         if (error.code === 'VALIDATION_ERROR') {
@@ -88,19 +90,30 @@ export function AccountPage() {
               {},
             ),
           )
+          setModalOpen(true)
           return
         }
 
         setSubmitErrorMessage(error.message)
+        setModalOpen(true)
         return
       }
 
       setSubmitErrorMessage(
         '口座の保存に失敗しました。入力内容とバックエンドの状態を確認してください。',
       )
+      setModalOpen(true)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleOpenCreateModal() {
+    setEditingAccountId(null)
+    setForm(initialForm)
+    setSubmitErrorMessage('')
+    setFieldErrors({})
+    setModalOpen(true)
   }
 
   function handleEdit(account: Account) {
@@ -125,11 +138,12 @@ export function AccountPage() {
           }
         : null,
     })
+    setModalOpen(true)
   }
 
   async function handleDelete(account: Account) {
     const confirmed = window.confirm(
-      `「${account.accountName}」を削除します。参照中なら停止状態に切り替わります。`,
+      `「${account.accountName}」を削除しますか。通常は元に戻せません。`,
     )
 
     if (!confirmed) {
@@ -144,7 +158,7 @@ export function AccountPage() {
       await loadAccounts()
 
       if (editingAccountId === account.accountId) {
-        resetForm()
+        closeModal()
       }
     } catch (error) {
       if (error instanceof ApiRequestError) {
@@ -157,20 +171,21 @@ export function AccountPage() {
     }
   }
 
-  function resetForm() {
+  function closeModal() {
     setEditingAccountId(null)
     setForm(initialForm)
     setSubmitErrorMessage('')
     setFieldErrors({})
+    setModalOpen(false)
   }
 
   return (
     <main className="app-shell">
       <section className="hero-panel">
-        <p className="eyebrow">flowlet / 口座マスタ</p>
-        <h1>口座を登録して管理する</h1>
+        <p className="eyebrow">flowlet / accounts</p>
+        <h1>口座を整理して管理する</h1>
         <p className="lead">
-          口座の追加に加えて、一覧から編集と削除も行えます。
+          一覧で全体を確認しながら、必要なときだけ登録フォームを開ける構成にしています。
         </p>
         <div className="hero-stats">
           <article>
@@ -178,7 +193,7 @@ export function AccountPage() {
             <strong>{accounts.length}</strong>
           </article>
           <article>
-            <span>有効な口座</span>
+            <span>稼働中口座</span>
             <strong>{accounts.filter((account) => account.active).length}</strong>
           </article>
         </div>
@@ -198,11 +213,11 @@ export function AccountPage() {
             </article>
             <article className="dashboard-focus-item">
               <span>入力状態</span>
-              <strong>{editingAccountId == null ? '新規' : '編集中'}</strong>
+              <strong>{modalOpen ? '入力中' : '待機中'}</strong>
               <p>
-                {editingAccountId == null
-                  ? '新しい口座を追加する状態です。'
-                  : '既存口座を更新する状態です。'}
+                {modalOpen
+                  ? 'フォームを開いて入力または編集を進めています。'
+                  : '一覧を見ながら次の操作を選べます。'}
               </p>
             </article>
           </div>
@@ -210,35 +225,18 @@ export function AccountPage() {
       </section>
 
       <section className="content-grid">
-        <section className="panel">
-          <div className="panel-heading">
-            <p className="eyebrow">
-              {editingAccountId == null ? '新規口座' : '口座編集'}
-            </p>
-            <h2>{editingAccountId == null ? '口座を登録' : '口座を編集'}</h2>
-          </div>
-          {editingAccountId != null ? (
-            <div className="button-row">
-              <button type="button" className="secondary" onClick={resetForm}>
-                新規登録に戻す
-              </button>
-            </div>
-          ) : null}
-          <AccountForm
-            accounts={accounts}
-            value={form}
-            submitting={submitting}
-            submitErrorMessage={submitErrorMessage}
-            fieldErrors={fieldErrors}
-            onChange={setForm}
-            onSubmit={handleSubmit}
-          />
-        </section>
-
-        <section className="panel">
+        <section className="panel account-list-panel">
           <div className="panel-heading">
             <p className="eyebrow">口座一覧</p>
             <h2>登録済み口座</h2>
+            <p className="lead dashboard-section-lead">
+              一覧で対象を見つけて、必要な口座だけ編集する流れを想定しています。
+            </p>
+          </div>
+          <div className="button-row">
+            <button type="button" onClick={handleOpenCreateModal}>
+              新規口座を追加
+            </button>
           </div>
           <AccountList
             accounts={accounts}
@@ -250,6 +248,27 @@ export function AccountPage() {
           />
         </section>
       </section>
+
+      <FormModal
+        open={modalOpen}
+        title={editingAccountId == null ? '口座を追加' : '口座を編集'}
+        description={
+          editingAccountId == null
+            ? '口座属性を入力して保存します。'
+            : '既存口座の内容を更新します。'
+        }
+        onClose={closeModal}
+      >
+        <AccountForm
+          accounts={accounts}
+          value={form}
+          submitting={submitting}
+          submitErrorMessage={submitErrorMessage}
+          fieldErrors={fieldErrors}
+          onChange={setForm}
+          onSubmit={handleSubmit}
+        />
+      </FormModal>
     </main>
   )
 }

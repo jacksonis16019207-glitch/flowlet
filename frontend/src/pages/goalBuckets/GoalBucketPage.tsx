@@ -14,6 +14,7 @@ import type {
 } from '../../features/goalBucket/types/goalBucket'
 import { fetchAccounts } from '../../features/account/api/accountApi'
 import type { Account } from '../../features/account/types/account'
+import { FormModal } from '../../shared/components/FormModal'
 import { ApiRequestError } from '../../shared/lib/api/client'
 
 const emptyForm: CreateGoalBucketInput = {
@@ -41,6 +42,7 @@ export function GoalBucketPage() {
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<GoalBucketFormField, string>>
   >({})
+  const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
     void loadPageData()
@@ -86,7 +88,7 @@ export function GoalBucketPage() {
       }
 
       await loadPageData()
-      resetForm()
+      closeModal()
     } catch (error) {
       if (error instanceof ApiRequestError) {
         if (error.code === 'VALIDATION_ERROR') {
@@ -102,17 +104,32 @@ export function GoalBucketPage() {
               return accumulator
             }, {}),
           )
+          setModalOpen(true)
           return
         }
 
         setSubmitErrorMessage(error.message)
+        setModalOpen(true)
         return
       }
 
       setSubmitErrorMessage('目的別口座の保存に失敗しました。')
+      setModalOpen(true)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleOpenCreateModal() {
+    setEditingGoalBucketId(null)
+    setForm({
+      accountId: accounts[0]?.accountId ?? 0,
+      bucketName: '',
+      active: true,
+    })
+    setSubmitErrorMessage('')
+    setFieldErrors({})
+    setModalOpen(true)
   }
 
   function handleEdit(goalBucket: GoalBucket) {
@@ -124,11 +141,12 @@ export function GoalBucketPage() {
       bucketName: goalBucket.bucketName,
       active: goalBucket.active,
     })
+    setModalOpen(true)
   }
 
   async function handleDelete(goalBucket: GoalBucket) {
     const confirmed = window.confirm(
-      `「${goalBucket.bucketName}」を削除します。参照中なら停止状態に切り替わります。`,
+      `「${goalBucket.bucketName}」を削除しますか。通常は元に戻せません。`,
     )
 
     if (!confirmed) {
@@ -143,7 +161,7 @@ export function GoalBucketPage() {
       await loadPageData()
 
       if (editingGoalBucketId === goalBucket.goalBucketId) {
-        resetForm()
+        closeModal()
       }
     } catch (error) {
       if (error instanceof ApiRequestError) {
@@ -156,7 +174,7 @@ export function GoalBucketPage() {
     }
   }
 
-  function resetForm() {
+  function closeModal() {
     setEditingGoalBucketId(null)
     setForm({
       accountId: accounts[0]?.accountId ?? 0,
@@ -165,15 +183,16 @@ export function GoalBucketPage() {
     })
     setSubmitErrorMessage('')
     setFieldErrors({})
+    setModalOpen(false)
   }
 
   return (
     <main className="app-shell">
       <section className="hero-panel">
-        <p className="eyebrow">flowlet / 目的別口座</p>
-        <h1>目的別口座を登録して管理する</h1>
+        <p className="eyebrow">flowlet / goal buckets</p>
+        <h1>目的別口座を整理して管理する</h1>
         <p className="lead">
-          目的別口座の追加に加えて、一覧から編集と削除も行えます。
+          一覧で残高のまとまりを確認しながら、必要なときだけ登録フォームを開ける構成にしています。
         </p>
         <div className="hero-stats">
           <article>
@@ -181,7 +200,7 @@ export function GoalBucketPage() {
             <strong>{goalBuckets.length}</strong>
           </article>
           <article>
-            <span>紐づけ先の口座</span>
+            <span>紐づく口座数</span>
             <strong>{accounts.length}</strong>
           </article>
         </div>
@@ -201,11 +220,11 @@ export function GoalBucketPage() {
             </article>
             <article className="dashboard-focus-item">
               <span>入力状態</span>
-              <strong>{editingGoalBucketId == null ? '新規' : '編集中'}</strong>
+              <strong>{modalOpen ? '入力中' : '待機中'}</strong>
               <p>
-                {editingGoalBucketId == null
-                  ? '新しい目的別口座を追加する状態です。'
-                  : '既存の目的別口座を更新する状態です。'}
+                {modalOpen
+                  ? 'フォームを開いて入力または編集を進めています。'
+                  : '一覧を見ながら次の操作を選べます。'}
               </p>
             </article>
           </div>
@@ -213,39 +232,18 @@ export function GoalBucketPage() {
       </section>
 
       <section className="content-grid">
-        <section className="panel">
-          <div className="panel-heading">
-            <p className="eyebrow">
-              {editingGoalBucketId == null ? '新規目的別口座' : '目的別口座編集'}
-            </p>
-            <h2>
-              {editingGoalBucketId == null
-                ? '目的別口座を登録'
-                : '目的別口座を編集'}
-            </h2>
-          </div>
-          {editingGoalBucketId != null ? (
-            <div className="button-row">
-              <button type="button" className="secondary" onClick={resetForm}>
-                新規登録に戻す
-              </button>
-            </div>
-          ) : null}
-          <GoalBucketForm
-            accounts={accounts}
-            value={form}
-            submitting={submitting}
-            submitErrorMessage={submitErrorMessage}
-            fieldErrors={fieldErrors}
-            onChange={setForm}
-            onSubmit={handleSubmit}
-          />
-        </section>
-
-        <section className="panel">
+        <section className="panel account-list-panel">
           <div className="panel-heading">
             <p className="eyebrow">目的別口座一覧</p>
             <h2>登録済み目的別口座</h2>
+            <p className="lead dashboard-section-lead">
+              一覧で対象を見つけて、必要なものだけ編集する流れを想定しています。
+            </p>
+          </div>
+          <div className="button-row">
+            <button type="button" onClick={handleOpenCreateModal}>
+              新規目的別口座を追加
+            </button>
           </div>
           <GoalBucketList
             goalBuckets={goalBuckets}
@@ -258,6 +256,27 @@ export function GoalBucketPage() {
           />
         </section>
       </section>
+
+      <FormModal
+        open={modalOpen}
+        title={editingGoalBucketId == null ? '目的別口座を追加' : '目的別口座を編集'}
+        description={
+          editingGoalBucketId == null
+            ? '紐づけ先の口座と名称を入力して保存します。'
+            : '既存の目的別口座の内容を更新します。'
+        }
+        onClose={closeModal}
+      >
+        <GoalBucketForm
+          accounts={accounts}
+          value={form}
+          submitting={submitting}
+          submitErrorMessage={submitErrorMessage}
+          fieldErrors={fieldErrors}
+          onChange={setForm}
+          onSubmit={handleSubmit}
+        />
+      </FormModal>
     </main>
   )
 }
