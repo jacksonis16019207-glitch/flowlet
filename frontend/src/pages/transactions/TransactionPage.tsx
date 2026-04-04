@@ -69,6 +69,28 @@ const initialTransferForm: CreateTransferInput = {
 
 type AllocationDraft = { toGoalBucketId: number; value: string }
 
+const transactionTabMeta: {
+  key: TransactionTab
+  label: string
+  description: string
+}[] = [
+  {
+    key: 'transaction',
+    label: '通常取引',
+    description: '収入と支出を最短で登録します。',
+  },
+  {
+    key: 'transfer',
+    label: '振替',
+    description: '口座移動と同時配分をまとめて処理します。',
+  },
+  {
+    key: 'allocation',
+    label: '配分',
+    description: '残高を GoalBucket に振り分けます。',
+  },
+]
+
 export function TransactionPage() {
   const [activeTab, setActiveTab] = useState<TransactionTab>('transaction')
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -136,6 +158,8 @@ export function TransactionPage() {
     () => goalBuckets.filter((goalBucket) => goalBucket.accountId === allocationAccountId),
     [goalBuckets, allocationAccountId],
   )
+  const currentTabMeta =
+    transactionTabMeta.find((tab) => tab.key === activeTab) ?? transactionTabMeta[0]
 
   async function loadPageData() {
     setLoading(true)
@@ -386,16 +410,21 @@ export function TransactionPage() {
       </section>
 
       <section className="panel transaction-panel">
-        <div className="inline-tabs">
+        <div className="inline-tabs transaction-tabs">
           <button type="button" className={activeTab === 'transaction' ? 'active' : ''} onClick={() => setActiveTab('transaction')}>通常取引</button>
           <button type="button" className={activeTab === 'transfer' ? 'active' : ''} onClick={() => setActiveTab('transfer')}>振替</button>
           <button type="button" className={activeTab === 'allocation' ? 'active' : ''} onClick={() => setActiveTab('allocation')}>配分</button>
+        </div>
+        <div className="transaction-active-summary">
+          <p className="eyebrow">Current Flow</p>
+          <h2>{currentTabMeta.label}</h2>
+          <p>{currentTabMeta.description}</p>
         </div>
         {errorMessage ? <p className="status error">{errorMessage}</p> : null}
         {loading ? <p className="status">読み込み中...</p> : null}
 
         {activeTab === 'transaction' ? (
-          <form className="account-form" onSubmit={handleTransactionSubmit}>
+          <form className="account-form transaction-form-grid" onSubmit={handleTransactionSubmit}>
             <div className="section-heading"><h3>{editingTransactionId == null ? '通常取引を登録' : '通常取引を編集'}</h3>{editingTransactionId != null ? <button type="button" className="action-button" onClick={resetTransactionForm}>新規入力に戻す</button> : null}</div>
             <CommonTransactionFields
               form={transactionForm}
@@ -423,7 +452,7 @@ export function TransactionPage() {
         ) : null}
 
         {activeTab === 'transfer' ? (
-          <form className="account-form" onSubmit={handleTransferSubmit}>
+          <form className="account-form transaction-form-grid" onSubmit={handleTransferSubmit}>
             <label>振替元口座<select value={transferForm.fromAccountId} onChange={(event) => setTransferForm((current) => ({ ...current, fromAccountId: Number(event.target.value), fromGoalBucketId: null }))}>{accounts.map((account) => <option key={account.accountId} value={account.accountId}>{account.providerName} / {account.accountName}</option>)}</select></label>
             <label>振替先口座<select value={transferForm.toAccountId} onChange={(event) => setTransferForm((current) => ({ ...current, toAccountId: Number(event.target.value) }))}>{accounts.map((account) => <option key={account.accountId} value={account.accountId}>{account.providerName} / {account.accountName}</option>)}</select></label>
             <label>振替元GoalBucket<select value={transferForm.fromGoalBucketId ?? ''} onChange={(event) => setTransferForm((current) => ({ ...current, fromGoalBucketId: event.target.value ? Number(event.target.value) : null }))}><option value="">未配分から</option>{goalBuckets.filter((goalBucket) => goalBucket.accountId === transferForm.fromAccountId).map((goalBucket) => <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>{goalBucket.bucketName}</option>)}</select></label>
@@ -452,7 +481,7 @@ export function TransactionPage() {
         ) : null}
 
         {activeTab === 'allocation' ? (
-          <form className="account-form" onSubmit={handleAllocationSubmit}>
+          <form className="account-form transaction-form-grid" onSubmit={handleAllocationSubmit}>
             <div className="section-heading"><h3>{editingAllocationId == null ? '配分を登録' : '配分を編集'}</h3>{editingAllocationId != null ? <button type="button" className="action-button" onClick={resetAllocationForm}>新規入力に戻す</button> : null}</div>
             <label>対象口座<select value={allocationAccountId} onChange={(event) => { setAllocationAccountId(Number(event.target.value)); setAllocationFromGoalBucketId(null) }}>{accounts.map((account) => <option key={account.accountId} value={account.accountId}>{account.providerName} / {account.accountName}</option>)}</select></label>
             <label>配分元<select value={allocationFromGoalBucketId ?? ''} onChange={(event) => setAllocationFromGoalBucketId(event.target.value ? Number(event.target.value) : null)}><option value="">未配分から</option>{accountGoalBuckets.map((goalBucket) => <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>{goalBucket.bucketName}</option>)}</select></label>
