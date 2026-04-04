@@ -16,32 +16,101 @@
   box-shadow: 0 12px 24px rgba(90, 28, 15, 0.16);
 }
 
-.top-nav {
+.app-nav-shell {
   position: sticky;
   top: 40px;
   z-index: 10;
-  display: flex;
-  justify-content: center;
-  gap: 12px;
+  display: grid;
+  gap: 14px;
   padding: 18px 24px 0;
+  backdrop-filter: blur(10px);
+}
+
+.app-nav-header {
+  max-width: 1180px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+}
+
+.app-nav-header h1 {
+  margin: 4px 0 0;
+  color: #2a1b0f;
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.app-nav-kicker {
+  margin: 0;
+  color: #8b5e34;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.app-nav-description {
+  max-width: 420px;
+  margin: 0;
+  color: #5f5448;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.top-nav {
+  display: flex;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px;
+  border-radius: 24px;
+  background: rgba(255, 250, 244, 0.78);
+  border: 1px solid rgba(71, 49, 24, 0.08);
+  box-shadow: 0 14px 40px rgba(91, 61, 25, 0.08);
+  scrollbar-width: thin;
 }
 
 .top-nav button {
+  flex: 1 0 164px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
   border: 1px solid rgba(71, 49, 24, 0.12);
   background: rgba(255, 252, 247, 0.9);
   color: #684927;
-  border-radius: 999px;
-  padding: 12px 18px;
+  border-radius: 20px;
+  padding: 14px 18px;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(91, 61, 25, 0.08);
+  text-align: left;
+  box-shadow: 0 10px 24px rgba(91, 61, 25, 0.06);
+}
+
+.top-nav button span {
+  color: #3f2b16;
+  font-size: 15px;
+}
+
+.top-nav button small {
+  color: #8b7357;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .top-nav button.active {
   background: linear-gradient(135deg, #b6641f, #d9893a);
   color: #fff7ef;
   border-color: transparent;
+}
+
+.top-nav button.active span,
+.top-nav button.active small {
+  color: inherit;
 }
 
 .app-shell {
@@ -554,14 +623,24 @@
 }
 
 @media (max-width: 960px) {
-  .top-nav {
-    justify-content: flex-start;
+  .app-nav-shell {
+    gap: 12px;
     padding: 16px 16px 0;
-    overflow-x: auto;
+  }
+
+  .app-nav-header {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .app-shell {
     padding: 20px 16px 40px;
+  }
+
+  .top-nav button {
+    flex-basis: 148px;
+    padding: 12px 14px;
   }
 
   .hero-panel,
@@ -600,6 +679,27 @@
 }
 
 @media (max-width: 640px) {
+  .app-nav-shell {
+    top: 40px;
+  }
+
+  .app-nav-header h1 {
+    font-size: 24px;
+  }
+
+  .app-nav-description {
+    font-size: 13px;
+  }
+
+  .top-nav {
+    gap: 10px;
+    padding: 4px;
+  }
+
+  .top-nav button {
+    flex-basis: 132px;
+  }
+
   .hero-stats {
     grid-template-columns: 1fr;
   }

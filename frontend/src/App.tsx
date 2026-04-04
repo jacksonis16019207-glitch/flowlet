@@ -6,11 +6,55 @@ import { GoalBucketPage } from './pages/goalBuckets/GoalBucketPage'
 import { TransactionPage } from './pages/transactions/TransactionPage'
 import './App.css'
 
+type PageKey =
+  | 'dashboard'
+  | 'accounts'
+  | 'goalBuckets'
+  | 'categories'
+  | 'transactions'
+
+const pages: {
+  key: PageKey
+  label: string
+  shortLabel: string
+  description: string
+}[] = [
+  {
+    key: 'dashboard',
+    label: 'ダッシュボード',
+    shortLabel: '残高と収支',
+    description: '現在の残高と直近の収支を最初に確認するページです。',
+  },
+  {
+    key: 'accounts',
+    label: '口座',
+    shortLabel: '管理',
+    description: '資産口座や支払い元口座を整理して管理します。',
+  },
+  {
+    key: 'goalBuckets',
+    label: '目的別口座',
+    shortLabel: '配分',
+    description: '使い道ごとの残高を分けて確認しやすくします。',
+  },
+  {
+    key: 'categories',
+    label: 'カテゴリ',
+    shortLabel: '分類',
+    description: '取引入力で使う分類をまとめて整備します。',
+  },
+  {
+    key: 'transactions',
+    label: '取引',
+    shortLabel: '記録',
+    description: '通常取引、振替、配分をまとめて登録します。',
+  },
+]
+
 function App() {
   const isDevelopment = import.meta.env.DEV
-  const [page, setPage] = useState<
-    'dashboard' | 'accounts' | 'goalBuckets' | 'categories' | 'transactions'
-  >('dashboard')
+  const [page, setPage] = useState<PageKey>('dashboard')
+  const currentPage = pages.find((candidate) => candidate.key === page) ?? pages[0]
 
   return (
     <>
@@ -19,43 +63,29 @@ function App() {
           DEVELOPMENT
         </div>
       ) : null}
-      <nav className="top-nav" aria-label="Main navigation">
-        <button
-          type="button"
-          className={page === 'dashboard' ? 'active' : ''}
-          onClick={() => setPage('dashboard')}
-        >
-          ダッシュボード
-        </button>
-        <button
-          type="button"
-          className={page === 'accounts' ? 'active' : ''}
-          onClick={() => setPage('accounts')}
-        >
-          口座
-        </button>
-        <button
-          type="button"
-          className={page === 'goalBuckets' ? 'active' : ''}
-          onClick={() => setPage('goalBuckets')}
-        >
-          目的別口座
-        </button>
-        <button
-          type="button"
-          className={page === 'categories' ? 'active' : ''}
-          onClick={() => setPage('categories')}
-        >
-          カテゴリ
-        </button>
-        <button
-          type="button"
-          className={page === 'transactions' ? 'active' : ''}
-          onClick={() => setPage('transactions')}
-        >
-          取引
-        </button>
-      </nav>
+      <header className="app-nav-shell">
+        <div className="app-nav-header">
+          <div>
+            <p className="app-nav-kicker">flowlet workspace</p>
+            <h1>{currentPage.label}</h1>
+          </div>
+          <p className="app-nav-description">{currentPage.description}</p>
+        </div>
+        <nav className="top-nav" aria-label="Main navigation">
+          {pages.map((navigationPage) => (
+            <button
+              key={navigationPage.key}
+              type="button"
+              className={page === navigationPage.key ? 'active' : ''}
+              aria-current={page === navigationPage.key ? 'page' : undefined}
+              onClick={() => setPage(navigationPage.key)}
+            >
+              <span>{navigationPage.label}</span>
+              <small>{navigationPage.shortLabel}</small>
+            </button>
+          ))}
+        </nav>
+      </header>
       {page === 'dashboard' ? <DashboardPage /> : null}
       {page === 'accounts' ? <AccountPage /> : null}
       {page === 'goalBuckets' ? <GoalBucketPage /> : null}
