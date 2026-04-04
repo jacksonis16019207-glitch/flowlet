@@ -8,9 +8,10 @@ select account.account_id,
        seed.is_active
 from (
     values
-        ('住信SBIネット銀行', 'メイン口座', '生活防衛', true),
-        ('住信SBIネット銀行', '貯金口座', '旅行', true),
-        ('住信SBIネット銀行', '貯金口座', '特別費', true)
+        ('メイン銀行', '生活口座', '定期支払', true),
+        ('メイン銀行', '生活口座', '生活イベント', true),
+        ('貯蓄用銀行', '積立口座', '旅行', true),
+        ('貯蓄用銀行', '積立口座', '特別費', true)
 ) as seed(provider_name, account_name, bucket_name, is_active)
 join flowlet.m_account account
     on account.provider_name = seed.provider_name

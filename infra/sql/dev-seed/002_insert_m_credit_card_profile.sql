@@ -12,11 +12,11 @@ select card.account_id,
        'NEXT_BUSINESS_DAY'
 from flowlet.m_account card
 join flowlet.m_account payment
-    on payment.provider_name = '住信SBIネット銀行'
-   and payment.account_name = 'メイン口座'
+    on payment.provider_name = 'メイン銀行'
+   and payment.account_name = '生活口座'
    and payment.account_category = 'BANK'
-where card.provider_name = '楽天カード'
-  and card.account_name = '楽天カード'
+where card.provider_name = 'サンプルカード'
+  and card.account_name = '支払カード'
   and card.account_category = 'CREDIT_CARD'
   and not exists (
       select 1
