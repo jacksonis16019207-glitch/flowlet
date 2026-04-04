@@ -187,6 +187,31 @@ export function GoalBucketPage() {
         </div>
       </section>
 
+      <section className="content-grid management-focus-grid">
+        <section className="panel management-focus-panel">
+          <div className="panel-heading">
+            <p className="eyebrow">Today Focus</p>
+            <h2>まず見るポイント</h2>
+          </div>
+          <div className="dashboard-focus-list">
+            <article className="dashboard-focus-item">
+              <span>目的別口座数</span>
+              <strong>{goalBuckets.length}</strong>
+              <p>管理対象のまとまり数を先に把握できます。</p>
+            </article>
+            <article className="dashboard-focus-item">
+              <span>入力状態</span>
+              <strong>{editingGoalBucketId == null ? '新規' : '編集中'}</strong>
+              <p>
+                {editingGoalBucketId == null
+                  ? '新しい目的別口座を追加する状態です。'
+                  : '既存の目的別口座を更新する状態です。'}
+              </p>
+            </article>
+          </div>
+        </section>
+      </section>
+
       <section className="content-grid">
         <section className="panel">
           <div className="panel-heading">

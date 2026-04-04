@@ -430,6 +430,14 @@
   grid-column: 1 / -1;
 }
 
+.management-focus-grid {
+  margin-bottom: 24px;
+}
+
+.management-focus-panel {
+  grid-column: 1 / -1;
+}
+
 .dashboard-grid {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }

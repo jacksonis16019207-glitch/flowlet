@@ -184,6 +184,31 @@ export function AccountPage() {
         </div>
       </section>
 
+      <section className="content-grid management-focus-grid">
+        <section className="panel management-focus-panel">
+          <div className="panel-heading">
+            <p className="eyebrow">Today Focus</p>
+            <h2>まず見るポイント</h2>
+          </div>
+          <div className="dashboard-focus-list">
+            <article className="dashboard-focus-item">
+              <span>稼働中口座</span>
+              <strong>{accounts.filter((account) => account.active).length}</strong>
+              <p>日常運用で使う口座数を先に把握できます。</p>
+            </article>
+            <article className="dashboard-focus-item">
+              <span>入力状態</span>
+              <strong>{editingAccountId == null ? '新規' : '編集中'}</strong>
+              <p>
+                {editingAccountId == null
+                  ? '新しい口座を追加する状態です。'
+                  : '既存口座を更新する状態です。'}
+              </p>
+            </article>
+          </div>
+        </section>
+      </section>
+
       <section className="content-grid">
         <section className="panel">
           <div className="panel-heading">
