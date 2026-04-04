@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AccountPage } from './pages/accounts/AccountPage'
 import { CategoryPage } from './pages/categories/CategoryPage'
+import { DashboardPage } from './pages/dashboard/DashboardPage'
 import { GoalBucketPage } from './pages/goalBuckets/GoalBucketPage'
 import { TransactionPage } from './pages/transactions/TransactionPage'
 import './App.css'
@@ -8,8 +9,8 @@ import './App.css'
 function App() {
   const isDevelopment = import.meta.env.DEV
   const [page, setPage] = useState<
-    'accounts' | 'goalBuckets' | 'categories' | 'transactions'
-  >('accounts')
+    'dashboard' | 'accounts' | 'goalBuckets' | 'categories' | 'transactions'
+  >('dashboard')
 
   return (
     <>
@@ -19,6 +20,13 @@ function App() {
         </div>
       ) : null}
       <nav className="top-nav" aria-label="Main navigation">
+        <button
+          type="button"
+          className={page === 'dashboard' ? 'active' : ''}
+          onClick={() => setPage('dashboard')}
+        >
+          ダッシュボード
+        </button>
         <button
           type="button"
           className={page === 'accounts' ? 'active' : ''}
@@ -48,6 +56,7 @@ function App() {
           取引
         </button>
       </nav>
+      {page === 'dashboard' ? <DashboardPage /> : null}
       {page === 'accounts' ? <AccountPage /> : null}
       {page === 'goalBuckets' ? <GoalBucketPage /> : null}
       {page === 'categories' ? <CategoryPage /> : null}
