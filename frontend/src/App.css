@@ -179,6 +179,14 @@
   font-size: 32px;
 }
 
+.hero-stats small {
+  display: block;
+  margin-top: 10px;
+  color: #7a6b5c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .content-grid {
   max-width: 1180px;
   margin: 0 auto;
@@ -386,6 +394,48 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
+.dashboard-focus-grid {
+  margin-bottom: 24px;
+}
+
+.dashboard-focus-panel {
+  grid-column: 1 / -1;
+}
+
+.dashboard-focus-list {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-focus-item {
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 248, 237, 0.94), rgba(249, 238, 219, 0.82));
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.dashboard-focus-item span {
+  display: block;
+  color: #8b5e34;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-focus-item strong {
+  display: block;
+  margin-top: 8px;
+  color: #1d1309;
+  font-size: clamp(28px, 4vw, 40px);
+}
+
+.dashboard-focus-item p {
+  margin: 10px 0 0;
+  color: #65584b;
+}
+
 .dashboard-hero-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -395,7 +445,7 @@
 }
 
 .dashboard-card {
-  min-height: 220px;
+  min-height: 0;
 }
 
 .dashboard-panel-full {
@@ -656,6 +706,10 @@
     grid-template-columns: 1fr;
   }
 
+  .dashboard-focus-list {
+    grid-template-columns: 1fr;
+  }
+
   .hero-stats {
     grid-template-columns: 1fr 1fr;
   }
@@ -706,6 +760,10 @@
 
   .dashboard-hero-stats {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-focus-item {
+    padding: 18px;
   }
 
   .account-card-header {
