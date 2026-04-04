@@ -104,13 +104,26 @@ docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml up -d
 固定マスタデータを先に投入し、その後で開発用ダミーデータを投入します。
 
 ```powershell
-Get-Content infra/sql/master-data/001_insert_m_category.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
-Get-Content infra/sql/master-data/002_insert_m_subcategory.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
-Get-Content infra/sql/dev-seed/001_insert_m_account.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
-Get-Content infra/sql/dev-seed/002_insert_m_credit_card_profile.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
-Get-Content infra/sql/dev-seed/003_insert_m_goal_bucket.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
-Get-Content infra/sql/dev-seed/004_insert_t_transaction.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
-Get-Content infra/sql/dev-seed/005_insert_t_goal_bucket_allocation.sql | docker exec -i flowlet-db-dev psql -U flowlet -d flowlet_dev
+docker cp infra/sql/master-data/001_insert_m_category.sql flowlet-db-dev:/tmp/001_insert_m_category.sql
+docker exec flowlet-db-dev psql -U flowlet -d flowlet_dev -f /tmp/001_insert_m_category.sql
+
+docker cp infra/sql/master-data/002_insert_m_subcategory.sql flowlet-db-dev:/tmp/002_insert_m_subcategory.sql
+docker exec flowlet-db-dev psql -U flowlet -d flowlet_dev -f /tmp/002_insert_m_subcategory.sql
+
+docker cp infra/sql/dev-seed/001_insert_m_account.sql flowlet-db-dev:/tmp/001_insert_m_account.sql
+docker exec flowlet-db-dev psql -U flowlet -d flowlet_dev -f /tmp/001_insert_m_account.sql
+
+docker cp infra/sql/dev-seed/002_insert_m_credit_card_profile.sql flowlet-db-dev:/tmp/002_insert_m_credit_card_profile.sql
+docker exec flowlet-db-dev psql -U flowlet -d flowlet_dev -f /tmp/002_insert_m_credit_card_profile.sql
+
+docker cp infra/sql/dev-seed/003_insert_m_goal_bucket.sql flowlet-db-dev:/tmp/003_insert_m_goal_bucket.sql
+docker exec flowlet-db-dev psql -U flowlet -d flowlet_dev -f /tmp/003_insert_m_goal_bucket.sql
+
+docker cp infra/sql/dev-seed/004_insert_t_transaction.sql flowlet-db-dev:/tmp/004_insert_t_transaction.sql
+docker exec flowlet-db-dev psql -U flowlet -d flowlet_dev -f /tmp/004_insert_t_transaction.sql
+
+docker cp infra/sql/dev-seed/005_insert_t_goal_bucket_allocation.sql flowlet-db-dev:/tmp/005_insert_t_goal_bucket_allocation.sql
+docker exec flowlet-db-dev psql -U flowlet -d flowlet_dev -f /tmp/005_insert_t_goal_bucket_allocation.sql
 ```
 
 ### この seed で確認できること
