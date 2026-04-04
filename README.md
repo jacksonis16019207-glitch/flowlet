@@ -63,6 +63,8 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --bu
 ## 補足
 
 - DB マイグレーション運用ルールは [docs/db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/db-migration-rules.md) を参照してください
+- 今後の実行順は [docs/execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/execution-task-list.md) を参照してください
+- 今後タスクの追加手順は [docs/task-addition-workflow.md](/C:/Users/jacks/Documents/flowlet/docs/task-addition-workflow.md) を参照してください
 - 開発用ダミーデータと固定マスタデータは Flyway ではなく `infra/sql/` 配下で管理します
 - 本番相当では frontend build を Docker image build 内で取り込みます
 - project-local Skills を優先して実装方針を揃えています
