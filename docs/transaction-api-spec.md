@@ -512,4 +512,4 @@
 - `GET /api/accounts` に `accountCategory=CREDIT_CARD` などの絞り込みをどこまで入れるか
 - `GoalBucketAllocation` の合計配分額に対して未配分残高超過を登録時エラーにするか、警告に留めるか
 - `TRANSFER_IN` の `goalBucketId` を将来も不許可のままにするか
-- ダッシュボード集計 API を取引 API 仕様と分離した別仕様書へ切り出すか
+- ダッシュボード集計 API は [dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/dashboard-balance-api-spec.md) に分離して管理する
