@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Addition Helper"
+  short_description: "flowletの追加タスク整理と優先度判断を支援する"
+  default_prompt: "Use $task-addition-helper to evaluate, prioritize, and document a new task for flowlet."
