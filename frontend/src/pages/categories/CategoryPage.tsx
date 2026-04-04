@@ -20,6 +20,7 @@ import {
   type Subcategory,
   type SubcategoryUpsertInput,
 } from '../../features/category/types/category'
+import { FormModal } from '../../shared/components/FormModal'
 import { ApiRequestError } from '../../shared/lib/api/client'
 
 const emptyCategoryForm: CategoryUpsertInput = {
@@ -44,6 +45,8 @@ const categoryTypeDescriptions: Record<CategoryType, string> = {
   TRANSFER: '口座移動や内部振替の分類を管理します。',
 }
 
+type CategoryModalMode = 'create' | 'edit' | null
+
 export function CategoryPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [subcategories, setSubcategories] = useState<Subcategory[]>([])
@@ -66,6 +69,8 @@ export function CategoryPage() {
   const [submitErrorMessage, setSubmitErrorMessage] = useState('')
   const [infoMessage, setInfoMessage] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [categoryModalMode, setCategoryModalMode] =
+    useState<CategoryModalMode>(null)
 
   useEffect(() => {
     void loadPageData()
@@ -108,10 +113,15 @@ export function CategoryPage() {
       categoryTypeOrder.map((categoryType) => ({
         categoryType,
         label: categoryTypeLabels[categoryType],
-        items: categories.filter((category) => category.categoryType === categoryType),
+        items: categories.filter(
+          (category) => category.categoryType === categoryType,
+        ),
       })),
     [categories],
   )
+
+  const categoryFormValue =
+    categoryModalMode === 'edit' ? editingCategoryForm : createCategoryForm
 
   async function handleCreateCategory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -121,10 +131,12 @@ export function CategoryPage() {
     try {
       await createCategory(createCategoryForm)
       setCreateCategoryForm(emptyCategoryForm)
-      setInfoMessage('カテゴリを登録しました。')
+      setCategoryModalMode(null)
+      setInfoMessage('カテゴリを追加しました。')
       await loadPageData()
     } catch (error) {
       handleApiError(error)
+      setCategoryModalMode('create')
     } finally {
       setSubmitting(false)
     }
@@ -141,21 +153,19 @@ export function CategoryPage() {
     try {
       await updateCategory(categoryId, editingCategoryForm)
       setEditingCategoryId(null)
+      setCategoryModalMode(null)
       setInfoMessage('カテゴリを更新しました。')
       await loadPageData()
     } catch (error) {
       handleApiError(error)
+      setCategoryModalMode('edit')
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDeleteCategory(categoryId: number) {
-    if (
-      !window.confirm(
-        'カテゴリを削除します。参照中の場合は停止状態に切り替わります。',
-      )
-    ) {
+    if (!window.confirm('カテゴリを削除しますか。通常は元に戻せません。')) {
       return
     }
 
@@ -187,7 +197,7 @@ export function CategoryPage() {
         ...current,
         [categoryId]: emptySubcategoryForm(categoryId),
       }))
-      setInfoMessage('サブカテゴリを登録しました。')
+      setInfoMessage('サブカテゴリを追加しました。')
       await loadPageData()
     } catch (error) {
       handleApiError(error)
@@ -217,11 +227,7 @@ export function CategoryPage() {
   }
 
   async function handleDeleteSubcategory(subcategoryId: number) {
-    if (
-      !window.confirm(
-        'サブカテゴリを削除します。参照中の場合は停止状態に切り替わります。',
-      )
-    ) {
+    if (!window.confirm('サブカテゴリを削除しますか。通常は元に戻せません。')) {
       return
     }
 
@@ -239,6 +245,13 @@ export function CategoryPage() {
     }
   }
 
+  function openCreateCategoryModal() {
+    setEditingCategoryId(null)
+    setCreateCategoryForm(emptyCategoryForm)
+    resetMessages()
+    setCategoryModalMode('create')
+  }
+
   function beginCategoryEdit(category: Category) {
     setEditingCategoryId(category.categoryId)
     setEditingCategoryForm({
@@ -248,6 +261,15 @@ export function CategoryPage() {
       active: category.active,
     })
     resetMessages()
+    setCategoryModalMode('edit')
+  }
+
+  function closeCategoryModal() {
+    setEditingCategoryId(null)
+    setCreateCategoryForm(emptyCategoryForm)
+    setEditingCategoryForm(emptyCategoryForm)
+    resetMessages()
+    setCategoryModalMode(null)
   }
 
   function beginSubcategoryEdit(subcategory: Subcategory) {
@@ -297,11 +319,10 @@ export function CategoryPage() {
   return (
     <main className="app-shell">
       <section className="hero-panel">
-        <p className="eyebrow">flowlet / カテゴリ管理</p>
-        <h1>カテゴリとサブカテゴリを管理する</h1>
+        <p className="eyebrow">flowlet / categories</p>
+        <h1>カテゴリとサブカテゴリを整理する</h1>
         <p className="lead">
-          取引で使うカテゴリ体系をここで自由に調整します。参照中の項目を削除した場合は、
-          履歴を壊さないため停止状態へ切り替えます。
+          カテゴリ本体はモーダルで追加・編集し、サブカテゴリは一覧の文脈を保ったまま調整できるようにしています。
         </p>
         <div className="hero-stats">
           <article>
@@ -316,100 +337,23 @@ export function CategoryPage() {
       </section>
 
       <section className="content-grid">
-        <section className="panel">
+        <section className="panel account-list-panel">
           <div className="panel-heading">
-            <p className="eyebrow">新規カテゴリ</p>
-            <h2>カテゴリを追加</h2>
+            <p className="eyebrow">カテゴリ一覧</p>
+            <h2>登録済みカテゴリ</h2>
           </div>
 
           {infoMessage ? <div className="status">{infoMessage}</div> : null}
-          {submitErrorMessage ? (
+          {submitErrorMessage && categoryModalMode == null ? (
             <div className="status error" role="alert">
               {submitErrorMessage}
             </div>
           ) : null}
 
-          <form className="account-form" onSubmit={handleCreateCategory}>
-            <label>
-              カテゴリ名
-              <input
-                aria-invalid={fieldErrors.categoryName ? 'true' : 'false'}
-                value={createCategoryForm.categoryName}
-                onChange={(event) =>
-                  setCreateCategoryForm({
-                    ...createCategoryForm,
-                    categoryName: event.target.value,
-                  })
-                }
-                maxLength={100}
-                required
-              />
-              {fieldErrors.categoryName ? (
-                <span className="field-error">{fieldErrors.categoryName}</span>
-              ) : null}
-            </label>
-
-            <label>
-              カテゴリ種別
-              <select
-                aria-invalid={fieldErrors.categoryType ? 'true' : 'false'}
-                value={createCategoryForm.categoryType}
-                onChange={(event) =>
-                  setCreateCategoryForm({
-                    ...createCategoryForm,
-                    categoryType: event.target.value as CategoryType,
-                  })
-                }
-              >
-                {categoryTypeOrder.map((categoryType) => (
-                  <option key={categoryType} value={categoryType}>
-                    {categoryTypeLabels[categoryType]}
-                  </option>
-                ))}
-              </select>
-              {fieldErrors.categoryType ? (
-                <span className="field-error">{fieldErrors.categoryType}</span>
-              ) : null}
-            </label>
-
-            <label>
-              表示順
-              <input
-                type="number"
-                value={createCategoryForm.displayOrder}
-                onChange={(event) =>
-                  setCreateCategoryForm({
-                    ...createCategoryForm,
-                    displayOrder: Number(event.target.value),
-                  })
-                }
-              />
-            </label>
-
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={createCategoryForm.active}
-                onChange={(event) =>
-                  setCreateCategoryForm({
-                    ...createCategoryForm,
-                    active: event.target.checked,
-                  })
-                }
-              />
-              利用中として登録
-            </label>
-
-            <button type="submit" disabled={submitting}>
-              {submitting ? '保存中...' : 'カテゴリを登録'}
+          <div className="button-row">
+            <button type="button" onClick={openCreateCategoryModal}>
+              新規カテゴリを追加
             </button>
-          </form>
-        </section>
-
-        <section className="panel">
-          <div className="panel-heading">
-            <p className="eyebrow">カテゴリ一覧</p>
-            <h2>カテゴリ体系を編集</h2>
           </div>
 
           {loading ? <div className="status">カテゴリを読み込み中です...</div> : null}
@@ -448,16 +392,11 @@ export function CategoryPage() {
                           createSubcategoryForms[category.categoryId] ??
                           emptySubcategoryForm(category.categoryId)
                         }
-                        editingCategoryId={editingCategoryId}
-                        editingCategoryForm={editingCategoryForm}
                         editingSubcategoryId={editingSubcategoryId}
                         editingSubcategoryForm={editingSubcategoryForm}
                         submitting={submitting}
                         onBeginCategoryEdit={beginCategoryEdit}
                         onDeleteCategory={handleDeleteCategory}
-                        onCategoryFormChange={setEditingCategoryForm}
-                        onCancelCategoryEdit={() => setEditingCategoryId(null)}
-                        onUpdateCategory={handleUpdateCategory}
                         onBeginSubcategoryEdit={beginSubcategoryEdit}
                         onDeleteSubcategory={handleDeleteSubcategory}
                         onSubcategoryFormChange={setEditingSubcategoryForm}
@@ -474,6 +413,139 @@ export function CategoryPage() {
           ) : null}
         </section>
       </section>
+
+      <FormModal
+        open={categoryModalMode != null}
+        title={categoryModalMode === 'edit' ? 'カテゴリを編集' : 'カテゴリを追加'}
+        description={
+          categoryModalMode === 'edit'
+            ? 'カテゴリ本体の名称や種別を更新します。'
+            : '新しいカテゴリを追加します。'
+        }
+        onClose={closeCategoryModal}
+      >
+        {submitErrorMessage ? (
+          <div className="status error" role="alert">
+            {submitErrorMessage}
+          </div>
+        ) : null}
+
+        <form
+          className="account-form"
+          onSubmit={(event) =>
+            categoryModalMode === 'edit'
+              ? void handleUpdateCategory(event, editingCategoryId ?? 0)
+              : void handleCreateCategory(event)
+          }
+        >
+          <label>
+            カテゴリ名
+            <input
+              aria-invalid={fieldErrors.categoryName ? 'true' : 'false'}
+              value={categoryFormValue.categoryName}
+              onChange={(event) => {
+                const nextValue = {
+                  ...categoryFormValue,
+                  categoryName: event.target.value,
+                }
+                if (categoryModalMode === 'edit') {
+                  setEditingCategoryForm(nextValue)
+                } else {
+                  setCreateCategoryForm(nextValue)
+                }
+              }}
+              maxLength={100}
+              required
+            />
+            {fieldErrors.categoryName ? (
+              <span className="field-error">{fieldErrors.categoryName}</span>
+            ) : null}
+          </label>
+
+          <label>
+            種別
+            <select
+              aria-invalid={fieldErrors.categoryType ? 'true' : 'false'}
+              value={categoryFormValue.categoryType}
+              onChange={(event) => {
+                const nextValue = {
+                  ...categoryFormValue,
+                  categoryType: event.target.value as CategoryType,
+                }
+                if (categoryModalMode === 'edit') {
+                  setEditingCategoryForm(nextValue)
+                } else {
+                  setCreateCategoryForm(nextValue)
+                }
+              }}
+            >
+              {categoryTypeOrder.map((categoryType) => (
+                <option key={categoryType} value={categoryType}>
+                  {categoryTypeLabels[categoryType]}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.categoryType ? (
+              <span className="field-error">{fieldErrors.categoryType}</span>
+            ) : null}
+          </label>
+
+          <label>
+            表示順
+            <input
+              type="number"
+              value={categoryFormValue.displayOrder}
+              onChange={(event) => {
+                const nextValue = {
+                  ...categoryFormValue,
+                  displayOrder: Number(event.target.value),
+                }
+                if (categoryModalMode === 'edit') {
+                  setEditingCategoryForm(nextValue)
+                } else {
+                  setCreateCategoryForm(nextValue)
+                }
+              }}
+            />
+          </label>
+
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={categoryFormValue.active}
+              onChange={(event) => {
+                const nextValue = {
+                  ...categoryFormValue,
+                  active: event.target.checked,
+                }
+                if (categoryModalMode === 'edit') {
+                  setEditingCategoryForm(nextValue)
+                } else {
+                  setCreateCategoryForm(nextValue)
+                }
+              }}
+            />
+            有効なカテゴリとして登録
+          </label>
+
+          <div className="button-row modal-action-row">
+            <button type="submit" disabled={submitting}>
+              {submitting
+                ? '保存中...'
+                : categoryModalMode === 'edit'
+                  ? 'カテゴリを更新'
+                  : 'カテゴリを追加'}
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={closeCategoryModal}
+            >
+              キャンセル
+            </button>
+          </div>
+        </form>
+      </FormModal>
     </main>
   )
 }
@@ -483,19 +555,11 @@ type CategoryCardProps = {
   categories: Category[]
   subcategories: Subcategory[]
   createSubcategoryForm: SubcategoryUpsertInput
-  editingCategoryId: number | null
-  editingCategoryForm: CategoryUpsertInput
   editingSubcategoryId: number | null
   editingSubcategoryForm: SubcategoryUpsertInput
   submitting: boolean
   onBeginCategoryEdit: (category: Category) => void
   onDeleteCategory: (categoryId: number) => void
-  onCategoryFormChange: (value: CategoryUpsertInput) => void
-  onCancelCategoryEdit: () => void
-  onUpdateCategory: (
-    event: FormEvent<HTMLFormElement>,
-    categoryId: number,
-  ) => Promise<void>
   onBeginSubcategoryEdit: (subcategory: Subcategory) => void
   onDeleteSubcategory: (subcategoryId: number) => void
   onSubcategoryFormChange: (value: SubcategoryUpsertInput) => void
@@ -519,16 +583,11 @@ function CategoryCard({
   categories,
   subcategories,
   createSubcategoryForm,
-  editingCategoryId,
-  editingCategoryForm,
   editingSubcategoryId,
   editingSubcategoryForm,
   submitting,
   onBeginCategoryEdit,
   onDeleteCategory,
-  onCategoryFormChange,
-  onCancelCategoryEdit,
-  onUpdateCategory,
   onBeginSubcategoryEdit,
   onDeleteSubcategory,
   onSubcategoryFormChange,
@@ -543,14 +602,19 @@ function CategoryCard({
         <div>
           <h3>{category.categoryName}</h3>
           <p>
-            表示順 {category.displayOrder} / 種別 {categoryTypeLabels[category.categoryType]}
+            表示順 {category.displayOrder} / 種別{' '}
+            {categoryTypeLabels[category.categoryType]}
           </p>
         </div>
         <div className="category-actions">
           <span className={`badge ${category.active ? 'active' : 'inactive'}`}>
-            {category.active ? '利用中' : '停止中'}
+            {category.active ? '有効' : '停止'}
           </span>
-          <button type="button" className="action-button" onClick={() => onBeginCategoryEdit(category)}>
+          <button
+            type="button"
+            className="action-button"
+            onClick={() => onBeginCategoryEdit(category)}
+          >
             編集
           </button>
           <button
@@ -563,82 +627,6 @@ function CategoryCard({
         </div>
       </div>
 
-      {editingCategoryId === category.categoryId ? (
-        <form
-          className="account-form nested-form"
-          onSubmit={(event) => void onUpdateCategory(event, category.categoryId)}
-        >
-          <label>
-            カテゴリ名
-            <input
-              value={editingCategoryForm.categoryName}
-              onChange={(event) =>
-                onCategoryFormChange({
-                  ...editingCategoryForm,
-                  categoryName: event.target.value,
-                })
-              }
-              maxLength={100}
-              required
-            />
-          </label>
-          <div className="subform-grid">
-            <label>
-              種別
-              <select
-                value={editingCategoryForm.categoryType}
-                onChange={(event) =>
-                  onCategoryFormChange({
-                    ...editingCategoryForm,
-                    categoryType: event.target.value as CategoryType,
-                  })
-                }
-              >
-                {categoryTypeOrder.map((categoryType) => (
-                  <option key={categoryType} value={categoryType}>
-                    {categoryTypeLabels[categoryType]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              表示順
-              <input
-                type="number"
-                value={editingCategoryForm.displayOrder}
-                onChange={(event) =>
-                  onCategoryFormChange({
-                    ...editingCategoryForm,
-                    displayOrder: Number(event.target.value),
-                  })
-                }
-              />
-            </label>
-          </div>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={editingCategoryForm.active}
-              onChange={(event) =>
-                onCategoryFormChange({
-                  ...editingCategoryForm,
-                  active: event.target.checked,
-                })
-              }
-            />
-            利用中
-          </label>
-          <div className="button-row">
-            <button type="submit" disabled={submitting}>
-              保存
-            </button>
-            <button type="button" className="secondary" onClick={onCancelCategoryEdit}>
-              キャンセル
-            </button>
-          </div>
-        </form>
-      ) : null}
-
       <div className="nested-panel">
         <div className="section-heading">
           <h4>サブカテゴリ</h4>
@@ -646,7 +634,9 @@ function CategoryCard({
         </div>
 
         <div className="subcategory-list">
-          {subcategories.length === 0 ? <div className="status">未登録です。</div> : null}
+          {subcategories.length === 0 ? (
+            <div className="status">まだ登録されていません。</div>
+          ) : null}
 
           {subcategories.map((subcategory) => (
             <div key={subcategory.subcategoryId} className="subcategory-item">
@@ -655,8 +645,10 @@ function CategoryCard({
                 <p>表示順 {subcategory.displayOrder}</p>
               </div>
               <div className="category-actions">
-                <span className={`badge ${subcategory.active ? 'active' : 'inactive'}`}>
-                  {subcategory.active ? '利用中' : '停止中'}
+                <span
+                  className={`badge ${subcategory.active ? 'active' : 'inactive'}`}
+                >
+                  {subcategory.active ? '有効' : '停止'}
                 </span>
                 <button
                   type="button"
@@ -678,7 +670,9 @@ function CategoryCard({
         </div>
 
         {editingSubcategoryId !== null &&
-        subcategories.some((subcategory) => subcategory.subcategoryId === editingSubcategoryId) ? (
+        subcategories.some(
+          (subcategory) => subcategory.subcategoryId === editingSubcategoryId,
+        ) ? (
           <form
             className="account-form nested-form"
             onSubmit={(event) => void onUpdateSubcategory(event, editingSubcategoryId)}
@@ -711,7 +705,8 @@ function CategoryCard({
                 >
                   {categories.map((option) => (
                     <option key={option.categoryId} value={option.categoryId}>
-                      {categoryTypeLabels[option.categoryType]} / {option.categoryName}
+                      {categoryTypeLabels[option.categoryType]} /{' '}
+                      {option.categoryName}
                     </option>
                   ))}
                 </select>
@@ -741,7 +736,7 @@ function CategoryCard({
                   })
                 }
               />
-              利用中
+              有効
             </label>
             <div className="button-row">
               <button type="submit" disabled={submitting}>
@@ -802,7 +797,7 @@ function CategoryCard({
                   }))
                 }
               />
-              利用中
+              有効
             </label>
           </div>
           <button type="submit" disabled={submitting}>
@@ -817,11 +812,11 @@ function CategoryCard({
 function categoryDeleteMessage(result: DeleteCategoryResult): string {
   return result.action === 'DELETED'
     ? 'カテゴリを削除しました。'
-    : 'カテゴリは取引で利用中のため停止状態に切り替えました。'
+    : 'カテゴリは参照中のため、停止状態に切り替えました。'
 }
 
 function subcategoryDeleteMessage(result: DeleteSubcategoryResult): string {
   return result.action === 'DELETED'
     ? 'サブカテゴリを削除しました。'
-    : 'サブカテゴリは取引で利用中のため停止状態に切り替えました。'
+    : 'サブカテゴリは参照中のため、停止状態に切り替えました。'
 }
