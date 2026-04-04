@@ -238,6 +238,160 @@ class TransactionControllerTest {
             .andExpect(jsonPath("$.deletedAllocationIds.length()").value(1));
     }
 
+    @Test
+    void rejectsTransactionWithTransferType() throws Exception {
+        Account main = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.ZERO,
+            true,
+            10,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        CategoryEntity transfer = saveCategory("Transfer", com.example.flowlet.category.domain.model.CategoryType.TRANSFER);
+        SubcategoryEntity transferDetail = saveSubcategory(transfer.getCategoryId(), "Account move");
+
+        mockMvc.perform(post("/api/transactions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"accountId":%d,"goalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionType":"TRANSFER_OUT","transactionDate":"2026-04-01","amount":1000,"description":"invalid type","note":"should fail"}
+                    """.formatted(main.accountId(), transfer.getCategoryId(), transferDetail.getSubcategoryId())))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("TRANSACTION_TYPE_NOT_ALLOWED"));
+    }
+
+    @Test
+    void rejectsTransferWithinSameAccount() throws Exception {
+        Account main = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.ZERO,
+            true,
+            10,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        CategoryEntity transfer = saveCategory("Transfer", com.example.flowlet.category.domain.model.CategoryType.TRANSFER);
+        SubcategoryEntity transferDetail = saveSubcategory(transfer.getCategoryId(), "Account move");
+
+        mockMvc.perform(post("/api/transfers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"fromAccountId":%d,"toAccountId":%d,"fromGoalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionDate":"2026-04-02","amount":5000,"description":"same account","note":"should fail"}
+                    """.formatted(main.accountId(), main.accountId(), transfer.getCategoryId(), transferDetail.getSubcategoryId())))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("SAME_ACCOUNT_TRANSFER"));
+    }
+
+    @Test
+    void rejectsAllocationWithDuplicateDestinations() throws Exception {
+        Account savings = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Savings",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.ZERO,
+            true,
+            20,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        GoalBucket travel = goalBucketRepository.save(new GoalBucket(
+            null,
+            savings.accountId(),
+            "Travel",
+            true,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+
+        mockMvc.perform(post("/api/goal-bucket-allocations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"accountId":%d,"fromGoalBucketId":null,"allocationDate":"2026-04-02","description":"duplicate destinations","note":"should fail","linkedTransferGroupId":null,"allocations":[{"toGoalBucketId":%d,"amount":1000},{"toGoalBucketId":%d,"amount":2000}]}
+                    """.formatted(savings.accountId(), travel.goalBucketId(), travel.goalBucketId())))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("DUPLICATE_ALLOCATION_DESTINATION"));
+    }
+
+    @Test
+    void rejectsAllocationWhenLinkedTransferDoesNotBelongToAccount() throws Exception {
+        Account main = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.ZERO,
+            true,
+            10,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        Account savings = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Savings",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.ZERO,
+            true,
+            20,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        Account reserve = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Reserve",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.ZERO,
+            true,
+            30,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        GoalBucket reserveBucket = goalBucketRepository.save(new GoalBucket(
+            null,
+            reserve.accountId(),
+            "Reserve bucket",
+            true,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+
+        CategoryEntity transfer = saveCategory("Transfer", com.example.flowlet.category.domain.model.CategoryType.TRANSFER);
+        SubcategoryEntity transferDetail = saveSubcategory(transfer.getCategoryId(), "Account move");
+
+        String transferResponse = mockMvc.perform(post("/api/transfers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"fromAccountId":%d,"toAccountId":%d,"fromGoalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionDate":"2026-04-02","amount":50000,"description":"monthly move","note":"linked transfer"}
+                    """.formatted(main.accountId(), savings.accountId(), transfer.getCategoryId(), transferDetail.getSubcategoryId())))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        String transferGroupId = com.jayway.jsonpath.JsonPath.read(transferResponse, "$.transferGroupId");
+
+        mockMvc.perform(post("/api/goal-bucket-allocations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"accountId":%d,"fromGoalBucketId":null,"allocationDate":"2026-04-02","description":"wrong account link","note":"should fail","linkedTransferGroupId":"%s","allocations":[{"toGoalBucketId":%d,"amount":30000}]}
+                    """.formatted(reserve.accountId(), transferGroupId, reserveBucket.goalBucketId())))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("LINKED_TRANSFER_NOT_FOUND"));
+    }
+
     private CategoryEntity saveCategory(String name, com.example.flowlet.category.domain.model.CategoryType type) {
         CategoryEntity category = new CategoryEntity();
         category.setCategoryName(name);
