@@ -281,15 +281,36 @@
 }
 
 .status {
-  padding: 16px;
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
   border-radius: 16px;
+  border: 1px solid rgba(139, 94, 52, 0.14);
+  border-left: 4px solid #c57d31;
   background: #f7f0e7;
   color: #5f5448;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.status::before {
+  content: 'INFO';
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8b5e34;
 }
 
 .status.error {
+  border-color: rgba(200, 79, 69, 0.18);
+  border-left-color: #c84f45;
   background: #fde9e7;
   color: #8d342d;
+}
+
+.status.error::before {
+  content: 'ERROR';
+  color: #a23d35;
 }
 
 .account-list {
@@ -652,6 +673,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 248, 239, 0.7);
+  border: 1px solid rgba(139, 94, 52, 0.12);
 }
 
 .button-row button {
