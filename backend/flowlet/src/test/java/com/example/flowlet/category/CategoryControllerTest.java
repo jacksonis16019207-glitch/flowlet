@@ -3,6 +3,8 @@ package com.example.flowlet.category;
 import com.example.flowlet.account.domain.model.AccountCategory;
 import com.example.flowlet.account.domain.model.BalanceSide;
 import com.example.flowlet.category.domain.model.CategoryType;
+import com.example.flowlet.goalbucket.domain.repository.GoalBucketRepository;
+import com.example.flowlet.infrastructure.jpa.account.repository.SpringDataCreditCardProfileRepository;
 import com.example.flowlet.infrastructure.jpa.account.entity.AccountEntity;
 import com.example.flowlet.infrastructure.jpa.account.repository.SpringDataAccountRepository;
 import com.example.flowlet.infrastructure.jpa.category.entity.CategoryEntity;
@@ -11,6 +13,7 @@ import com.example.flowlet.infrastructure.jpa.category.repository.SpringDataCate
 import com.example.flowlet.infrastructure.jpa.category.repository.SpringDataSubcategoryRepository;
 import com.example.flowlet.infrastructure.jpa.transaction.entity.TransactionEntity;
 import com.example.flowlet.infrastructure.jpa.transaction.repository.SpringDataTransactionRepository;
+import com.example.flowlet.transaction.domain.repository.GoalBucketAllocationRepository;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,9 +55,21 @@ class CategoryControllerTest {
     @Autowired
     private SpringDataAccountRepository accountRepository;
 
+    @Autowired
+    private GoalBucketAllocationRepository goalBucketAllocationRepository;
+
+    @Autowired
+    private GoalBucketRepository goalBucketRepository;
+
+    @Autowired
+    private SpringDataCreditCardProfileRepository creditCardProfileRepository;
+
     @BeforeEach
     void setUp() {
+        goalBucketAllocationRepository.deleteAll();
         transactionRepository.deleteAll();
+        creditCardProfileRepository.deleteAll();
+        goalBucketRepository.deleteAll();
         subcategoryRepository.deleteAll();
         categoryRepository.deleteAll();
         accountRepository.deleteAll();

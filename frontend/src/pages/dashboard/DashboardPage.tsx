@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react'
-import { fetchDashboardBalanceSummary } from '../../features/dashboard/api/dashboardApi'
+import {
+  fetchDashboardBalanceSummary,
+  fetchDashboardMonthlyCashflow,
+} from '../../features/dashboard/api/dashboardApi'
 import { DashboardAccountList } from '../../features/dashboard/components/DashboardAccountList'
 import { DashboardGoalBucketList } from '../../features/dashboard/components/DashboardGoalBucketList'
-import type { DashboardBalanceSummary } from '../../features/dashboard/types/dashboard'
+import { DashboardMonthlyCashflowList } from '../../features/dashboard/components/DashboardMonthlyCashflowList'
+import type {
+  DashboardBalanceSummary,
+  DashboardMonthlyCashflow,
+} from '../../features/dashboard/types/dashboard'
 
 const emptySummary: DashboardBalanceSummary = {
   accounts: [],
@@ -14,10 +21,23 @@ const emptySummary: DashboardBalanceSummary = {
   },
 }
 
+const emptyCashflow: DashboardMonthlyCashflow = {
+  fromMonth: '',
+  toMonth: '',
+  months: [],
+  totals: {
+    income: '0',
+    expense: '0',
+    net: '0',
+  },
+}
+
 export function DashboardPage() {
   const [summary, setSummary] = useState<DashboardBalanceSummary>(emptySummary)
+  const [cashflow, setCashflow] = useState<DashboardMonthlyCashflow>(emptyCashflow)
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
+  const [cashflowErrorMessage, setCashflowErrorMessage] = useState('')
 
   useEffect(() => {
     void loadSummary()
@@ -26,17 +46,31 @@ export function DashboardPage() {
   async function loadSummary() {
     setLoading(true)
     setErrorMessage('')
+    setCashflowErrorMessage('')
 
-    try {
-      const data = await fetchDashboardBalanceSummary()
-      setSummary(data)
-    } catch {
+    const { fromMonth, toMonth } = getDefaultMonthRange()
+    const [summaryResult, cashflowResult] = await Promise.allSettled([
+      fetchDashboardBalanceSummary(),
+      fetchDashboardMonthlyCashflow(fromMonth, toMonth),
+    ])
+
+    if (summaryResult.status === 'fulfilled') {
+      setSummary(summaryResult.value)
+    } else {
       setErrorMessage(
         'ダッシュボードの取得に失敗しました。バックエンドの状態を確認してください。',
       )
-    } finally {
-      setLoading(false)
     }
+
+    if (cashflowResult.status === 'fulfilled') {
+      setCashflow(cashflowResult.value)
+    } else {
+      setCashflowErrorMessage(
+        '月次収支の取得に失敗しました。集計APIの状態を確認してください。',
+      )
+    }
+
+    setLoading(false)
   }
 
   return (
@@ -99,8 +133,57 @@ export function DashboardPage() {
           )}
         </section>
       </section>
+
+      <section className="content-grid">
+        <section className="panel dashboard-panel-full">
+          <div className="panel-heading">
+            <p className="eyebrow">Monthly Cashflow</p>
+            <h2>直近の月次収支</h2>
+            <p className="lead dashboard-section-lead">
+              振替と配分を除いた収入、支出、差額を月単位で確認します。
+            </p>
+          </div>
+          <div className="hero-stats dashboard-hero-stats dashboard-sub-stats">
+            <article>
+              <span>期間収入合計</span>
+              <strong>{formatMoney(cashflow.totals.income)}</strong>
+            </article>
+            <article>
+              <span>期間支出合計</span>
+              <strong>{formatMoney(cashflow.totals.expense)}</strong>
+            </article>
+            <article>
+              <span>期間差額</span>
+              <strong>{formatMoney(cashflow.totals.net)}</strong>
+            </article>
+          </div>
+          {cashflowErrorMessage ? (
+            <p className="status error">{cashflowErrorMessage}</p>
+          ) : loading ? (
+            <p className="status">読み込み中...</p>
+          ) : (
+            <DashboardMonthlyCashflowList cashflow={cashflow} />
+          )}
+        </section>
+      </section>
     </main>
   )
+}
+
+function getDefaultMonthRange() {
+  const end = new Date()
+  const start = new Date(end.getFullYear(), end.getMonth() - 3, 1)
+
+  return {
+    fromMonth: formatYearMonth(start),
+    toMonth: formatYearMonth(end),
+  }
+}
+
+function formatYearMonth(value: Date) {
+  const year = value.getFullYear()
+  const month = `${value.getMonth() + 1}`.padStart(2, '0')
+  return `${year}-${month}`
 }
 
 function formatMoney(value: string) {

@@ -329,6 +329,34 @@
   min-height: 220px;
 }
 
+.dashboard-panel-full {
+  grid-column: 1 / -1;
+}
+
+.dashboard-section-lead {
+  max-width: none;
+  margin: 12px 0 0;
+  font-size: 15px;
+}
+
+.dashboard-sub-stats {
+  margin-bottom: 24px;
+}
+
+.dashboard-sub-stats strong {
+  font-size: 28px;
+}
+
+.dashboard-cashflow-list {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-cashflow-card {
+  min-height: 0;
+}
+
 .balance-pairs {
   display: grid;
   gap: 14px;

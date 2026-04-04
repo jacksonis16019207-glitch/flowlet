@@ -6,6 +6,7 @@ import com.example.flowlet.account.domain.model.BalanceSide;
 import com.example.flowlet.account.domain.repository.AccountRepository;
 import com.example.flowlet.transaction.domain.model.GoalBucketAllocation;
 import com.example.flowlet.transaction.domain.repository.GoalBucketAllocationRepository;
+import com.example.flowlet.transaction.domain.repository.TransactionRepository;
 import com.example.flowlet.goalbucket.domain.repository.GoalBucketRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -51,9 +52,13 @@ class GoalBucketControllerTest {
     @Autowired
     private GoalBucketAllocationRepository goalBucketAllocationRepository;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
     @BeforeEach
     void setUp() {
         goalBucketAllocationRepository.deleteAll();
+        transactionRepository.deleteAll();
         goalBucketRepository.deleteAll();
         accountRepository.deleteAll();
     }

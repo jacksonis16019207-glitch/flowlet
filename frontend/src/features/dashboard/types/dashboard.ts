@@ -28,3 +28,23 @@ export type DashboardBalanceSummary = {
   goalBuckets: DashboardGoalBucketBalanceSummary[]
   totals: DashboardTotals
 }
+
+export type DashboardMonthlyCashflowMonth = {
+  month: string
+  income: string
+  expense: string
+  net: string
+}
+
+export type DashboardMonthlyCashflowTotals = {
+  income: string
+  expense: string
+  net: string
+}
+
+export type DashboardMonthlyCashflow = {
+  fromMonth: string
+  toMonth: string
+  months: DashboardMonthlyCashflowMonth[]
+  totals: DashboardMonthlyCashflowTotals
+}

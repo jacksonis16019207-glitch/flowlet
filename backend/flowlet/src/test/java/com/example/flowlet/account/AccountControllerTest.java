@@ -6,6 +6,9 @@ import com.example.flowlet.account.domain.model.BalanceSide;
 import com.example.flowlet.account.domain.repository.AccountRepository;
 import com.example.flowlet.goalbucket.domain.model.GoalBucket;
 import com.example.flowlet.goalbucket.domain.repository.GoalBucketRepository;
+import com.example.flowlet.infrastructure.jpa.account.repository.SpringDataCreditCardProfileRepository;
+import com.example.flowlet.transaction.domain.repository.GoalBucketAllocationRepository;
+import com.example.flowlet.transaction.domain.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,8 +51,20 @@ class AccountControllerTest {
     @Autowired
     private GoalBucketRepository goalBucketRepository;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
+    private GoalBucketAllocationRepository goalBucketAllocationRepository;
+
+    @Autowired
+    private SpringDataCreditCardProfileRepository creditCardProfileRepository;
+
     @BeforeEach
     void setUp() {
+        goalBucketAllocationRepository.deleteAll();
+        transactionRepository.deleteAll();
+        creditCardProfileRepository.deleteAll();
         goalBucketRepository.deleteAll();
         accountRepository.deleteAll();
     }
