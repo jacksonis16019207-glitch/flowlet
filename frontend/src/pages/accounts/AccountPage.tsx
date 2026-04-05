@@ -61,6 +61,7 @@ export function AccountPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [sortOption, setSortOption] = useState<SortOption>('DISPLAY_ORDER')
   const [accountListView, setAccountListView] = useState<AccountListView>('ALL')
+  const [mobileDetailVisible, setMobileDetailVisible] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<AccountFormField, string>>
   >({})
@@ -136,6 +137,7 @@ export function AccountPage() {
   useEffect(() => {
     setSelectedAccountId((current) => {
       if (filteredAccounts.length === 0) {
+        setMobileDetailVisible(false)
         return null
       }
 
@@ -319,6 +321,7 @@ export function AccountPage() {
       return
     }
 
+    setMobileDetailVisible(true)
     window.requestAnimationFrame(() => {
       document
         .getElementById('selected-account-detail')
@@ -330,6 +333,16 @@ export function AccountPage() {
     document
       .getElementById('selected-account-detail')
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function handleReturnToAccountList() {
+    setMobileDetailVisible(false)
+
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById('account-list-panel')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   return (
@@ -397,7 +410,7 @@ export function AccountPage() {
       <section className="content-grid account-overview-grid">
         <section
           id="selected-account-detail"
-          className="panel account-detail-panel"
+          className={`panel account-detail-panel ${mobileDetailVisible ? 'mobile-detail-visible' : 'mobile-detail-hidden'}`}
         >
           <div className="panel-heading">
             <p className="eyebrow">Selected Account</p>
@@ -405,6 +418,17 @@ export function AccountPage() {
             <p className="lead dashboard-section-lead">
               一覧から選んだ口座に対して、関連する目的別口座、引き落とし情報、最近の取引をまとめて確認できます。
             </p>
+          </div>
+
+          <div className="mobile-detail-toolbar">
+            <button
+              type="button"
+              className="secondary"
+              onClick={handleReturnToAccountList}
+            >
+              一覧に戻る
+            </button>
+            <p>同じページのまま一覧位置へ戻せます。</p>
           </div>
 
           {selectedAccount == null ? (
@@ -466,6 +490,13 @@ export function AccountPage() {
                 )}
               </dl>
               <div className="category-actions">
+                <button
+                  type="button"
+                  className="action-button mobile-back-button"
+                  onClick={handleReturnToAccountList}
+                >
+                  一覧に戻る
+                </button>
                 <button
                   type="button"
                   className="action-button"
@@ -612,7 +643,10 @@ export function AccountPage() {
           )}
         </section>
 
-        <section className="panel account-list-panel">
+        <section
+          id="account-list-panel"
+          className={`panel account-list-panel ${mobileDetailVisible ? 'mobile-list-hidden' : 'mobile-list-visible'}`}
+        >
           <div className="panel-heading">
             <p className="eyebrow">口座一覧</p>
             <h2>登録済み口座</h2>
