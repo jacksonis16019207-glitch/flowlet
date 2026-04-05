@@ -653,6 +653,57 @@
   margin-top: 20px;
 }
 
+.goal-bucket-group {
+  display: grid;
+  gap: 16px;
+}
+
+.goal-bucket-group-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: end;
+}
+
+.goal-bucket-group-header h3 {
+  margin: 0;
+  color: #1d1309;
+}
+
+.goal-bucket-group-header p {
+  margin: 8px 0 0;
+  color: #65584b;
+}
+
+.goal-bucket-group-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: end;
+}
+
+.goal-bucket-group-metrics span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 248, 239, 0.9);
+  border: 1px solid rgba(139, 94, 52, 0.14);
+  color: #684927;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.goal-bucket-linked-summary {
+  font-weight: 700;
+  color: #24180d;
+}
+
+.goal-bucket-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .account-list-section {
   display: grid;
   gap: 16px;
@@ -1012,6 +1063,15 @@
 
   .account-detail-panel {
     position: static;
+  }
+
+  .goal-bucket-group-header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .goal-bucket-group-metrics {
+    justify-content: start;
   }
 
   .dashboard-grid {
