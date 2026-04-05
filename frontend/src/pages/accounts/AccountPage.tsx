@@ -6,8 +6,12 @@ import {
   fetchAccounts,
   updateAccount,
 } from '../../features/account/api/accountApi'
+import { fetchGoalBuckets } from '../../features/goalBucket/api/goalBucketApi'
+import type { GoalBucket } from '../../features/goalBucket/types/goalBucket'
 import { AccountForm } from '../../features/account/components/AccountForm'
 import { AccountList } from '../../features/account/components/AccountList'
+import { fetchTransactions } from '../../features/transaction/api/transactionApi'
+import type { Transaction } from '../../features/transaction/types/transaction'
 import type {
   Account,
   CreateAccountInput,
@@ -30,9 +34,20 @@ const initialForm: CreateAccountInput = {
 type AccountFormField = keyof CreateAccountInput
 type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE'
 type SortOption = 'DISPLAY_ORDER' | 'NAME' | 'BALANCE_DESC'
+type CreditCardBillingSummary = {
+  closingDayLabel: string
+  paymentDayLabel: string
+  nextClosingDate: string
+  nextPaymentDate: string
+  followingPaymentDate: string
+  nextPaymentAmount: string
+  followingPaymentAmount: string
+}
 
 export function AccountPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [goalBuckets, setGoalBuckets] = useState<GoalBucket[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [form, setForm] = useState<CreateAccountInput>(initialForm)
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null)
   const [deletingAccountId, setDeletingAccountId] = useState<number | null>(null)
@@ -79,6 +94,36 @@ export function AccountPage() {
   ).length
   const visibleActiveCount = filteredAccounts.filter((account) => account.active).length
   const visibleInactiveCount = filteredAccounts.length - visibleActiveCount
+  const selectedGoalBuckets =
+    selectedAccount == null || selectedAccount.accountCategory === 'CREDIT_CARD'
+      ? []
+      : goalBuckets
+          .filter((goalBucket) => goalBucket.accountId === selectedAccount.accountId)
+          .sort(
+            (left, right) =>
+              Number(right.currentBalance) - Number(left.currentBalance) ||
+              left.bucketName.localeCompare(right.bucketName, 'ja'),
+          )
+  const selectedTransactions =
+    selectedAccount == null
+      ? []
+      : transactions
+          .filter((transaction) => transaction.accountId === selectedAccount.accountId)
+          .sort(compareTransactions)
+  const selectedLinkedCreditCards =
+    selectedAccount == null || selectedAccount.accountCategory === 'CREDIT_CARD'
+      ? []
+      : accounts
+          .filter(
+            (account) =>
+              account.accountCategory === 'CREDIT_CARD' &&
+              account.creditCardProfile?.paymentAccountId === selectedAccount.accountId,
+          )
+          .sort((left, right) => left.displayOrder - right.displayOrder)
+  const selectedBillingSummary =
+    selectedAccount?.accountCategory === 'CREDIT_CARD'
+      ? buildCreditCardBillingSummary(selectedAccount, transactions)
+      : null
 
   useEffect(() => {
     setSelectedAccountId((current) => {
@@ -102,22 +147,31 @@ export function AccountPage() {
     setErrorMessage('')
 
     try {
-      const data = await fetchAccounts()
-      setAccounts(data)
+      const [accountData, goalBucketData, transactionData] = await Promise.all([
+        fetchAccounts(),
+        fetchGoalBuckets(),
+        fetchTransactions(),
+      ])
+      setAccounts(accountData)
+      setGoalBuckets(goalBucketData)
+      setTransactions(transactionData)
       setSelectedAccountId((current) => {
-        if (data.length === 0) {
+        if (accountData.length === 0) {
           return null
         }
 
-        if (current != null && data.some((account) => account.accountId === current)) {
+        if (
+          current != null &&
+          accountData.some((account) => account.accountId === current)
+        ) {
           return current
         }
 
-        return data[0].accountId
+        return accountData[0].accountId
       })
     } catch {
       setErrorMessage(
-        '口座の取得に失敗しました。バックエンドの状態を確認してください。',
+        '口座詳細に必要なデータの取得に失敗しました。バックエンドの状態を確認してください。',
       )
     } finally {
       setLoading(false)
@@ -318,7 +372,7 @@ export function AccountPage() {
             <p className="eyebrow">Selected Account</p>
             <h2>選択中の口座詳細</h2>
             <p className="lead dashboard-section-lead">
-              P1-2 で関連情報を追加しやすいように、一覧から選んだ口座の基本情報を先に固定表示します。
+              一覧から選んだ口座に対して、関連する目的別口座、引き落とし情報、最近の取引をまとめて確認できます。
             </p>
           </div>
 
@@ -389,6 +443,140 @@ export function AccountPage() {
                   この口座を編集
                 </button>
               </div>
+
+              {selectedAccount.accountCategory === 'CREDIT_CARD' &&
+              selectedBillingSummary != null ? (
+                <>
+                  <section className="account-detail-section">
+                    <div className="section-heading">
+                      <div>
+                        <h3>支払サイクル</h3>
+                        <p className="section-description">
+                          締め日と支払日を基準に、次回以降の予定を確認できます。
+                        </p>
+                      </div>
+                    </div>
+                    <dl className="balance-pairs compact">
+                      <div>
+                        <dt>締め日</dt>
+                        <dd>{selectedBillingSummary.closingDayLabel}</dd>
+                      </div>
+                      <div>
+                        <dt>支払日</dt>
+                        <dd>{selectedBillingSummary.paymentDayLabel}</dd>
+                      </div>
+                      <div>
+                        <dt>次の締め日</dt>
+                        <dd>{selectedBillingSummary.nextClosingDate}</dd>
+                      </div>
+                      <div>
+                        <dt>次の支払日</dt>
+                        <dd>{selectedBillingSummary.nextPaymentDate}</dd>
+                      </div>
+                      <div>
+                        <dt>次々回支払日</dt>
+                        <dd>{selectedBillingSummary.followingPaymentDate}</dd>
+                      </div>
+                      <div>
+                        <dt>次回支払額</dt>
+                        <dd>{selectedBillingSummary.nextPaymentAmount}</dd>
+                      </div>
+                      <div>
+                        <dt>次々回支払額</dt>
+                        <dd>{selectedBillingSummary.followingPaymentAmount}</dd>
+                      </div>
+                    </dl>
+                    <p className="account-meta-note">
+                      支払額は登録済みのカード利用履歴から見た見込みです。振替による返済額は含めていません。
+                    </p>
+                  </section>
+                  <section className="account-detail-section">
+                    <div className="section-heading">
+                      <div>
+                        <h3>関連取引</h3>
+                        <p className="section-description">
+                          直近のカード利用を時系列で確認できます。
+                        </p>
+                      </div>
+                    </div>
+                    <TransactionSummaryList transactions={selectedTransactions} />
+                  </section>
+                </>
+              ) : null}
+
+              {selectedAccount.accountCategory !== 'CREDIT_CARD' ? (
+                <>
+                  <section className="account-detail-section">
+                    <div className="section-heading">
+                      <div>
+                        <h3>紐づく目的別口座</h3>
+                        <p className="section-description">
+                          この口座配下で管理している残高のまとまりです。
+                        </p>
+                      </div>
+                    </div>
+                    {selectedGoalBuckets.length === 0 ? (
+                      <p className="status">紐づく目的別口座はまだありません。</p>
+                    ) : (
+                      <div className="detail-chip-list">
+                        {selectedGoalBuckets.map((goalBucket) => (
+                          <article key={goalBucket.goalBucketId} className="detail-chip-card">
+                            <strong>{goalBucket.bucketName}</strong>
+                            <span>{formatMoney(goalBucket.currentBalance)}</span>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="account-detail-section">
+                    <div className="section-heading">
+                      <div>
+                        <h3>引き落とし対象カード</h3>
+                        <p className="section-description">
+                          この口座から支払う設定のクレジットカードと、次回引き落とし予定を確認できます。
+                        </p>
+                      </div>
+                    </div>
+                    {selectedLinkedCreditCards.length === 0 ? (
+                      <p className="status">この口座を引き落とし元にしているカードはありません。</p>
+                    ) : (
+                      <div className="detail-list">
+                        {selectedLinkedCreditCards.map((creditCard) => (
+                          <article key={creditCard.accountId} className="detail-list-item">
+                            <div>
+                              <h4>{creditCard.accountName}</h4>
+                              <p>{creditCard.providerName}</p>
+                            </div>
+                            <dl className="detail-inline-stats">
+                              <div>
+                                <dt>次回支払日</dt>
+                                <dd>{formatNextPaymentDate(creditCard)}</dd>
+                              </div>
+                              <div>
+                                <dt>次回引き落とし見込み</dt>
+                                <dd>{formatMoney(creditCard.currentBalance, true)}</dd>
+                              </div>
+                            </dl>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="account-detail-section">
+                    <div className="section-heading">
+                      <div>
+                        <h3>関連取引</h3>
+                        <p className="section-description">
+                          最近の入出金や振替を確認できます。
+                        </p>
+                      </div>
+                    </div>
+                    <TransactionSummaryList transactions={selectedTransactions} />
+                  </section>
+                </>
+              ) : null}
             </article>
           )}
         </section>
@@ -580,6 +768,118 @@ function buildKeywordText(account: Account) {
     .trim()
 }
 
+function TransactionSummaryList({
+  transactions,
+}: {
+  transactions: Transaction[]
+}) {
+  if (transactions.length === 0) {
+    return <p className="status">紐づく取引はまだありません。</p>
+  }
+
+  return (
+    <div className="detail-list">
+      {transactions.slice(0, 5).map((transaction) => (
+        <article key={transaction.transactionId} className="detail-list-item">
+          <div>
+            <h4>{transaction.description}</h4>
+            <p>
+              {transaction.categoryName}
+              {transaction.subcategoryName ? ` / ${transaction.subcategoryName}` : ''}
+              {transaction.goalBucketName ? ` / ${transaction.goalBucketName}` : ''}
+            </p>
+          </div>
+          <dl className="detail-inline-stats">
+            <div>
+              <dt>取引日</dt>
+              <dd>{formatDateLabel(transaction.transactionDate)}</dd>
+            </div>
+            <div>
+              <dt>金額</dt>
+              <dd>{formatMoneyByTransactionType(transaction)}</dd>
+            </div>
+          </dl>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function buildCreditCardBillingSummary(
+  account: Account,
+  transactions: Transaction[],
+): CreditCardBillingSummary | null {
+  if (account.creditCardProfile == null) {
+    return null
+  }
+
+  const today = startOfDay(new Date())
+  const previousClosingDate = getPreviousOccurrence(
+    account.creditCardProfile.closingDay,
+    today,
+  )
+  const priorClosingDate = getPreviousOccurrence(
+    account.creditCardProfile.closingDay,
+    addMonths(previousClosingDate, -1),
+  )
+  const nextClosingDate = getNextOccurrence(
+    account.creditCardProfile.closingDay,
+    today,
+  )
+  const nextPaymentDate = getNextPaymentDate(
+    account.creditCardProfile.paymentDay,
+    account.creditCardProfile.paymentDateAdjustmentRule,
+  )
+  const followingPaymentDate = getPaymentDateForMonthOffset(
+    account.creditCardProfile.paymentDay,
+    account.creditCardProfile.paymentDateAdjustmentRule,
+    1,
+  )
+  const cardTransactions = transactions.filter(
+    (transaction) => transaction.accountId === account.accountId,
+  )
+
+  return {
+    closingDayLabel: `${account.creditCardProfile.closingDay}日`,
+    paymentDayLabel: `${account.creditCardProfile.paymentDay}日 / ${describeAdjustmentRule(account.creditCardProfile.paymentDateAdjustmentRule)}`,
+    nextClosingDate: formatDateLabel(nextClosingDate),
+    nextPaymentDate: formatDateLabel(nextPaymentDate),
+    followingPaymentDate: formatDateLabel(followingPaymentDate),
+    nextPaymentAmount: formatMoney(
+      sumCreditCardCharges(cardTransactions, priorClosingDate, previousClosingDate),
+      true,
+    ),
+    followingPaymentAmount: formatMoney(
+      sumCreditCardCharges(cardTransactions, previousClosingDate, nextClosingDate),
+      true,
+    ),
+  }
+}
+
+function sumCreditCardCharges(
+  transactions: Transaction[],
+  fromExclusive: Date,
+  toInclusive: Date,
+) {
+  return transactions.reduce((total, transaction) => {
+    const transactionDate = new Date(`${transaction.transactionDate}T00:00:00`)
+
+    if (transactionDate <= fromExclusive || transactionDate > toInclusive) {
+      return total
+    }
+
+    if (transaction.transactionType === 'EXPENSE') {
+      return total + Number(transaction.amount)
+    }
+
+    if (transaction.transactionType === 'INCOME') {
+      return total - Number(transaction.amount)
+    }
+
+    return total
+  }, 0)
+}
+
 function formatPaymentAccountName(
   allAccounts: Account[],
   paymentAccountId?: number,
@@ -615,6 +915,45 @@ function formatNextPaymentDate(account: Account) {
   })
 }
 
+function getPaymentDateForMonthOffset(
+  paymentDay: number,
+  adjustmentRule: PaymentDateAdjustmentRule,
+  monthOffset: number,
+) {
+  const today = new Date()
+  const candidate = new Date(
+    today.getFullYear(),
+    today.getMonth() + monthOffset,
+    clampToMonthEnd(
+      today.getFullYear(),
+      today.getMonth() + monthOffset,
+      paymentDay,
+    ),
+  )
+
+  return adjustBusinessDate(candidate, adjustmentRule)
+}
+
+function formatDateLabel(value: string | Date) {
+  const date = typeof value === 'string' ? new Date(`${value}T00:00:00`) : value
+
+  return date.toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    weekday: 'short',
+  })
+}
+
+function formatMoneyByTransactionType(transaction: Transaction) {
+  const sign =
+    transaction.transactionType === 'INCOME' || transaction.transactionType === 'TRANSFER_IN'
+      ? '+'
+      : '-'
+
+  return `${sign}${formatMoney(transaction.amount, true)}`
+}
+
 function getNextPaymentDate(
   paymentDay: number,
   adjustmentRule: PaymentDateAdjustmentRule,
@@ -634,6 +973,44 @@ function getNextPaymentDate(
   }
 
   return adjustBusinessDate(candidate, adjustmentRule)
+}
+
+function getPreviousOccurrence(day: number, referenceDate: Date) {
+  const candidate = new Date(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    clampToMonthEnd(referenceDate.getFullYear(), referenceDate.getMonth(), day),
+  )
+
+  if (candidate > startOfDay(referenceDate)) {
+    candidate.setMonth(candidate.getMonth() - 1)
+    candidate.setDate(
+      clampToMonthEnd(candidate.getFullYear(), candidate.getMonth(), day),
+    )
+  }
+
+  return candidate
+}
+
+function getNextOccurrence(day: number, referenceDate: Date) {
+  const candidate = new Date(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    clampToMonthEnd(referenceDate.getFullYear(), referenceDate.getMonth(), day),
+  )
+
+  if (candidate <= startOfDay(referenceDate)) {
+    candidate.setMonth(candidate.getMonth() + 1)
+    candidate.setDate(
+      clampToMonthEnd(candidate.getFullYear(), candidate.getMonth(), day),
+    )
+  }
+
+  return candidate
+}
+
+function addMonths(value: Date, months: number) {
+  return new Date(value.getFullYear(), value.getMonth() + months, value.getDate())
 }
 
 function clampToMonthEnd(year: number, month: number, day: number) {
@@ -664,7 +1041,15 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
-function formatMoney(value: string, absolute = false) {
+function compareTransactions(left: Transaction, right: Transaction) {
+  if (left.transactionDate !== right.transactionDate) {
+    return right.transactionDate.localeCompare(left.transactionDate)
+  }
+
+  return right.transactionId - left.transactionId
+}
+
+function formatMoney(value: string | number, absolute = false) {
   const numericValue = Number(value)
 
   return new Intl.NumberFormat('ja-JP', {
@@ -672,6 +1057,18 @@ function formatMoney(value: string, absolute = false) {
     currency: 'JPY',
     maximumFractionDigits: 0,
   }).format(absolute ? Math.abs(numericValue) : numericValue)
+}
+
+function describeAdjustmentRule(rule: PaymentDateAdjustmentRule) {
+  if (rule === 'NEXT_BUSINESS_DAY') {
+    return '翌営業日補正'
+  }
+
+  if (rule === 'PREVIOUS_BUSINESS_DAY') {
+    return '前営業日補正'
+  }
+
+  return '補正なし'
 }
 
 function isAccountFormField(value: string): value is AccountFormField {

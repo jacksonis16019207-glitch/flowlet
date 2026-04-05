@@ -534,6 +534,67 @@
   color: #65584b;
 }
 
+.account-detail-section {
+  display: grid;
+  gap: 14px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(91, 61, 25, 0.12);
+}
+
+.detail-chip-list,
+.detail-list {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-chip-list {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.detail-chip-card,
+.detail-list-item {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 248, 239, 0.72);
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.detail-chip-card strong,
+.detail-list-item h4 {
+  display: block;
+  margin: 0;
+  color: #24180d;
+}
+
+.detail-chip-card span,
+.detail-list-item p {
+  display: block;
+  margin-top: 6px;
+  color: #65584b;
+}
+
+.detail-inline-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.detail-inline-stats dt {
+  color: #8b5e34;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.detail-inline-stats dd {
+  margin: 4px 0 0;
+  color: #1d1309;
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .account-hero-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
