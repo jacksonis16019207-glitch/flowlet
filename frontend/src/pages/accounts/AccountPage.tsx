@@ -34,6 +34,7 @@ const initialForm: CreateAccountInput = {
 type AccountFormField = keyof CreateAccountInput
 type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE'
 type SortOption = 'DISPLAY_ORDER' | 'NAME' | 'BALANCE_DESC'
+type AccountListView = 'ALL' | 'OPERATIONAL' | 'CREDIT_CARD'
 type CreditCardBillingSummary = {
   closingDayLabel: string
   paymentDayLabel: string
@@ -59,6 +60,7 @@ export function AccountPage() {
   const [keyword, setKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [sortOption, setSortOption] = useState<SortOption>('DISPLAY_ORDER')
+  const [accountListView, setAccountListView] = useState<AccountListView>('ALL')
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<AccountFormField, string>>
   >({})
@@ -94,6 +96,12 @@ export function AccountPage() {
   ).length
   const visibleActiveCount = filteredAccounts.filter((account) => account.active).length
   const visibleInactiveCount = filteredAccounts.length - visibleActiveCount
+  const selectedListCount =
+    accountListView === 'OPERATIONAL'
+      ? operationalAccounts.length
+      : accountListView === 'CREDIT_CARD'
+        ? creditCardAccounts.length
+        : filteredAccounts.length
   const selectedGoalBuckets =
     selectedAccount == null || selectedAccount.accountCategory === 'CREDIT_CARD'
       ? []
@@ -304,6 +312,26 @@ export function AccountPage() {
     setSortOption('DISPLAY_ORDER')
   }
 
+  function handleSelectAccount(account: Account) {
+    setSelectedAccountId(account.accountId)
+
+    if (!window.matchMedia('(max-width: 960px)').matches) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById('selected-account-detail')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
+  function scrollToSelectedAccountDetail() {
+    document
+      .getElementById('selected-account-detail')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <main className="app-shell">
       <section className="hero-panel">
@@ -367,7 +395,10 @@ export function AccountPage() {
       </section>
 
       <section className="content-grid account-overview-grid">
-        <section className="panel account-detail-panel">
+        <section
+          id="selected-account-detail"
+          className="panel account-detail-panel"
+        >
           <div className="panel-heading">
             <p className="eyebrow">Selected Account</p>
             <h2>選択中の口座詳細</h2>
@@ -642,21 +673,75 @@ export function AccountPage() {
             <span>クレジットカード {creditCardAccounts.length} 件</span>
           </div>
 
+          <div
+            className="inline-tabs account-list-tabs"
+            role="tablist"
+            aria-label="口座一覧の表示切り替え"
+          >
+            <button
+              type="button"
+              className={accountListView === 'ALL' ? 'active' : ''}
+              onClick={() => setAccountListView('ALL')}
+            >
+              すべて
+              <span>{filteredAccounts.length}</span>
+            </button>
+            <button
+              type="button"
+              className={accountListView === 'OPERATIONAL' ? 'active' : ''}
+              onClick={() => setAccountListView('OPERATIONAL')}
+            >
+              銀行口座
+              <span>{operationalAccounts.length}</span>
+            </button>
+            <button
+              type="button"
+              className={accountListView === 'CREDIT_CARD' ? 'active' : ''}
+              onClick={() => setAccountListView('CREDIT_CARD')}
+            >
+              クレジットカード
+              <span>{creditCardAccounts.length}</span>
+            </button>
+          </div>
+
+          {selectedAccount != null ? (
+            <div className="selected-account-jump">
+              <p>
+                選択中: <strong>{selectedAccount.accountName}</strong>
+              </p>
+              <button
+                type="button"
+                className="secondary"
+                onClick={scrollToSelectedAccountDetail}
+              >
+                詳細へ移動
+              </button>
+            </div>
+          ) : null}
+
           {errorMessage ? <p className="status error">{errorMessage}</p> : null}
           {loading ? <p className="status">読み込み中...</p> : null}
 
           {!loading && !errorMessage ? (
             <div className="account-section-stack">
+              <div className="account-section-summary">
+                <p>現在の表示: {selectedListCount} 件</p>
+                <p>
+                  一覧から口座を選ぶと、固定表示している詳細カードの内容が切り替わります。
+                </p>
+              </div>
               <AccountList
                 title="預金・現金など"
                 description="銀行口座、現金、電子マネーなどをまとめて確認します。"
                 variant="operational"
-                accounts={operationalAccounts}
+                accounts={
+                  accountListView === 'CREDIT_CARD' ? [] : operationalAccounts
+                }
                 allAccounts={accounts}
                 emptyMessage="条件に合う預金・現金系の口座はありません。"
                 deletingAccountId={deletingAccountId}
                 selectedAccountId={selectedAccountId}
-                onSelectDetail={(account) => setSelectedAccountId(account.accountId)}
+                onSelectDetail={handleSelectAccount}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
@@ -664,12 +749,14 @@ export function AccountPage() {
                 title="クレジットカード"
                 description="請求額、次回支払日、引き落とし口座を先に見られるようにしています。"
                 variant="creditCard"
-                accounts={creditCardAccounts}
+                accounts={
+                  accountListView === 'OPERATIONAL' ? [] : creditCardAccounts
+                }
                 allAccounts={accounts}
                 emptyMessage="条件に合うクレジットカードはありません。"
                 deletingAccountId={deletingAccountId}
                 selectedAccountId={selectedAccountId}
-                onSelectDetail={(account) => setSelectedAccountId(account.accountId)}
+                onSelectDetail={handleSelectAccount}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
