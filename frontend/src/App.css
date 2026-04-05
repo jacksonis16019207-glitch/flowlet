@@ -403,7 +403,7 @@
 .subform-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .transaction-panel {
@@ -644,9 +644,14 @@
 
 .allocation-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 140px 88px;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, 160px) auto;
   gap: 12px;
   align-items: end;
+}
+
+.allocation-row select,
+.allocation-row input {
+  min-width: 0;
 }
 
 .category-management {
