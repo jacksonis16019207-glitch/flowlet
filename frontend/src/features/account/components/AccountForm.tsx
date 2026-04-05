@@ -13,6 +13,7 @@ type AccountFormField = keyof CreateAccountInput
 type AccountFormProps = {
   accounts: Account[]
   value: CreateAccountInput
+  isEditing?: boolean
   submitting: boolean
   submitErrorMessage: string
   fieldErrors: Partial<Record<AccountFormField, string>>
@@ -23,6 +24,7 @@ type AccountFormProps = {
 export function AccountForm({
   accounts,
   value,
+  isEditing = false,
   submitting,
   submitErrorMessage,
   fieldErrors,
@@ -274,7 +276,7 @@ export function AccountForm({
       </label>
 
       <button type="submit" disabled={submitting}>
-        {submitting ? '登録中...' : '口座を登録'}
+        {submitting ? '保存中...' : isEditing ? '口座を更新' : '口座を登録'}
       </button>
     </form>
   )

@@ -40,38 +40,41 @@ export function DashboardPage() {
   const [cashflowErrorMessage, setCashflowErrorMessage] = useState('')
 
   useEffect(() => {
-    void loadSummary()
-  }, [])
-
-  async function loadSummary() {
-    setLoading(true)
-    setErrorMessage('')
-    setCashflowErrorMessage('')
+    let active = true
 
     const { fromMonth, toMonth } = getDefaultMonthRange()
-    const [summaryResult, cashflowResult] = await Promise.allSettled([
+
+    void Promise.allSettled([
       fetchDashboardBalanceSummary(),
       fetchDashboardMonthlyCashflow(fromMonth, toMonth),
-    ])
+    ]).then(([summaryResult, cashflowResult]) => {
+      if (!active) {
+        return
+      }
 
-    if (summaryResult.status === 'fulfilled') {
-      setSummary(summaryResult.value)
-    } else {
-      setErrorMessage(
-        'ダッシュボードの取得に失敗しました。バックエンドの状態を確認してください。',
-      )
+      if (summaryResult.status === 'fulfilled') {
+        setSummary(summaryResult.value)
+      } else {
+        setErrorMessage(
+          'ダッシュボードの取得に失敗しました。バックエンドの状態を確認してください。',
+        )
+      }
+
+      if (cashflowResult.status === 'fulfilled') {
+        setCashflow(cashflowResult.value)
+      } else {
+        setCashflowErrorMessage(
+          '月次収支の取得に失敗しました。API の状態を確認してください。',
+        )
+      }
+
+      setLoading(false)
+    })
+
+    return () => {
+      active = false
     }
-
-    if (cashflowResult.status === 'fulfilled') {
-      setCashflow(cashflowResult.value)
-    } else {
-      setCashflowErrorMessage(
-        '月次収支の取得に失敗しました。API の状態を確認してください。',
-      )
-    }
-
-    setLoading(false)
-  }
+  }, [])
 
   const accountCount = summary.accounts.length
   const goalBucketCount = summary.goalBuckets.length

@@ -48,6 +48,10 @@ export function AccountPage() {
     Partial<Record<AccountFormField, string>>
   >({})
   const [modalOpen, setModalOpen] = useState(false)
+  const hasActiveFilters =
+    keyword.trim().length > 0 ||
+    statusFilter !== 'ALL' ||
+    sortOption !== 'DISPLAY_ORDER'
 
   useEffect(() => {
     void loadAccounts()
@@ -73,6 +77,8 @@ export function AccountPage() {
   const creditCardCount = accounts.filter(
     (account) => account.accountCategory === 'CREDIT_CARD',
   ).length
+  const visibleActiveCount = filteredAccounts.filter((account) => account.active).length
+  const visibleInactiveCount = filteredAccounts.length - visibleActiveCount
 
   useEffect(() => {
     setSelectedAccountId((current) => {
@@ -238,6 +244,12 @@ export function AccountPage() {
     setModalOpen(false)
   }
 
+  function resetFilters() {
+    setKeyword('')
+    setStatusFilter('ALL')
+    setSortOption('DISPLAY_ORDER')
+  }
+
   return (
     <main className="app-shell">
       <section className="hero-panel">
@@ -276,6 +288,20 @@ export function AccountPage() {
               <span>一覧表示件数</span>
               <strong>{filteredAccounts.length}</strong>
               <p>検索、状態フィルター、並び替えで今日見る口座だけに絞れます。</p>
+            </article>
+            <article className="dashboard-focus-item">
+              <span>表示内訳</span>
+              <strong>
+                {operationalAccounts.length} / {creditCardAccounts.length}
+              </strong>
+              <p>左から順に、預金・現金系口座数とクレジットカード数です。</p>
+            </article>
+            <article className="dashboard-focus-item">
+              <span>状態内訳</span>
+              <strong>
+                {visibleActiveCount} / {visibleInactiveCount}
+              </strong>
+              <p>左から順に、有効口座数と停止口座数です。</p>
             </article>
             <article className="dashboard-focus-item">
               <span>選択中</span>
@@ -413,6 +439,19 @@ export function AccountPage() {
             <button type="button" onClick={handleOpenCreateModal}>
               新規口座を追加
             </button>
+            {hasActiveFilters ? (
+              <button type="button" className="secondary" onClick={resetFilters}>
+                条件をクリア
+              </button>
+            ) : null}
+          </div>
+
+          <div className="account-filter-summary" aria-live="polite">
+            <span>表示中 {filteredAccounts.length} 件</span>
+            <span>有効 {visibleActiveCount} 件</span>
+            <span>停止 {visibleInactiveCount} 件</span>
+            <span>預金・現金など {operationalAccounts.length} 件</span>
+            <span>クレジットカード {creditCardAccounts.length} 件</span>
           </div>
 
           {errorMessage ? <p className="status error">{errorMessage}</p> : null}
@@ -464,6 +503,7 @@ export function AccountPage() {
         <AccountForm
           accounts={accounts}
           value={form}
+          isEditing={editingAccountId != null}
           submitting={submitting}
           submitErrorMessage={submitErrorMessage}
           fieldErrors={fieldErrors}
@@ -482,7 +522,7 @@ function matchesKeyword(account: Account, keyword: string) {
     return true
   }
 
-  return `${account.providerName} ${account.accountName}`
+  return buildKeywordText(account)
     .toLocaleLowerCase()
     .includes(normalizedKeyword)
 }
@@ -525,6 +565,19 @@ function compareAccounts(
 
 function getSortLabel(account: Account) {
   return `${account.providerName} ${account.accountName}`
+}
+
+function buildKeywordText(account: Account) {
+  return [
+    account.providerName,
+    account.accountName,
+    account.accountCategory === 'CREDIT_CARD' ? 'クレジットカード' : '預金 現金 電子マネー',
+    account.creditCardProfile?.paymentAccountId != null
+      ? `payment-account-${account.creditCardProfile.paymentAccountId}`
+      : '',
+  ]
+    .join(' ')
+    .trim()
 }
 
 function formatPaymentAccountName(
