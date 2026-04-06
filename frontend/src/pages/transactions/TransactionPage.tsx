@@ -828,6 +828,12 @@ export function TransactionPage() {
     setTransactionForm({ ...lastSubmittedTransactionForm })
   }
 
+  function resetTransactionFilters() {
+    setTransactionFilterType('ALL')
+    setTransactionFilterAccountId(0)
+    setTransactionFilterKeyword('')
+  }
+
   async function handleDeleteTransaction(transaction: Transaction) {
     const confirmed = window.confirm(
       transaction.transferGroupId
@@ -890,6 +896,11 @@ export function TransactionPage() {
       setDeletingAllocationId(null)
     }
   }
+
+  const hasTransactionFilters =
+    transactionFilterType !== 'ALL' ||
+    transactionFilterAccountId !== 0 ||
+    transactionFilterKeyword.trim() !== ''
 
   return (
     <main className="app-shell">
@@ -1393,6 +1404,37 @@ export function TransactionPage() {
                 placeholder="説明・メモ・カテゴリで検索"
               />
             </label>
+          </div>
+          <div className="account-filter-summary" aria-live="polite">
+            <span>表示中 {filteredTransactions.length} 件</span>
+            {transactionFilterType !== 'ALL' ? (
+              <span>
+                種別:{' '}
+                {
+                  transactionFilterOptions.find((option) => option.value === transactionFilterType)
+                    ?.label
+                }
+              </span>
+            ) : null}
+            {transactionFilterAccountId !== 0 ? (
+              <span>
+                口座:{' '}
+                {accounts.find((account) => account.accountId === transactionFilterAccountId)
+                  ?.accountName ?? '未選択'}
+              </span>
+            ) : null}
+            {transactionFilterKeyword.trim() !== '' ? (
+              <span>キーワード: {transactionFilterKeyword.trim()}</span>
+            ) : null}
+            {hasTransactionFilters ? (
+              <button
+                type="button"
+                className="action-button transaction-filter-reset"
+                onClick={resetTransactionFilters}
+              >
+                条件をクリア
+              </button>
+            ) : null}
           </div>
           <div className="transaction-list">
             {filteredTransactions.length === 0 ? (

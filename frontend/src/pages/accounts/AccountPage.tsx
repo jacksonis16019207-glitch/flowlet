@@ -357,42 +357,8 @@ export function AccountPage() {
         </div>
       </section>
 
-      <section className="content-grid management-focus-grid">
-        <section className="panel management-focus-panel">
-          <div className="panel-heading">
-            <p className="eyebrow">Today Focus</p>
-            <h2>一覧で押さえるポイント</h2>
-          </div>
-          <div className="dashboard-focus-list">
-            <article className="dashboard-focus-item">
-              <span>一覧表示件数</span>
-              <strong>{filteredAccounts.length}</strong>
-              <p>検索、状態フィルター、並び替えで今日見る口座だけに絞れます。</p>
-            </article>
-            <article className="dashboard-focus-item">
-              <span>表示内訳</span>
-              <strong>
-                {operationalAccounts.length} / {creditCardAccounts.length}
-              </strong>
-              <p>左から順に、預金・現金系口座数とクレジットカード数です。</p>
-            </article>
-            <article className="dashboard-focus-item">
-              <span>状態内訳</span>
-              <strong>
-                {visibleActiveCount} / {visibleInactiveCount}
-              </strong>
-              <p>左から順に、有効口座数と停止口座数です。</p>
-            </article>
-            <article className="dashboard-focus-item">
-              <span>選択中</span>
-              <strong>{selectedAccount?.accountName ?? '未選択'}</strong>
-              <p>一覧から詳細を見ると、確認対象をそのまま下の詳細カードに固定できます。</p>
-            </article>
-          </div>
-        </section>
-      </section>
-
       <section className="content-grid account-overview-grid">
+
         <section
           id="selected-account-detail"
           className={`panel account-detail-panel ${mobileDetailVisible ? 'mobile-detail-visible' : 'mobile-detail-hidden'}`}

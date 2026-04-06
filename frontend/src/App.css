@@ -417,6 +417,25 @@
   margin: 0 auto 24px;
 }
 
+.transaction-action-panel .panel-heading {
+  align-items: start;
+  gap: 16px;
+}
+
+.transaction-action-heading h2 {
+  margin: 0;
+}
+
+.transaction-action-row {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.transaction-action-summary {
+  display: none;
+}
+
 .transaction-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -541,10 +560,38 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 20px;
   align-items: end;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 248, 239, 0.62);
+  border: 1px solid rgba(139, 94, 52, 0.1);
+}
+
+.transaction-filter-grid label {
+  display: grid;
+  gap: 8px;
+  color: #3e3124;
+  font-size: 0;
+  font-weight: 600;
+}
+
+.transaction-filter-grid label > span {
+  color: #7a6b5c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.transaction-filter-grid label > select,
+.transaction-filter-grid label > input {
+  font-size: 16px;
 }
 
 .transaction-filter-keyword {
   grid-column: 1 / -1;
+}
+
+.transaction-filter-reset {
+  margin-left: auto;
 }
 
 .transaction-list {
@@ -1527,6 +1574,10 @@
 
   .transaction-filter-grid {
     grid-template-columns: 1fr;
+  }
+
+  .transaction-filter-reset {
+    margin-left: 0;
   }
 
   .transaction-detail-panel {
