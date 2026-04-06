@@ -16,6 +16,7 @@ public final class TransactionEntityMapper {
             entity.getCategoryId(),
             entity.getSubcategoryId(),
             entity.getTransactionType(),
+            entity.getCashflowTreatment(),
             entity.getTransactionDate(),
             entity.getAmount(),
             entity.getDescription(),
@@ -34,6 +35,7 @@ public final class TransactionEntityMapper {
         entity.setCategoryId(transaction.categoryId());
         entity.setSubcategoryId(transaction.subcategoryId());
         entity.setTransactionType(transaction.transactionType());
+        entity.setCashflowTreatment(transaction.cashflowTreatment());
         entity.setTransactionDate(transaction.transactionDate());
         entity.setAmount(transaction.amount());
         entity.setDescription(transaction.description());

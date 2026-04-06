@@ -12,6 +12,7 @@ import com.example.flowlet.infrastructure.jpa.category.entity.CategoryEntity;
 import com.example.flowlet.infrastructure.jpa.category.entity.SubcategoryEntity;
 import com.example.flowlet.infrastructure.jpa.category.repository.SpringDataCategoryRepository;
 import com.example.flowlet.infrastructure.jpa.category.repository.SpringDataSubcategoryRepository;
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.Transaction;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 import com.example.flowlet.transaction.domain.repository.GoalBucketAllocationRepository;
@@ -112,6 +113,7 @@ class DashboardCategoryCashflowControllerTest {
             salary.getCategoryId(),
             salarySubcategory.getSubcategoryId(),
             TransactionType.INCOME,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 2, 20),
             BigDecimal.valueOf(280000),
             "salary",
@@ -127,6 +129,7 @@ class DashboardCategoryCashflowControllerTest {
             bonus.getCategoryId(),
             bonusSubcategory.getSubcategoryId(),
             TransactionType.INCOME,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 3, 5),
             BigDecimal.valueOf(50000),
             "bonus",
@@ -142,6 +145,7 @@ class DashboardCategoryCashflowControllerTest {
             food.getCategoryId(),
             foodSubcategory.getSubcategoryId(),
             TransactionType.EXPENSE,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 3, 10),
             BigDecimal.valueOf(35000),
             "food",
@@ -157,6 +161,7 @@ class DashboardCategoryCashflowControllerTest {
             housing.getCategoryId(),
             housingSubcategory.getSubcategoryId(),
             TransactionType.EXPENSE,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 3, 22),
             BigDecimal.valueOf(72000),
             "housing",
@@ -172,6 +177,7 @@ class DashboardCategoryCashflowControllerTest {
             housing.getCategoryId(),
             housingSubcategory.getSubcategoryId(),
             TransactionType.EXPENSE,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 3, 23),
             BigDecimal.valueOf(11111),
             "next period",
@@ -199,6 +205,147 @@ class DashboardCategoryCashflowControllerTest {
             .andExpect(jsonPath("$.expenseCategories[1].amount").value(35000))
             .andExpect(jsonPath("$.totals.income").value(330000))
             .andExpect(jsonPath("$.totals.expense").value(107000));
+    }
+
+    @Test
+    void getCategoryCashflowReflectsCashflowTreatmentOverrides() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        appSettingRepository.save(new AppSetting(
+            1L,
+            1,
+            PaymentDateAdjustmentRule.NEXT_BUSINESS_DAY,
+            now,
+            now
+        ));
+
+        Account main = accountRepository.save(new Account(
+            null,
+            "MUFG",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.valueOf(100000),
+            true,
+            10,
+            now,
+            now
+        ));
+        Account savings = accountRepository.save(new Account(
+            null,
+            "MUFG",
+            "Savings",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.valueOf(50000),
+            true,
+            20,
+            now,
+            now
+        ));
+
+        CategoryEntity salary = saveCategory("給与", com.example.flowlet.category.domain.model.CategoryType.INCOME, 10);
+        CategoryEntity food = saveCategory("食費", com.example.flowlet.category.domain.model.CategoryType.EXPENSE, 20);
+        CategoryEntity transfer = saveCategory("口座振替", com.example.flowlet.category.domain.model.CategoryType.TRANSFER, 30);
+        SubcategoryEntity salarySubcategory = saveSubcategory(salary.getCategoryId(), "基本給");
+        SubcategoryEntity foodSubcategory = saveSubcategory(food.getCategoryId(), "外食");
+        SubcategoryEntity transferSubcategory = saveSubcategory(transfer.getCategoryId(), "資金移動");
+
+        transactionRepository.save(new Transaction(
+            null,
+            main.accountId(),
+            null,
+            salary.getCategoryId(),
+            salarySubcategory.getSubcategoryId(),
+            TransactionType.INCOME,
+            CashflowTreatment.IGNORE,
+            LocalDate.of(2026, 2, 1),
+            BigDecimal.valueOf(100000),
+            "ignored salary",
+            null,
+            null,
+            now,
+            now
+        ));
+        transactionRepository.save(new Transaction(
+            null,
+            main.accountId(),
+            null,
+            food.getCategoryId(),
+            foodSubcategory.getSubcategoryId(),
+            TransactionType.EXPENSE,
+            CashflowTreatment.INCOME,
+            LocalDate.of(2026, 2, 2),
+            BigDecimal.valueOf(4000),
+            "expense as income",
+            null,
+            null,
+            now,
+            now
+        ));
+        transactionRepository.save(new Transaction(
+            null,
+            savings.accountId(),
+            null,
+            transfer.getCategoryId(),
+            transferSubcategory.getSubcategoryId(),
+            TransactionType.TRANSFER_IN,
+            CashflowTreatment.INCOME,
+            LocalDate.of(2026, 2, 3),
+            BigDecimal.valueOf(25000),
+            "transfer as income",
+            null,
+            java.util.UUID.randomUUID(),
+            now,
+            now
+        ));
+        transactionRepository.save(new Transaction(
+            null,
+            main.accountId(),
+            null,
+            transfer.getCategoryId(),
+            transferSubcategory.getSubcategoryId(),
+            TransactionType.TRANSFER_OUT,
+            CashflowTreatment.EXPENSE,
+            LocalDate.of(2026, 2, 3),
+            BigDecimal.valueOf(25000),
+            "transfer as expense",
+            null,
+            java.util.UUID.randomUUID(),
+            now,
+            now
+        ));
+        transactionRepository.save(new Transaction(
+            null,
+            main.accountId(),
+            null,
+            food.getCategoryId(),
+            foodSubcategory.getSubcategoryId(),
+            TransactionType.EXPENSE,
+            CashflowTreatment.AUTO,
+            LocalDate.of(2026, 2, 4),
+            BigDecimal.valueOf(7000),
+            "normal expense",
+            null,
+            null,
+            now,
+            now
+        ));
+
+        mockMvc.perform(get("/api/dashboard/category-cashflow")
+                .param("targetMonth", "2026-02"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.incomeCategories.length()").value(2))
+            .andExpect(jsonPath("$.incomeCategories[0].categoryName").value("口座振替"))
+            .andExpect(jsonPath("$.incomeCategories[0].amount").value(25000))
+            .andExpect(jsonPath("$.incomeCategories[1].categoryName").value("食費"))
+            .andExpect(jsonPath("$.incomeCategories[1].amount").value(4000))
+            .andExpect(jsonPath("$.expenseCategories.length()").value(2))
+            .andExpect(jsonPath("$.expenseCategories[0].categoryName").value("口座振替"))
+            .andExpect(jsonPath("$.expenseCategories[0].amount").value(25000))
+            .andExpect(jsonPath("$.expenseCategories[1].categoryName").value("食費"))
+            .andExpect(jsonPath("$.expenseCategories[1].amount").value(7000))
+            .andExpect(jsonPath("$.totals.income").value(29000))
+            .andExpect(jsonPath("$.totals.expense").value(32000));
     }
 
     @Test

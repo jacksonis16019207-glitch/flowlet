@@ -1,5 +1,6 @@
 package com.example.flowlet.presentation.transaction.dto;
 
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -27,6 +28,8 @@ public class CreateTransactionRequest {
     @NotNull(message = "{validation.transaction.transactionDate.notNull}")
     private LocalDate transactionDate;
 
+    private CashflowTreatment cashflowTreatment;
+
     @NotNull(message = "{validation.transaction.amount.notNull}")
     @DecimalMin(value = "0.01", message = "{validation.transaction.amount.positive}")
     private BigDecimal amount;
@@ -50,6 +53,8 @@ public class CreateTransactionRequest {
     public void setTransactionType(TransactionType transactionType) { this.transactionType = transactionType; }
     public LocalDate getTransactionDate() { return transactionDate; }
     public void setTransactionDate(LocalDate transactionDate) { this.transactionDate = transactionDate; }
+    public CashflowTreatment getCashflowTreatment() { return cashflowTreatment; }
+    public void setCashflowTreatment(CashflowTreatment cashflowTreatment) { this.cashflowTreatment = cashflowTreatment; }
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
     public String getDescription() { return description; }

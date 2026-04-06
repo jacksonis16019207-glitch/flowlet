@@ -67,6 +67,14 @@
 - `transactionType = INCOME` は `incomeCategories` に集計する
 - `transactionType = EXPENSE` は `expenseCategories` に集計する
 - `TRANSFER_IN` / `TRANSFER_OUT` / `GoalBucketAllocation` は集計対象外
+- `Transaction.cashflowTreatment` を優先して収支集計先を決める
+- `cashflowTreatment = AUTO` の場合:
+  - `INCOME` は `incomeCategories`
+  - `EXPENSE` は `expenseCategories`
+  - `TRANSFER_IN` / `TRANSFER_OUT` は集計対象外
+- `cashflowTreatment = IGNORE` は集計対象外
+- `cashflowTreatment = INCOME` はカテゴリ種別に関係なく `incomeCategories` に集計する
+- `cashflowTreatment = EXPENSE` はカテゴリ種別に関係なく `expenseCategories` に集計する
 - 金額降順、同額時は `displayOrder` とカテゴリ名で並べる
 
 ## エラー

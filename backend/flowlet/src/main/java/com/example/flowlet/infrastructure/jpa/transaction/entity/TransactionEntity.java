@@ -1,5 +1,6 @@
 package com.example.flowlet.infrastructure.jpa.transaction.entity;
 
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,6 +41,10 @@ public class TransactionEntity {
     @Column(name = "transaction_type", nullable = false, length = 50)
     private TransactionType transactionType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cashflow_treatment", nullable = false, length = 50)
+    private CashflowTreatment cashflowTreatment;
+
     @Column(name = "transaction_date", nullable = false)
     private LocalDate transactionDate;
 
@@ -73,6 +78,8 @@ public class TransactionEntity {
     public void setSubcategoryId(Long subcategoryId) { this.subcategoryId = subcategoryId; }
     public TransactionType getTransactionType() { return transactionType; }
     public void setTransactionType(TransactionType transactionType) { this.transactionType = transactionType; }
+    public CashflowTreatment getCashflowTreatment() { return cashflowTreatment; }
+    public void setCashflowTreatment(CashflowTreatment cashflowTreatment) { this.cashflowTreatment = cashflowTreatment; }
     public LocalDate getTransactionDate() { return transactionDate; }
     public void setTransactionDate(LocalDate transactionDate) { this.transactionDate = transactionDate; }
     public BigDecimal getAmount() { return amount; }

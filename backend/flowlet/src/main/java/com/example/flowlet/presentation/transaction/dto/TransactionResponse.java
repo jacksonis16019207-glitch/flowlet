@@ -1,5 +1,6 @@
 package com.example.flowlet.presentation.transaction.dto;
 
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.Transaction;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 
@@ -19,6 +20,7 @@ public record TransactionResponse(
     Long subcategoryId,
     String subcategoryName,
     TransactionType transactionType,
+    CashflowTreatment cashflowTreatment,
     LocalDate transactionDate,
     BigDecimal amount,
     String description,
@@ -45,6 +47,7 @@ public record TransactionResponse(
             transaction.subcategoryId(),
             subcategoryName,
             transaction.transactionType(),
+            transaction.cashflowTreatment(),
             transaction.transactionDate(),
             transaction.amount(),
             transaction.description(),

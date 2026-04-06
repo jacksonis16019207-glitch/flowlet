@@ -30,6 +30,7 @@ import {
   updateTransaction,
 } from '../../features/transaction/api/transactionApi'
 import type {
+  CashflowTreatment,
   CreateGoalBucketAllocationsInput,
   CreateTransactionInput,
   CreateTransferInput,
@@ -52,6 +53,7 @@ const initialTransactionForm: CreateTransactionInput = {
   categoryId: 0,
   subcategoryId: null,
   transactionType: 'EXPENSE',
+  cashflowTreatment: 'AUTO',
   transactionDate: today,
   amount: '',
   description: '',
@@ -65,10 +67,19 @@ const initialTransferForm: CreateTransferInput = {
   categoryId: 0,
   subcategoryId: null,
   transactionDate: today,
+  outgoingCashflowTreatment: 'AUTO',
+  incomingCashflowTreatment: 'AUTO',
   amount: '',
   description: '',
   note: '',
 }
+
+const cashflowTreatmentOptions: { value: CashflowTreatment; label: string }[] = [
+  { value: 'AUTO', label: '自動' },
+  { value: 'IGNORE', label: '収支に含めない' },
+  { value: 'INCOME', label: '収入として扱う' },
+  { value: 'EXPENSE', label: '支出として扱う' },
+]
 
 type AllocationDraft = { toGoalBucketId: number; value: string }
 type BatchTransactionDraft = {
@@ -482,6 +493,8 @@ export function TransactionPage() {
         note: '',
         fromGoalBucketId: null,
         subcategoryId: null,
+        outgoingCashflowTreatment: 'AUTO',
+        incomingCashflowTreatment: 'AUTO',
       }))
       setTransferAllocationDrafts([])
     } catch (error) {
@@ -606,6 +619,7 @@ export function TransactionPage() {
       categoryId: transaction.categoryId,
       subcategoryId: transaction.subcategoryId,
       transactionType: transaction.transactionType as CreateTransactionInput['transactionType'],
+      cashflowTreatment: transaction.cashflowTreatment,
       transactionDate: transaction.transactionDate,
       amount: transaction.amount,
       description: transaction.description,
@@ -633,6 +647,7 @@ export function TransactionPage() {
       categoryId: transaction.categoryId,
       subcategoryId: transaction.subcategoryId,
       transactionType: transaction.transactionType,
+      cashflowTreatment: transaction.cashflowTreatment,
       transactionDate: transaction.transactionDate,
       amount: transaction.amount,
       description: transaction.description,
@@ -925,6 +940,42 @@ export function TransactionPage() {
                 {transferSubcategories.map((subcategory) => (
                   <option key={subcategory.subcategoryId} value={subcategory.subcategoryId}>
                     {subcategory.subcategoryName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              振替元の収支集計
+              <select
+                value={transferForm.outgoingCashflowTreatment}
+                onChange={(event) =>
+                  setTransferForm((current) => ({
+                    ...current,
+                    outgoingCashflowTreatment: event.target.value as CashflowTreatment,
+                  }))
+                }
+              >
+                {cashflowTreatmentOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              振替先の収支集計
+              <select
+                value={transferForm.incomingCashflowTreatment}
+                onChange={(event) =>
+                  setTransferForm((current) => ({
+                    ...current,
+                    incomingCashflowTreatment: event.target.value as CashflowTreatment,
+                  }))
+                }
+              >
+                {cashflowTreatmentOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
@@ -1406,6 +1457,24 @@ function CommonTransactionFields({
           {goalBuckets.map((goalBucket) => (
             <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>
               {goalBucket.bucketName}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        収支集計
+        <select
+          value={form.cashflowTreatment}
+          onChange={(event) =>
+            setForm((current) => ({
+              ...current,
+              cashflowTreatment: event.target.value as CashflowTreatment,
+            }))
+          }
+        >
+          {cashflowTreatmentOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>

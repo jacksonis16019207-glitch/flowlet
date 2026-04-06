@@ -17,6 +17,7 @@ import com.example.flowlet.infrastructure.jpa.transaction.repository.SpringDataT
 import com.example.flowlet.presentation.transaction.dto.CreateTransactionRequest;
 import com.example.flowlet.presentation.transaction.dto.DeleteTransactionResponse;
 import com.example.flowlet.presentation.transaction.dto.TransactionResponse;
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.Transaction;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 import com.example.flowlet.transaction.domain.repository.TransactionRepository;
@@ -114,6 +115,7 @@ public class TransactionService {
             request.getCategoryId(),
             request.getSubcategoryId(),
             request.getTransactionType(),
+            resolveCashflowTreatment(request.getCashflowTreatment()),
             request.getTransactionDate(),
             request.getAmount(),
             request.getDescription().trim(),
@@ -157,6 +159,7 @@ public class TransactionService {
             request.getCategoryId(),
             request.getSubcategoryId(),
             request.getTransactionType(),
+            resolveCashflowTreatment(request.getCashflowTreatment()),
             request.getTransactionDate(),
             request.getAmount(),
             request.getDescription().trim(),
@@ -299,6 +302,10 @@ public class TransactionService {
             case EXPENSE -> CategoryType.EXPENSE;
             case TRANSFER_OUT, TRANSFER_IN -> CategoryType.TRANSFER;
         };
+    }
+
+    private CashflowTreatment resolveCashflowTreatment(CashflowTreatment cashflowTreatment) {
+        return cashflowTreatment == null ? CashflowTreatment.AUTO : cashflowTreatment;
     }
 
     private String normalizeNote(String note) {

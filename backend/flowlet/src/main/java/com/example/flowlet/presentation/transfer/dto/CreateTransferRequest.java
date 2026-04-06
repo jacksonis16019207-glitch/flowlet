@@ -1,5 +1,6 @@
 package com.example.flowlet.presentation.transfer.dto;
 
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,6 +27,10 @@ public class CreateTransferRequest {
     @NotNull(message = "{validation.transfer.transactionDate.notNull}")
     private LocalDate transactionDate;
 
+    private CashflowTreatment outgoingCashflowTreatment;
+
+    private CashflowTreatment incomingCashflowTreatment;
+
     @NotNull(message = "{validation.transfer.amount.notNull}")
     @DecimalMin(value = "0.01", message = "{validation.transaction.amount.positive}")
     private BigDecimal amount;
@@ -49,6 +54,10 @@ public class CreateTransferRequest {
     public void setSubcategoryId(Long subcategoryId) { this.subcategoryId = subcategoryId; }
     public LocalDate getTransactionDate() { return transactionDate; }
     public void setTransactionDate(LocalDate transactionDate) { this.transactionDate = transactionDate; }
+    public CashflowTreatment getOutgoingCashflowTreatment() { return outgoingCashflowTreatment; }
+    public void setOutgoingCashflowTreatment(CashflowTreatment outgoingCashflowTreatment) { this.outgoingCashflowTreatment = outgoingCashflowTreatment; }
+    public CashflowTreatment getIncomingCashflowTreatment() { return incomingCashflowTreatment; }
+    public void setIncomingCashflowTreatment(CashflowTreatment incomingCashflowTreatment) { this.incomingCashflowTreatment = incomingCashflowTreatment; }
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
     public String getDescription() { return description; }

@@ -6,6 +6,8 @@ export type TransactionType =
   | 'TRANSFER_OUT'
   | 'TRANSFER_IN'
 
+export type CashflowTreatment = 'AUTO' | 'IGNORE' | 'INCOME' | 'EXPENSE'
+
 export type Transaction = {
   transactionId: number
   accountId: number
@@ -17,6 +19,7 @@ export type Transaction = {
   subcategoryId: number | null
   subcategoryName: string | null
   transactionType: TransactionType
+  cashflowTreatment: CashflowTreatment
   transactionDate: string
   amount: string
   description: string
@@ -48,6 +51,7 @@ export type CreateTransactionInput = {
   categoryId: number
   subcategoryId: number | null
   transactionType: Extract<TransactionType, 'INCOME' | 'EXPENSE'>
+  cashflowTreatment: CashflowTreatment
   transactionDate: string
   amount: string
   description: string
@@ -61,6 +65,8 @@ export type CreateTransferInput = {
   categoryId: number
   subcategoryId: number | null
   transactionDate: string
+  outgoingCashflowTreatment: CashflowTreatment
+  incomingCashflowTreatment: CashflowTreatment
   amount: string
   description: string
   note: string

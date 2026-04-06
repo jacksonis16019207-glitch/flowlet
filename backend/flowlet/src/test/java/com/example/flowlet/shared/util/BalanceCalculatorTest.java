@@ -10,6 +10,7 @@ import com.example.flowlet.infrastructure.jpa.category.entity.CategoryEntity;
 import com.example.flowlet.infrastructure.jpa.category.entity.SubcategoryEntity;
 import com.example.flowlet.infrastructure.jpa.category.repository.SpringDataCategoryRepository;
 import com.example.flowlet.infrastructure.jpa.category.repository.SpringDataSubcategoryRepository;
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.GoalBucketAllocation;
 import com.example.flowlet.transaction.domain.model.Transaction;
 import com.example.flowlet.transaction.domain.model.TransactionType;
@@ -82,6 +83,7 @@ class BalanceCalculatorTest {
             incomeCategory.getCategoryId(),
             incomeSubcategory.getSubcategoryId(),
             TransactionType.INCOME,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 4, 1),
             BigDecimal.valueOf(50000),
             "給料",
@@ -97,6 +99,7 @@ class BalanceCalculatorTest {
             expenseCategory.getCategoryId(),
             expenseSubcategory.getSubcategoryId(),
             TransactionType.EXPENSE,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 4, 2),
             BigDecimal.valueOf(20000),
             "生活費",
@@ -112,6 +115,7 @@ class BalanceCalculatorTest {
             transferCategory.getCategoryId(),
             transferSubcategory.getSubcategoryId(),
             TransactionType.TRANSFER_OUT,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 4, 3),
             BigDecimal.valueOf(10000),
             "旅行積立",
@@ -175,6 +179,7 @@ class BalanceCalculatorTest {
             expenseCategory.getCategoryId(),
             expenseSubcategory.getSubcategoryId(),
             TransactionType.EXPENSE,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 4, 1),
             BigDecimal.valueOf(12000),
             "カード利用",
@@ -190,6 +195,7 @@ class BalanceCalculatorTest {
             incomeCategory.getCategoryId(),
             incomeSubcategory.getSubcategoryId(),
             TransactionType.INCOME,
+            CashflowTreatment.AUTO,
             LocalDate.of(2026, 4, 2),
             BigDecimal.valueOf(5000),
             "返済",

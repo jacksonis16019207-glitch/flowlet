@@ -4,6 +4,7 @@ import com.example.flowlet.account.exception.BusinessRuleException;
 import com.example.flowlet.presentation.transaction.dto.TransactionResponse;
 import com.example.flowlet.presentation.transfer.dto.CreateTransferRequest;
 import com.example.flowlet.presentation.transfer.dto.TransferResponse;
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.Transaction;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 import com.example.flowlet.transaction.domain.repository.TransactionRepository;
@@ -65,6 +66,7 @@ public class TransferApplicationService {
                 request.getCategoryId(),
                 request.getSubcategoryId(),
                 TransactionType.TRANSFER_OUT,
+                resolveCashflowTreatment(request.getOutgoingCashflowTreatment()),
                 request.getTransactionDate(),
                 request.getAmount(),
                 request.getDescription().trim(),
@@ -80,6 +82,7 @@ public class TransferApplicationService {
                 request.getCategoryId(),
                 request.getSubcategoryId(),
                 TransactionType.TRANSFER_IN,
+                resolveCashflowTreatment(request.getIncomingCashflowTreatment()),
                 request.getTransactionDate(),
                 request.getAmount(),
                 request.getDescription().trim(),
@@ -102,5 +105,9 @@ public class TransferApplicationService {
 
     private String normalizeNote(String note) {
         return note == null || note.isBlank() ? null : note.trim();
+    }
+
+    private CashflowTreatment resolveCashflowTreatment(CashflowTreatment cashflowTreatment) {
+        return cashflowTreatment == null ? CashflowTreatment.AUTO : cashflowTreatment;
     }
 }

@@ -5,8 +5,8 @@ import com.example.flowlet.appsetting.service.AppSettingService;
 import com.example.flowlet.dashboard.exception.DashboardRequestException;
 import com.example.flowlet.presentation.dashboard.dto.DashboardMonthlyCashflowResponse;
 import com.example.flowlet.shared.time.MonthlyBoundaryService;
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.Transaction;
-import com.example.flowlet.transaction.domain.model.TransactionType;
 import com.example.flowlet.transaction.domain.repository.TransactionRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -49,9 +49,9 @@ public class DashboardMonthlyCashflowService {
                 continue;
             }
 
-            if (transaction.transactionType() == TransactionType.INCOME) {
+            if (transaction.resolvedCashflowTreatment() == CashflowTreatment.INCOME) {
                 totalIncome = totalIncome.add(transaction.amount());
-            } else if (transaction.transactionType() == TransactionType.EXPENSE) {
+            } else if (transaction.resolvedCashflowTreatment() == CashflowTreatment.EXPENSE) {
                 totalExpense = totalExpense.add(transaction.amount());
             }
         }

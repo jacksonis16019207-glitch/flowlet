@@ -110,20 +110,23 @@ class TransactionControllerTest {
         mockMvc.perform(post("/api/transactions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"accountId":%d,"goalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionType":"EXPENSE","transactionDate":"2026-04-01","amount":2800,"description":"ホテル朝食","note":"出張"}
+                    {"accountId":%d,"goalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionType":"EXPENSE","cashflowTreatment":"IGNORE","transactionDate":"2026-04-01","amount":2800,"description":"ホテル朝食","note":"出張"}
                     """.formatted(main.accountId(), expense.getCategoryId(), dine.getSubcategoryId())))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.transactionType").value("EXPENSE"))
+            .andExpect(jsonPath("$.cashflowTreatment").value("IGNORE"))
             .andExpect(jsonPath("$.categoryName").value("食費"));
 
         String transferResponse = mockMvc.perform(post("/api/transfers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"fromAccountId":%d,"toAccountId":%d,"fromGoalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionDate":"2026-04-02","amount":50000,"description":"旅行用口座へ振替","note":"4月積立"}
+                    {"fromAccountId":%d,"toAccountId":%d,"fromGoalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionDate":"2026-04-02","outgoingCashflowTreatment":"IGNORE","incomingCashflowTreatment":"INCOME","amount":50000,"description":"旅行用口座へ振替","note":"4月積立"}
                     """.formatted(main.accountId(), savings.accountId(), transfer.getCategoryId(), transferDetail.getSubcategoryId())))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.outgoingTransaction.transactionType").value("TRANSFER_OUT"))
+            .andExpect(jsonPath("$.outgoingTransaction.cashflowTreatment").value("IGNORE"))
             .andExpect(jsonPath("$.incomingTransaction.transactionType").value("TRANSFER_IN"))
+            .andExpect(jsonPath("$.incomingTransaction.cashflowTreatment").value("INCOME"))
             .andReturn()
             .getResponse()
             .getContentAsString();
@@ -182,7 +185,7 @@ class TransactionControllerTest {
         String transactionResponse = mockMvc.perform(post("/api/transactions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"accountId":%d,"goalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionType":"EXPENSE","transactionDate":"2026-04-01","amount":2800,"description":"朝食","note":"初回"}
+                    {"accountId":%d,"goalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionType":"EXPENSE","cashflowTreatment":"AUTO","transactionDate":"2026-04-01","amount":2800,"description":"朝食","note":"初回"}
                     """.formatted(main.accountId(), expense.getCategoryId(), meal.getSubcategoryId())))
             .andExpect(status().isCreated())
             .andReturn()
@@ -193,16 +196,17 @@ class TransactionControllerTest {
         mockMvc.perform(put("/api/transactions/{transactionId}", transactionId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"accountId":%d,"goalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionType":"EXPENSE","transactionDate":"2026-04-03","amount":3200,"description":"昼食","note":"更新"}
+                    {"accountId":%d,"goalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionType":"EXPENSE","cashflowTreatment":"INCOME","transactionDate":"2026-04-03","amount":3200,"description":"昼食","note":"更新"}
                     """.formatted(main.accountId(), expense.getCategoryId(), meal.getSubcategoryId())))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.description").value("昼食"))
-            .andExpect(jsonPath("$.amount").value(3200));
+            .andExpect(jsonPath("$.amount").value(3200))
+            .andExpect(jsonPath("$.cashflowTreatment").value("INCOME"));
 
         String transferResponse = mockMvc.perform(post("/api/transfers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"fromAccountId":%d,"toAccountId":%d,"fromGoalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionDate":"2026-04-02","amount":50000,"description":"振替テスト","note":"4月"}
+                    {"fromAccountId":%d,"toAccountId":%d,"fromGoalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionDate":"2026-04-02","outgoingCashflowTreatment":"EXPENSE","incomingCashflowTreatment":"IGNORE","amount":50000,"description":"振替テスト","note":"4月"}
                     """.formatted(main.accountId(), savings.accountId(), transfer.getCategoryId(), transferDetail.getSubcategoryId())))
             .andExpect(status().isCreated())
             .andReturn()

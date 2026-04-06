@@ -9,8 +9,8 @@ import com.example.flowlet.presentation.dashboard.dto.DashboardCategoryCashflowC
 import com.example.flowlet.presentation.dashboard.dto.DashboardCategoryCashflowResponse;
 import com.example.flowlet.presentation.dashboard.dto.DashboardCategoryCashflowTotalsResponse;
 import com.example.flowlet.shared.time.MonthlyBoundaryService;
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.model.Transaction;
-import com.example.flowlet.transaction.domain.model.TransactionType;
 import com.example.flowlet.transaction.domain.repository.TransactionRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -60,12 +60,12 @@ public class DashboardCategoryCashflowService {
         Map<Long, BigDecimal> incomeTotals = aggregateCategoryTotals(
             period.periodStartDate(),
             period.periodEndDate(),
-            transaction -> transaction.transactionType() == TransactionType.INCOME
+            transaction -> transaction.resolvedCashflowTreatment() == CashflowTreatment.INCOME
         );
         Map<Long, BigDecimal> expenseTotals = aggregateCategoryTotals(
             period.periodStartDate(),
             period.periodEndDate(),
-            transaction -> transaction.transactionType() == TransactionType.EXPENSE
+            transaction -> transaction.resolvedCashflowTreatment() == CashflowTreatment.EXPENSE
         );
 
         List<DashboardCategoryCashflowCategoryResponse> incomeCategories =

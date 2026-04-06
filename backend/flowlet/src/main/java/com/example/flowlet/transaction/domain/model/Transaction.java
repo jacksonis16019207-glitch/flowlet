@@ -12,6 +12,7 @@ public record Transaction(
     Long categoryId,
     Long subcategoryId,
     TransactionType transactionType,
+    CashflowTreatment cashflowTreatment,
     LocalDate transactionDate,
     BigDecimal amount,
     String description,
@@ -20,4 +21,15 @@ public record Transaction(
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
+    public CashflowTreatment resolvedCashflowTreatment() {
+        if (cashflowTreatment != null && cashflowTreatment != CashflowTreatment.AUTO) {
+            return cashflowTreatment;
+        }
+
+        return switch (transactionType) {
+            case INCOME -> CashflowTreatment.INCOME;
+            case EXPENSE -> CashflowTreatment.EXPENSE;
+            case TRANSFER_OUT, TRANSFER_IN -> CashflowTreatment.IGNORE;
+        };
+    }
 }

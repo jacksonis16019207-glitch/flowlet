@@ -55,6 +55,14 @@
 - `transactionType = INCOME` を収入として集計する
 - `transactionType = EXPENSE` を支出として集計する
 - `TRANSFER_IN` / `TRANSFER_OUT` / `GoalBucketAllocation` は対象外
+- `Transaction.cashflowTreatment` を優先して収支集計対象を決める
+- `cashflowTreatment = AUTO` の場合:
+  - `INCOME` は収入
+  - `EXPENSE` は支出
+  - `TRANSFER_IN` / `TRANSFER_OUT` は対象外
+- `cashflowTreatment = IGNORE` は収支集計対象外
+- `cashflowTreatment = INCOME` は `transactionType` に関係なく収入へ加算する
+- `cashflowTreatment = EXPENSE` は `transactionType` に関係なく支出へ加算する
 
 ## 月初計算ルール
 
