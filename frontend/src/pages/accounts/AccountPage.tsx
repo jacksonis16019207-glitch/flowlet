@@ -825,8 +825,8 @@ export function AccountPage() {
 
       <FormModal
         open={detailModalOpen && selectedAccount != null}
-        title={selectedAccount?.accountName ?? '蜿｣蠎ｧ隧ｳ邏ｰ'}
-        description="蜿｣蠎ｧ縺ｮ谿矩ｫ倥∵ｬ｡蝗樊髪謇墓律縲・GoalBucket縲・髢｢騾｣蜿門ｼ輔ｒ繧｢繝ｼ繝繝ｫ縺ｧ遒ｺ隱阪＠縺ｾ縺吶・"
+        title={selectedAccount?.accountName ?? '口座詳細'}
+        description="口座残高、支払予定、関連するGoalBucketや取引を確認できます。"
         eyebrow="Account Detail"
         panelClassName="modal-panel-xwide"
         onClose={() => setDetailModalOpen(false)}
@@ -835,12 +835,12 @@ export function AccountPage() {
           <article className="account-detail-card">
             <div className="account-card-header">
               <span className={`badge ${selectedAccount.active ? 'active' : 'inactive'}`}>
-                {selectedAccount.active ? '譛牙柑' : '蛛懈ｭ｢'}
+                {selectedAccount.active ? '有効' : '無効'}
               </span>
               <span className="type-chip">
                 {selectedAccount.accountCategory === 'CREDIT_CARD'
-                  ? '繧ｯ繝ｬ繧ｸ繝・ヨ繧ｫ繝ｼ繝・'
-                  : '鬆宣≡繝ｻ迴ｾ驥代↑縺ｩ'}
+                  ? 'クレジットカード'
+                  : '銀行口座・現金など'}
               </span>
             </div>
             <h3>
@@ -853,15 +853,15 @@ export function AccountPage() {
               {selectedAccount.accountCategory === 'CREDIT_CARD' ? (
                 <>
                   <div>
-                    <dt>隲区ｱる｡・</dt>
+                    <dt>利用残高</dt>
                     <dd>{formatMoney(selectedAccount.currentBalance, true)}</dd>
                   </div>
                   <div>
-                    <dt>谺｡縺ｮ謾ｯ謇墓律</dt>
+                    <dt>次の支払日</dt>
                     <dd>{formatNextPaymentDate(selectedAccount)}</dd>
                   </div>
                   <div>
-                    <dt>蠑輔″關ｽ縺ｨ縺怜哨蠎ｧ</dt>
+                    <dt>引き落とし口座</dt>
                     <dd>
                       {formatPaymentAccountName(
                         accounts,
@@ -873,15 +873,15 @@ export function AccountPage() {
               ) : (
                 <>
                   <div>
-                    <dt>迴ｾ蝨ｨ谿矩ｫ・</dt>
+                    <dt>現在残高</dt>
                     <dd>{formatMoney(selectedAccount.currentBalance)}</dd>
                   </div>
                   <div>
-                    <dt>譛ｪ驟榊・</dt>
+                    <dt>未配分</dt>
                     <dd>{formatMoney(selectedAccount.unallocatedBalance)}</dd>
                   </div>
                   <div>
-                    <dt>蛻晄悄谿矩ｫ・</dt>
+                    <dt>初期残高</dt>
                     <dd>{formatMoney(selectedAccount.initialBalance)}</dd>
                   </div>
                 </>
@@ -893,7 +893,7 @@ export function AccountPage() {
                 className="action-button"
                 onClick={() => handleEdit(selectedAccount)}
               >
-                縺薙・蜿｣蠎ｧ繧堤ｷｨ髮・
+                この口座を編集
               </button>
             </div>
 
@@ -903,52 +903,52 @@ export function AccountPage() {
                 <section className="account-detail-section">
                   <div className="section-heading">
                     <div>
-                      <h3>謾ｯ謇輔し繧､繧ｯ繝ｫ</h3>
+                      <h3>支払いサイクル</h3>
                       <p className="section-description">
-                        邱繧∵律縺ｨ謾ｯ謇墓律繧貞渕貅悶↓縲∵ｬ｡蝗樔ｻ･髯阪・莠亥ｮ壹ｒ遒ｺ隱阪〒縺阪∪縺吶・
+                        締め日と支払日、次回以降の請求予定を確認できます。
                       </p>
                     </div>
                   </div>
                   <dl className="balance-pairs compact">
                     <div>
-                      <dt>邱繧∵律</dt>
+                      <dt>締め日</dt>
                       <dd>{selectedBillingSummary.closingDayLabel}</dd>
                     </div>
                     <div>
-                      <dt>謾ｯ謇墓律</dt>
+                      <dt>支払日</dt>
                       <dd>{selectedBillingSummary.paymentDayLabel}</dd>
                     </div>
                     <div>
-                      <dt>谺｡縺ｮ邱繧∵律</dt>
+                      <dt>次の締め日</dt>
                       <dd>{selectedBillingSummary.nextClosingDate}</dd>
                     </div>
                     <div>
-                      <dt>谺｡縺ｮ謾ｯ謇墓律</dt>
+                      <dt>次の支払日</dt>
                       <dd>{selectedBillingSummary.nextPaymentDate}</dd>
                     </div>
                     <div>
-                      <dt>谺｡縲・屓謾ｯ謇墓律</dt>
+                      <dt>次々回支払日</dt>
                       <dd>{selectedBillingSummary.followingPaymentDate}</dd>
                     </div>
                     <div>
-                      <dt>谺｡蝗樊髪謇暮｡・</dt>
+                      <dt>次回請求額</dt>
                       <dd>{selectedBillingSummary.nextPaymentAmount}</dd>
                     </div>
                     <div>
-                      <dt>谺｡縲・屓謾ｯ謇暮｡・</dt>
+                      <dt>次々回請求額</dt>
                       <dd>{selectedBillingSummary.followingPaymentAmount}</dd>
                     </div>
                   </dl>
                   <p className="account-meta-note">
-                    謾ｯ謇暮｡阪・逋ｻ骭ｲ貂医∩縺ｮ繧ｫ繝ｼ繝牙茜逕ｨ螻･豁ｴ縺九ｉ隕九◆隕玖ｾｼ縺ｿ縺ｧ縺吶よ険譖ｿ縺ｫ繧医ｋ霑疲ｸ磯｡阪・蜷ｫ繧√※縺・∪縺帙ｓ縲・
+                    請求額は関連するカード利用取引からの見込み値です。運用上の確認用として使えます。
                   </p>
                 </section>
                 <section className="account-detail-section">
                   <div className="section-heading">
                     <div>
-                      <h3>髢｢騾｣蜿門ｼ・</h3>
+                      <h3>関連取引</h3>
                       <p className="section-description">
-                        逶ｴ霑代・繧ｫ繝ｼ繝牙茜逕ｨ繧呈凾邉ｻ蛻励〒遒ｺ隱阪〒縺阪∪縺吶・
+                        この口座に紐づく最近の取引を確認できます。
                       </p>
                     </div>
                   </div>
@@ -962,14 +962,14 @@ export function AccountPage() {
                 <section className="account-detail-section">
                   <div className="section-heading">
                     <div>
-                      <h3>邏舌▼縺冗岼逧・挨蜿｣蠎ｧ</h3>
+                      <h3>紐づくGoalBucket</h3>
                       <p className="section-description">
-                        縺薙・蜿｣蠎ｧ驟堺ｸ九〒邂｡逅・＠縺ｦ縺・ｋ谿矩ｫ倥・縺ｾ縺ｨ縺ｾ繧翫〒縺吶・
+                        この口座の中で管理している目的別口座の残高を確認できます。
                       </p>
                     </div>
                   </div>
                   {selectedGoalBuckets.length === 0 ? (
-                    <p className="status">邏舌▼縺冗岼逧・挨蜿｣蠎ｧ縺ｯ縺ｾ縺縺ゅｊ縺ｾ縺帙ｓ縲・</p>
+                    <p className="status">紐づくGoalBucketはありません。</p>
                   ) : (
                     <div className="detail-chip-list">
                       {selectedGoalBuckets.map((goalBucket) => (
@@ -985,14 +985,14 @@ export function AccountPage() {
                 <section className="account-detail-section">
                   <div className="section-heading">
                     <div>
-                      <h3>蠑輔″關ｽ縺ｨ縺怜ｯｾ雎｡繧ｫ繝ｼ繝・</h3>
+                      <h3>関連クレジットカード</h3>
                       <p className="section-description">
-                        縺薙・蜿｣蠎ｧ縺九ｉ謾ｯ謇輔≧險ｭ螳壹・繧ｯ繝ｬ繧ｸ繝・ヨ繧ｫ繝峨→縲∵ｬ｡蝗槫ｼ輔″關ｽ縺ｨ縺嶺ｺ亥ｮ壹ｒ遒ｺ隱阪〒縺阪∪縺吶・
+                        この口座を引き落とし先にしているカードの次回支払予定を確認できます。
                       </p>
                     </div>
                   </div>
                   {selectedLinkedCreditCards.length === 0 ? (
-                    <p className="status">縺薙・蜿｣蠎ｧ繧貞ｼ輔″關ｽ縺ｨ縺怜・縺ｫ縺励※縺・ｋ繧ｫ繝ｼ繝峨・縺ゅｊ縺ｾ縺帙ｓ縲・</p>
+                    <p className="status">関連するクレジットカードはありません。</p>
                   ) : (
                     <div className="detail-list">
                       {selectedLinkedCreditCards.map((creditCard) => (
@@ -1003,11 +1003,11 @@ export function AccountPage() {
                           </div>
                           <dl className="detail-inline-stats">
                             <div>
-                              <dt>谺｡蝗樊髪謇墓律</dt>
+                              <dt>次回支払日</dt>
                               <dd>{formatNextPaymentDate(creditCard)}</dd>
                             </div>
                             <div>
-                              <dt>谺｡蝗槫ｼ輔″關ｽ縺ｨ縺苓ｦ玖ｾｼ縺ｿ</dt>
+                              <dt>次回請求見込み</dt>
                               <dd>{formatMoney(creditCard.currentBalance, true)}</dd>
                             </div>
                           </dl>
@@ -1017,14 +1017,14 @@ export function AccountPage() {
                               className="action-button secondary"
                               onClick={() => handleSelectAccount(creditCard)}
                             >
-                              隧ｳ邏ｰ繧定ｦ九ｋ
+                              詳細を見る
                             </button>
                             <button
                               type="button"
                               className="action-button"
                               onClick={() => handleEdit(creditCard)}
                             >
-                              縺薙・繧ｫ繝ｼ繝峨ｒ邱ｨ髮・
+                              このカードを編集
                             </button>
                           </div>
                         </article>
@@ -1036,9 +1036,9 @@ export function AccountPage() {
                 <section className="account-detail-section">
                   <div className="section-heading">
                     <div>
-                      <h3>髢｢騾｣蜿門ｼ・</h3>
+                      <h3>関連取引</h3>
                       <p className="section-description">
-                        譛霑代・蜈･蜃ｺ驥代ｄ謖ｯ譖ｿ繧堤｢ｺ隱阪〒縺阪∪縺吶・
+                        最近の入出金や振替を確認できます。
                       </p>
                     </div>
                   </div>

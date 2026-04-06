@@ -764,19 +764,19 @@ export function TransactionPage() {
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>逋ｻ骭ｲ繧｢繧ｯ繧ｷ繝ｧ繝ｳ</h2>
+          <h2>取引アクション</h2>
           <button type="button" onClick={() => setEntryModalOpen(true)}>
-            譁ｰ隕上ｒ逋ｻ骭ｲ
+            新規登録
           </button>
         </div>
         <p className="section-description">
-          騾壼ｸｸ蜿門ｼ・・謖ｯ譖ｿ縲・驟榊・繧堤悽縺倥Γ繝ｼ繝繝ｫ縺ｧ蛻・￠縺ｾ縺吶・
+          通常取引、振替、配分はモーダルで登録できます。
         </p>
       </section>
 
       <FormModal
         open={entryModalOpen}
-        title={editingTransactionId != null ? '騾壼ｸｸ蜿門ｼ輔ｒ邱ｨ髮・' : currentTabMeta.label}
+        title={editingTransactionId != null ? '取引を編集' : currentTabMeta.label}
         description={currentTabMeta.description}
         eyebrow="Transaction Entry"
         panelClassName="modal-panel-xwide"
@@ -1433,7 +1433,7 @@ export function TransactionPage() {
                       setAllocationDetailOpen(true)
                     }}
                   >
-                    隧ｳ邏ｰ
+                    詳細
                   </button>
                   <button
                     type="button"
@@ -1461,8 +1461,8 @@ export function TransactionPage() {
 
       <FormModal
         open={transactionDetailOpen && selectedTransaction != null}
-        title={selectedTransaction?.description ?? '蜿門ｼ取律隧ｳ邏ｰ'}
-        description="蜿門ｼ墓律縲・蜿｣蠎ｧ縲・GoalBucket縲・蛻､譁ｭ譎ゅｒ遒ｺ隱阪〒縺阪∪縺吶・"
+        title={selectedTransaction?.description ?? '取引詳細'}
+        description="取引日、口座、GoalBucket、更新日時を確認できます。"
         eyebrow="Transaction Detail"
         panelClassName="modal-panel-wide"
         onClose={() => setTransactionDetailOpen(false)}
@@ -1476,45 +1476,45 @@ export function TransactionPage() {
             </div>
             <dl className="detail-list">
               <div className="detail-list-item">
-                <dt>蜿門ｼ慕ｨｮ蛻･</dt>
+                <dt>取引種別</dt>
                 <dd>{formatTransactionTypeLabel(selectedTransaction.transactionType)}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>蜿｣蠎ｧ</dt>
-                <dd>{selectedTransaction.accountName ?? '譛ｪ險ｭ螳・'}</dd>
+                <dt>口座</dt>
+                <dd>{selectedTransaction.accountName ?? '未設定'}</dd>
               </div>
               <div className="detail-list-item">
                 <dt>GoalBucket</dt>
-                <dd>{selectedTransaction.goalBucketName ?? '譛ｪ驟榊・'}</dd>
+                <dd>{selectedTransaction.goalBucketName ?? '未設定'}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>繧ｫ繝・ざ繝ｪ</dt>
+                <dt>カテゴリ</dt>
                 <dd>
-                  {selectedTransaction.categoryName ?? '譛ｪ險ｭ螳・'}
+                  {selectedTransaction.categoryName ?? '未設定'}
                   {selectedTransaction.subcategoryName
                     ? ` / ${selectedTransaction.subcategoryName}`
                     : ''}
                 </dd>
               </div>
               <div className="detail-list-item">
-                <dt>蜿門ｼ墓律</dt>
+                <dt>取引日</dt>
                 <dd>{formatDateLabel(selectedTransaction.transactionDate)}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>繝｡繝｢</dt>
-                <dd>{selectedTransaction.note?.trim() || '縺ｪ縺・'}</dd>
+                <dt>メモ</dt>
+                <dd>{selectedTransaction.note?.trim() || 'なし'}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>菴懈・譌･譎・</dt>
+                <dt>作成日時</dt>
                 <dd>{formatDateTimeLabel(selectedTransaction.createdAt)}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>譖ｴ譁ｰ譌･譎・</dt>
+                <dt>更新日時</dt>
                 <dd>{formatDateTimeLabel(selectedTransaction.updatedAt)}</dd>
               </div>
               {selectedTransaction.transferGroupId ? (
                 <div className="detail-list-item">
-                  <dt>謖ｯ譖ｿ繧ｰ繝ｫ繝ｼ繝・</dt>
+                  <dt>振替グループ</dt>
                   <dd>{selectedTransaction.transferGroupId}</dd>
                 </div>
               ) : null}
@@ -1526,7 +1526,7 @@ export function TransactionPage() {
                 disabled={Boolean(selectedTransaction.transferGroupId)}
                 onClick={() => handleCopyTransaction(selectedTransaction)}
               >
-                繧ｳ繝斐・縺励※譁ｰ隕丈ｽ懈・
+                コピーして新規作成
               </button>
               <button
                 type="button"
@@ -1534,7 +1534,7 @@ export function TransactionPage() {
                 disabled={Boolean(selectedTransaction.transferGroupId)}
                 onClick={() => handleEditTransaction(selectedTransaction)}
               >
-                邱ｨ髮・
+                編集
               </button>
               <button
                 type="button"
@@ -1543,8 +1543,8 @@ export function TransactionPage() {
                 onClick={() => void handleDeleteTransaction(selectedTransaction)}
               >
                 {deletingTransactionId === selectedTransaction.transactionId
-                  ? '蜑企勁荳ｭ...'
-                  : '蜑企勁'}
+                  ? '削除中...'
+                  : '削除'}
               </button>
             </div>
           </div>
@@ -1553,8 +1553,8 @@ export function TransactionPage() {
 
       <FormModal
         open={allocationDetailOpen && selectedAllocation != null}
-        title={selectedAllocation?.description ?? '驟榊・隧ｳ邏ｰ'}
-        description="驟榊・譌･縲・遘ｻ蜍慕先棡縲・謖ｯ譖ｿ騾｣謳ｺ縺ｪ縺ｩ繧定ｦ九ｋ繝｢繝ｼ繝繝ｫ縺ｧ縺吶・"
+        title={selectedAllocation?.description ?? '配分詳細'}
+        description="配分日、移動元と移動先、関連する振替情報を確認できます。"
         eyebrow="Allocation Detail"
         panelClassName="modal-panel-wide"
         onClose={() => setAllocationDetailOpen(false)}
@@ -1568,32 +1568,32 @@ export function TransactionPage() {
             </div>
             <dl className="detail-list">
               <div className="detail-list-item">
-                <dt>驟榊・譌･</dt>
+                <dt>配分日</dt>
                 <dd>{formatDateLabel(selectedAllocation.allocationDate)}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>驟榊・蜈・</dt>
-                <dd>{selectedAllocation.fromGoalBucketName ?? '譛ｪ驟榊・'}</dd>
+                <dt>配分元</dt>
+                <dd>{selectedAllocation.fromGoalBucketName ?? '未配分'}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>驟榊・蜈・蜈亥・</dt>
-                <dd>{selectedAllocation.toGoalBucketName ?? '譛ｪ驟榊・'}</dd>
+                <dt>配分先</dt>
+                <dd>{selectedAllocation.toGoalBucketName ?? '未配分'}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>繝｡繝｢</dt>
-                <dd>{selectedAllocation.note?.trim() || '縺ｪ縺・'}</dd>
+                <dt>メモ</dt>
+                <dd>{selectedAllocation.note?.trim() || 'なし'}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>菴懈・譌･譎・</dt>
+                <dt>作成日時</dt>
                 <dd>{formatDateTimeLabel(selectedAllocation.createdAt)}</dd>
               </div>
               <div className="detail-list-item">
-                <dt>譖ｴ譁ｰ譌･譎・</dt>
+                <dt>更新日時</dt>
                 <dd>{formatDateTimeLabel(selectedAllocation.updatedAt)}</dd>
               </div>
               {selectedAllocation.linkedTransferGroupId ? (
                 <div className="detail-list-item">
-                  <dt>謖ｯ譖ｿ騾｣謳ｺ</dt>
+                  <dt>振替連携</dt>
                   <dd>{selectedAllocation.linkedTransferGroupId}</dd>
                 </div>
               ) : null}
@@ -1604,7 +1604,7 @@ export function TransactionPage() {
                 className="action-button"
                 onClick={() => handleEditAllocation(selectedAllocation)}
               >
-                邱ｨ髮・
+                編集
               </button>
               <button
                 type="button"
@@ -1613,8 +1613,8 @@ export function TransactionPage() {
                 onClick={() => void handleDeleteAllocation(selectedAllocation)}
               >
                 {deletingAllocationId === selectedAllocation.allocationId
-                  ? '蜑企勁荳ｭ...'
-                  : '蜑企勁'}
+                  ? '削除中...'
+                  : '削除'}
               </button>
             </div>
           </div>

@@ -500,8 +500,8 @@ export function GoalBucketPage() {
 
       <FormModal
         open={detailModalOpen && selectedGoalBucket != null}
-        title={selectedGoalBucket?.bucketName ?? '逶ｮ逧・挨蜿｣蠎ｧ隧ｳ邏ｰ'}
-        description="隕ｪ蜿｣蠎ｧ縲・髢｢騾｣蜿門ｼ輔・驟榊・螻･豁ｴ繧定ｦ九ｋ縺溘ａ縺ｮ隧ｳ邏ｰ繝｢繝ｼ繝繝ｫ縺ｧ縺吶・"
+        title={selectedGoalBucket?.bucketName ?? '目的別口座詳細'}
+        description="親口座、関連取引、配分履歴を確認できます。"
         eyebrow="Goal Bucket Detail"
         panelClassName="modal-panel-xwide"
         onClose={() => setDetailModalOpen(false)}
@@ -512,36 +512,36 @@ export function GoalBucketPage() {
               <span
                 className={`badge ${selectedGoalBucket.active ? 'active' : 'inactive'}`}
               >
-                {selectedGoalBucket.active ? '譛牙柑' : '蛛懈ｭ｢'}
+                {selectedGoalBucket.active ? '有効' : '無効'}
               </span>
               <span className="type-chip">
                 {selectedAccount == null
-                  ? `蜿｣蠎ｧID #${selectedGoalBucket.accountId}`
+                  ? `口座ID #${selectedGoalBucket.accountId}`
                   : `${selectedAccount.providerName} / ${selectedAccount.accountName}`}
               </span>
             </div>
             <h3>{selectedGoalBucket.bucketName}</h3>
             <p className="account-detail-provider">
-              邏舌▼縺城橿陦悟哨蠎ｧ: {formatAccountName(selectedAccount, selectedGoalBucket.accountId)}
+              親口座: {formatAccountName(selectedAccount, selectedGoalBucket.accountId)}
             </p>
             <dl className="balance-pairs">
               <div>
-                <dt>迴ｾ蝨ｨ谿矩ｫ・</dt>
+                <dt>現在残高</dt>
                 <dd>{formatMoney(selectedGoalBucket.currentBalance)}</dd>
               </div>
               <div>
-                <dt>隕ｪ蜿｣蠎ｧ縺ｮ譛ｪ驟榊・</dt>
+                <dt>親口座の未配分</dt>
                 <dd>
                   {selectedAccount == null
-                    ? '荳肴・'
+                    ? '取得不可'
                     : formatMoney(selectedAccount.unallocatedBalance)}
                 </dd>
               </div>
               <div>
-                <dt>隕ｪ蜿｣蠎ｧ縺ｮ谿矩ｫ・</dt>
+                <dt>親口座の残高</dt>
                 <dd>
                   {selectedAccount == null
-                    ? '荳肴・'
+                    ? '取得不可'
                     : formatMoney(selectedAccount.currentBalance)}
                 </dd>
               </div>
@@ -552,37 +552,37 @@ export function GoalBucketPage() {
                 className="action-button"
                 onClick={() => handleEdit(selectedGoalBucket)}
               >
-                縺薙・逶ｮ逧・挨蜿｣蠎ｧ繧堤ｷｨ髮・
+                この目的別口座を編集
               </button>
             </div>
 
             <section className="account-detail-section">
               <div className="section-heading">
                 <div>
-                  <h3>邏舌▼縺城橿陦悟哨蠎ｧ</h3>
+                  <h3>親口座</h3>
                   <p className="section-description">
-                    縺ｩ縺ｮ螳溷哨蠎ｧ縺ｮ雉・≡繧定ｦ九※縺・ｋ縺九→縲√◎縺ｮ蜿｣蠎ｧ縺ｫ谿九ｋ譛ｪ驟榊・繧堤｢ｺ隱阪〒縺阪∪縺吶・
+                    紐づいている口座と、その口座側の未配分額を確認できます。
                   </p>
                 </div>
               </div>
               {selectedAccount == null ? (
                 <p className="status">
-                  邏舌▼縺城橿陦悟哨蠎ｧ縺ｮ諠・ｱ繧貞叙蠕励〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・
+                  親口座情報を取得できませんでした。
                 </p>
               ) : (
                 <div className="detail-list">
                   <article className="detail-list-item">
                     <div>
                       <h4>{`${selectedAccount.providerName} / ${selectedAccount.accountName}`}</h4>
-                      <p>蜿｣蠎ｧ谿矩ｫ倥→譛ｪ驟榊・繧貞酔縺倥き繝ｼ繝峨〒遒ｺ隱阪〒縺阪∪縺吶・</p>
+                      <p>口座残高と未配分をあわせて確認できます。</p>
                     </div>
                     <dl className="detail-inline-stats">
                       <div>
-                        <dt>蜿｣蠎ｧ谿矩ｫ・</dt>
+                        <dt>口座残高</dt>
                         <dd>{formatMoney(selectedAccount.currentBalance)}</dd>
                       </div>
                       <div>
-                        <dt>譛ｪ驟榊・</dt>
+                        <dt>未配分</dt>
                         <dd>{formatMoney(selectedAccount.unallocatedBalance)}</dd>
                       </div>
                     </dl>
@@ -594,9 +594,9 @@ export function GoalBucketPage() {
             <section className="account-detail-section">
               <div className="section-heading">
                 <div>
-                  <h3>髢｢騾｣蜿門ｼ・</h3>
+                  <h3>関連取引</h3>
                   <p className="section-description">
-                    GoalBucket 縺ｫ邏舌▼縺・◆蜿主・繝ｻ謾ｯ蜃ｺ繝ｻ謖ｯ譖ｿ縺縺代ｒ謚ｽ蜃ｺ縺励※陦ｨ遉ｺ縺励∪縺吶・
+                    この目的別口座に紐づく入出金や振替を確認できます。
                   </p>
                 </div>
               </div>
@@ -606,9 +606,9 @@ export function GoalBucketPage() {
             <section className="account-detail-section">
               <div className="section-heading">
                 <div>
-                  <h3>驟榊・螻･豁ｴ</h3>
+                  <h3>配分履歴</h3>
                   <p className="section-description">
-                    譛ｪ驟榊・縺ｨ縺ｮ蜃ｺ蜈･繧翫→ GoalBucket 髢薙・遘ｻ蜍輔ｒ縲∝酔縺倩ｩｳ邏ｰ繧ｫ繝ｼ繝峨〒霑ｽ縺医ｋ繧医≧縺ｫ縺励※縺・∪縺吶・
+                    未配分との移動や、他のGoalBucketとの移動履歴を確認できます。
                   </p>
                 </div>
               </div>
@@ -617,7 +617,7 @@ export function GoalBucketPage() {
                 selectedGoalBucket={selectedGoalBucket}
               />
               <p className="account-meta-note">
-                驟榊・謫堺ｽ懊◎縺ｮ繧ゅ・縺ｯ譏守ｴｰ蜈･蜉帙→蜷後§譁・ц縺ｧ蛻､譁ｭ縺励ｄ縺吶＞繧医≧縲∬ｩｳ邏ｰ縺ｧ螻･豁ｴ繧堤｢ｺ隱阪＠縺ｦ縺九ｉ蜿門ｼ輔・驟榊・逕ｻ髱｢縺ｸ遘ｻ繧句燕謠舌〒謨ｴ逅・＠縺ｦ縺・∪縺吶・
+                配分操作は専用画面で行い、ここでは履歴確認に集中できる構成です。
               </p>
             </section>
           </article>
