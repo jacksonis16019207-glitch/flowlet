@@ -697,6 +697,14 @@
   font-weight: 700;
 }
 
+.detail-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .account-hero-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

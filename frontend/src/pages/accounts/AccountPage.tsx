@@ -620,6 +620,22 @@ export function AccountPage() {
                                 <dd>{formatMoney(creditCard.currentBalance, true)}</dd>
                               </div>
                             </dl>
+                            <div className="detail-item-actions">
+                              <button
+                                type="button"
+                                className="action-button secondary"
+                                onClick={() => handleSelectAccount(creditCard)}
+                              >
+                                詳細を見る
+                              </button>
+                              <button
+                                type="button"
+                                className="action-button"
+                                onClick={() => handleEdit(creditCard)}
+                              >
+                                このカードを編集
+                              </button>
+                            </div>
                           </article>
                         ))}
                       </div>
