@@ -5,6 +5,8 @@ type FormModalProps = {
   title: string
   description: string
   onClose: () => void
+  eyebrow?: string
+  panelClassName?: string
   children: ReactNode
 }
 
@@ -13,6 +15,8 @@ export function FormModal({
   title,
   description,
   onClose,
+  eyebrow = 'Entry Form',
+  panelClassName,
   children,
 }: FormModalProps) {
   if (!open) {
@@ -22,7 +26,7 @@ export function FormModal({
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <section
-        className="modal-panel"
+        className={panelClassName ? `modal-panel ${panelClassName}` : 'modal-panel'}
         role="dialog"
         aria-modal="true"
         aria-labelledby="form-modal-title"
@@ -31,7 +35,7 @@ export function FormModal({
       >
         <div className="modal-header">
           <div>
-            <p className="eyebrow">Entry Form</p>
+            <p className="eyebrow">{eyebrow}</p>
             <h2 id="form-modal-title">{title}</h2>
             <p id="form-modal-description" className="modal-description">
               {description}

@@ -48,6 +48,7 @@ export function GoalBucketPage() {
   const [selectedGoalBucketId, setSelectedGoalBucketId] = useState<number | null>(
     null,
   )
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -317,7 +318,7 @@ export function GoalBucketPage() {
       </section>
 
       <section className="content-grid account-overview-grid">
-        <section className="panel account-detail-panel">
+        <section className="panel account-detail-panel" hidden>
           <div className="panel-heading">
             <p className="eyebrow">Selected Goal Bucket</p>
             <h2>選択中の目的別口座詳細</h2>
@@ -466,7 +467,10 @@ export function GoalBucketPage() {
             errorMessage={errorMessage}
             deletingGoalBucketId={deletingGoalBucketId}
             selectedGoalBucketId={selectedGoalBucketId}
-            onSelectDetail={(goalBucket) => setSelectedGoalBucketId(goalBucket.goalBucketId)}
+            onSelectDetail={(goalBucket) => {
+              setSelectedGoalBucketId(goalBucket.goalBucketId)
+              setDetailModalOpen(true)
+            }}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
@@ -492,6 +496,132 @@ export function GoalBucketPage() {
           onChange={setForm}
           onSubmit={handleSubmit}
         />
+      </FormModal>
+
+      <FormModal
+        open={detailModalOpen && selectedGoalBucket != null}
+        title={selectedGoalBucket?.bucketName ?? '逶ｮ逧・挨蜿｣蠎ｧ隧ｳ邏ｰ'}
+        description="隕ｪ蜿｣蠎ｧ縲・髢｢騾｣蜿門ｼ輔・驟榊・螻･豁ｴ繧定ｦ九ｋ縺溘ａ縺ｮ隧ｳ邏ｰ繝｢繝ｼ繝繝ｫ縺ｧ縺吶・"
+        eyebrow="Goal Bucket Detail"
+        panelClassName="modal-panel-xwide"
+        onClose={() => setDetailModalOpen(false)}
+      >
+        {selectedGoalBucket == null ? null : (
+          <article className="account-detail-card">
+            <div className="account-card-header">
+              <span
+                className={`badge ${selectedGoalBucket.active ? 'active' : 'inactive'}`}
+              >
+                {selectedGoalBucket.active ? '譛牙柑' : '蛛懈ｭ｢'}
+              </span>
+              <span className="type-chip">
+                {selectedAccount == null
+                  ? `蜿｣蠎ｧID #${selectedGoalBucket.accountId}`
+                  : `${selectedAccount.providerName} / ${selectedAccount.accountName}`}
+              </span>
+            </div>
+            <h3>{selectedGoalBucket.bucketName}</h3>
+            <p className="account-detail-provider">
+              邏舌▼縺城橿陦悟哨蠎ｧ: {formatAccountName(selectedAccount, selectedGoalBucket.accountId)}
+            </p>
+            <dl className="balance-pairs">
+              <div>
+                <dt>迴ｾ蝨ｨ谿矩ｫ・</dt>
+                <dd>{formatMoney(selectedGoalBucket.currentBalance)}</dd>
+              </div>
+              <div>
+                <dt>隕ｪ蜿｣蠎ｧ縺ｮ譛ｪ驟榊・</dt>
+                <dd>
+                  {selectedAccount == null
+                    ? '荳肴・'
+                    : formatMoney(selectedAccount.unallocatedBalance)}
+                </dd>
+              </div>
+              <div>
+                <dt>隕ｪ蜿｣蠎ｧ縺ｮ谿矩ｫ・</dt>
+                <dd>
+                  {selectedAccount == null
+                    ? '荳肴・'
+                    : formatMoney(selectedAccount.currentBalance)}
+                </dd>
+              </div>
+            </dl>
+            <div className="category-actions">
+              <button
+                type="button"
+                className="action-button"
+                onClick={() => handleEdit(selectedGoalBucket)}
+              >
+                縺薙・逶ｮ逧・挨蜿｣蠎ｧ繧堤ｷｨ髮・
+              </button>
+            </div>
+
+            <section className="account-detail-section">
+              <div className="section-heading">
+                <div>
+                  <h3>邏舌▼縺城橿陦悟哨蠎ｧ</h3>
+                  <p className="section-description">
+                    縺ｩ縺ｮ螳溷哨蠎ｧ縺ｮ雉・≡繧定ｦ九※縺・ｋ縺九→縲√◎縺ｮ蜿｣蠎ｧ縺ｫ谿九ｋ譛ｪ驟榊・繧堤｢ｺ隱阪〒縺阪∪縺吶・
+                  </p>
+                </div>
+              </div>
+              {selectedAccount == null ? (
+                <p className="status">
+                  邏舌▼縺城橿陦悟哨蠎ｧ縺ｮ諠・ｱ繧貞叙蠕励〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・
+                </p>
+              ) : (
+                <div className="detail-list">
+                  <article className="detail-list-item">
+                    <div>
+                      <h4>{`${selectedAccount.providerName} / ${selectedAccount.accountName}`}</h4>
+                      <p>蜿｣蠎ｧ谿矩ｫ倥→譛ｪ驟榊・繧貞酔縺倥き繝ｼ繝峨〒遒ｺ隱阪〒縺阪∪縺吶・</p>
+                    </div>
+                    <dl className="detail-inline-stats">
+                      <div>
+                        <dt>蜿｣蠎ｧ谿矩ｫ・</dt>
+                        <dd>{formatMoney(selectedAccount.currentBalance)}</dd>
+                      </div>
+                      <div>
+                        <dt>譛ｪ驟榊・</dt>
+                        <dd>{formatMoney(selectedAccount.unallocatedBalance)}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                </div>
+              )}
+            </section>
+
+            <section className="account-detail-section">
+              <div className="section-heading">
+                <div>
+                  <h3>髢｢騾｣蜿門ｼ・</h3>
+                  <p className="section-description">
+                    GoalBucket 縺ｫ邏舌▼縺・◆蜿主・繝ｻ謾ｯ蜃ｺ繝ｻ謖ｯ譖ｿ縺縺代ｒ謚ｽ蜃ｺ縺励※陦ｨ遉ｺ縺励∪縺吶・
+                  </p>
+                </div>
+              </div>
+              <GoalBucketTransactionList transactions={selectedTransactions} />
+            </section>
+
+            <section className="account-detail-section">
+              <div className="section-heading">
+                <div>
+                  <h3>驟榊・螻･豁ｴ</h3>
+                  <p className="section-description">
+                    譛ｪ驟榊・縺ｨ縺ｮ蜃ｺ蜈･繧翫→ GoalBucket 髢薙・遘ｻ蜍輔ｒ縲∝酔縺倩ｩｳ邏ｰ繧ｫ繝ｼ繝峨〒霑ｽ縺医ｋ繧医≧縺ｫ縺励※縺・∪縺吶・
+                  </p>
+                </div>
+              </div>
+              <GoalBucketAllocationList
+                allocations={selectedAllocations}
+                selectedGoalBucket={selectedGoalBucket}
+              />
+              <p className="account-meta-note">
+                驟榊・謫堺ｽ懊◎縺ｮ繧ゅ・縺ｯ譏守ｴｰ蜈･蜉帙→蜷後§譁・ц縺ｧ蛻､譁ｭ縺励ｄ縺吶＞繧医≧縲∬ｩｳ邏ｰ縺ｧ螻･豁ｴ繧堤｢ｺ隱阪＠縺ｦ縺九ｉ蜿門ｼ輔・驟榊・逕ｻ髱｢縺ｸ遘ｻ繧句燕謠舌〒謨ｴ逅・＠縺ｦ縺・∪縺吶・
+              </p>
+            </section>
+          </article>
+        )}
       </FormModal>
     </main>
   )

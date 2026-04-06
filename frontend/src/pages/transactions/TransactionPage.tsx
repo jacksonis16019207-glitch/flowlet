@@ -17,6 +17,7 @@ import type {
 } from '../../features/category/types/category'
 import { fetchGoalBuckets } from '../../features/goalBucket/api/goalBucketApi'
 import type { GoalBucket } from '../../features/goalBucket/types/goalBucket'
+import { FormModal } from '../../shared/components/FormModal'
 import { ApiRequestError } from '../../shared/lib/api/client'
 import {
   createGoalBucketAllocations,
@@ -155,6 +156,11 @@ export function TransactionPage() {
   const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null)
   const [editingAllocationId, setEditingAllocationId] = useState<number | null>(null)
   const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null)
+  const [selectedAllocationId, setSelectedAllocationId] = useState<number | null>(null)
+  const [entryModalOpen, setEntryModalOpen] = useState(false)
+  const [transactionDetailOpen, setTransactionDetailOpen] = useState(false)
+  const [allocationDetailOpen, setAllocationDetailOpen] = useState(false)
+  const [displayMonth, setDisplayMonth] = useState(today.slice(0, 7))
   const [transactionFilterType, setTransactionFilterType] = useState<TransactionFilterType>('ALL')
   const [transactionFilterAccountId, setTransactionFilterAccountId] = useState<number>(0)
   const [transactionFilterKeyword, setTransactionFilterKeyword] = useState('')
@@ -226,6 +232,10 @@ export function TransactionPage() {
   const filteredTransactions = useMemo(
     () =>
       sortedTransactions.filter((transaction) => {
+        if (!transaction.transactionDate.startsWith(displayMonth)) {
+          return false
+        }
+
         if (
           transactionFilterType !== 'ALL' &&
           transaction.transactionType !== transactionFilterType
@@ -258,6 +268,7 @@ export function TransactionPage() {
       }),
     [
       sortedTransactions,
+      displayMonth,
       transactionFilterType,
       transactionFilterAccountId,
       transactionFilterKeyword,
@@ -271,6 +282,9 @@ export function TransactionPage() {
     () => [...allocations].sort(compareAllocations).slice(0, 8),
     [allocations],
   )
+  const selectedAllocation =
+    latestAllocations.find((allocation) => allocation.allocationId === selectedAllocationId) ??
+    null
 
   useEffect(() => {
     if (filteredTransactions.length === 0) {
@@ -432,6 +446,7 @@ export function TransactionPage() {
         if (savedTransaction) {
           setSelectedTransactionId(savedTransaction.transactionId)
         }
+        setEntryModalOpen(false)
         resetBatchTransactionDrafts()
         resetTransactionForm()
       } catch (error) {
@@ -454,6 +469,7 @@ export function TransactionPage() {
       setLastSubmittedTransactionForm({ ...transactionForm })
       await loadPageData()
       setSelectedTransactionId(savedTransaction.transactionId)
+      setEntryModalOpen(false)
       resetTransactionForm()
     } catch (error) {
       setErrorMessage(
@@ -486,6 +502,7 @@ export function TransactionPage() {
       }
       await loadPageData()
       setSelectedTransactionId(transfer.outgoingTransaction.transactionId)
+      setEntryModalOpen(false)
       setTransferForm((current) => ({
         ...current,
         amount: '',
@@ -529,6 +546,7 @@ export function TransactionPage() {
         await updateGoalBucketAllocation(editingAllocationId, payload)
       }
       await loadPageData()
+      setEntryModalOpen(false)
       resetAllocationForm()
     } catch (error) {
       setErrorMessage(resolveApiErrorMessage(error, '配分の保存に失敗しました。'))
@@ -610,9 +628,11 @@ export function TransactionPage() {
       return
     }
     setSelectedTransactionId(transaction.transactionId)
+    setTransactionDetailOpen(false)
     setActiveTab('transaction')
     setTransactionEntryMode('single')
     setEditingTransactionId(transaction.transactionId)
+    setEntryModalOpen(true)
     setTransactionForm({
       accountId: transaction.accountId,
       goalBucketId: transaction.goalBucketId,
@@ -638,9 +658,11 @@ export function TransactionPage() {
 
     setErrorMessage('')
     setSelectedTransactionId(transaction.transactionId)
+    setTransactionDetailOpen(false)
     setActiveTab('transaction')
     setTransactionEntryMode('single')
     setEditingTransactionId(null)
+    setEntryModalOpen(true)
     setTransactionForm({
       accountId: transaction.accountId,
       goalBucketId: transaction.goalBucketId,
@@ -664,6 +686,7 @@ export function TransactionPage() {
     setActiveTab('transaction')
     setTransactionEntryMode('single')
     setEditingTransactionId(null)
+    setEntryModalOpen(true)
     setTransactionForm({ ...lastSubmittedTransactionForm })
   }
 
@@ -692,7 +715,9 @@ export function TransactionPage() {
 
   function handleEditAllocation(allocation: GoalBucketAllocation) {
     setActiveTab('allocation')
+    setAllocationDetailOpen(false)
     setEditingAllocationId(allocation.allocationId)
+    setSelectedAllocationId(allocation.allocationId)
     setAllocationAccountId(allocation.accountId)
     setAllocationFromGoalBucketId(allocation.fromGoalBucketId)
     setAllocationDate(allocation.allocationDate)
@@ -706,6 +731,7 @@ export function TransactionPage() {
         value: allocation.amount,
       },
     ])
+    setEntryModalOpen(true)
   }
 
   async function handleDeleteAllocation(allocation: GoalBucketAllocation) {
@@ -736,6 +762,26 @@ export function TransactionPage() {
         </p>
       </section>
 
+      <section className="panel">
+        <div className="panel-heading">
+          <h2>逋ｻ骭ｲ繧｢繧ｯ繧ｷ繝ｧ繝ｳ</h2>
+          <button type="button" onClick={() => setEntryModalOpen(true)}>
+            譁ｰ隕上ｒ逋ｻ骭ｲ
+          </button>
+        </div>
+        <p className="section-description">
+          騾壼ｸｸ蜿門ｼ・・謖ｯ譖ｿ縲・驟榊・繧堤悽縺倥Γ繝ｼ繝繝ｫ縺ｧ蛻・￠縺ｾ縺吶・
+        </p>
+      </section>
+
+      <FormModal
+        open={entryModalOpen}
+        title={editingTransactionId != null ? '騾壼ｸｸ蜿門ｼ輔ｒ邱ｨ髮・' : currentTabMeta.label}
+        description={currentTabMeta.description}
+        eyebrow="Transaction Entry"
+        panelClassName="modal-panel-xwide"
+        onClose={() => setEntryModalOpen(false)}
+      >
       <section className="panel transaction-panel">
         <div className="inline-tabs transaction-tabs">
           {transactionTabMeta.map((tab) => (
@@ -1140,12 +1186,30 @@ export function TransactionPage() {
           </form>
         ) : null}
       </section>
+      </FormModal>
 
       <section className="content-grid transaction-workbench-grid">
         <section className="panel">
           <div className="panel-heading">
             <h2>取引一覧</h2>
             <span>{filteredTransactions.length} 件</span>
+          </div>
+          <div className="transaction-month-switcher">
+            <button
+              type="button"
+              className="action-button"
+              onClick={() => setDisplayMonth(shiftMonthLabel(displayMonth, -1))}
+            >
+              {'<'}
+            </button>
+            <strong>{formatMonthLabel(displayMonth)}</strong>
+            <button
+              type="button"
+              className="action-button"
+              onClick={() => setDisplayMonth(shiftMonthLabel(displayMonth, 1))}
+            >
+              {'>'}
+            </button>
           </div>
           <div className="transaction-filter-grid">
             <label>
@@ -1202,7 +1266,10 @@ export function TransactionPage() {
                     <button
                       type="button"
                       className="transaction-card-button"
-                      onClick={() => setSelectedTransactionId(transaction.transactionId)}
+                      onClick={() => {
+                        setSelectedTransactionId(transaction.transactionId)
+                        setTransactionDetailOpen(true)
+                      }}
                     >
                       <div className="account-card-header">
                         <span className="type-chip">
@@ -1236,7 +1303,7 @@ export function TransactionPage() {
           </div>
         </section>
 
-        <section className="panel transaction-detail-panel">
+        <section className="panel transaction-detail-panel" hidden>
           <div className="panel-heading">
             <h2>取引詳細</h2>
           </div>
@@ -1360,6 +1427,16 @@ export function TransactionPage() {
                 <div className="category-actions">
                   <button
                     type="button"
+                    className="action-button secondary"
+                    onClick={() => {
+                      setSelectedAllocationId(allocation.allocationId)
+                      setAllocationDetailOpen(true)
+                    }}
+                  >
+                    隧ｳ邏ｰ
+                  </button>
+                  <button
+                    type="button"
                     className="action-button"
                     onClick={() => handleEditAllocation(allocation)}
                   >
@@ -1381,6 +1458,168 @@ export function TransactionPage() {
           )}
         </div>
       </section>
+
+      <FormModal
+        open={transactionDetailOpen && selectedTransaction != null}
+        title={selectedTransaction?.description ?? '蜿門ｼ取律隧ｳ邏ｰ'}
+        description="蜿門ｼ墓律縲・蜿｣蠎ｧ縲・GoalBucket縲・蛻､譁ｭ譎ゅｒ遒ｺ隱阪〒縺阪∪縺吶・"
+        eyebrow="Transaction Detail"
+        panelClassName="modal-panel-wide"
+        onClose={() => setTransactionDetailOpen(false)}
+      >
+        {selectedTransaction == null ? null : (
+          <div className="transaction-detail-stack">
+            <div className="transaction-detail-hero">
+              <p className="eyebrow">Selected Transaction</p>
+              <h3>{selectedTransaction.description}</h3>
+              <p>{formatSignedMoney(selectedTransaction)}</p>
+            </div>
+            <dl className="detail-list">
+              <div className="detail-list-item">
+                <dt>蜿門ｼ慕ｨｮ蛻･</dt>
+                <dd>{formatTransactionTypeLabel(selectedTransaction.transactionType)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>蜿｣蠎ｧ</dt>
+                <dd>{selectedTransaction.accountName ?? '譛ｪ險ｭ螳・'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>GoalBucket</dt>
+                <dd>{selectedTransaction.goalBucketName ?? '譛ｪ驟榊・'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>繧ｫ繝・ざ繝ｪ</dt>
+                <dd>
+                  {selectedTransaction.categoryName ?? '譛ｪ險ｭ螳・'}
+                  {selectedTransaction.subcategoryName
+                    ? ` / ${selectedTransaction.subcategoryName}`
+                    : ''}
+                </dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>蜿門ｼ墓律</dt>
+                <dd>{formatDateLabel(selectedTransaction.transactionDate)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>繝｡繝｢</dt>
+                <dd>{selectedTransaction.note?.trim() || '縺ｪ縺・'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>菴懈・譌･譎・</dt>
+                <dd>{formatDateTimeLabel(selectedTransaction.createdAt)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>譖ｴ譁ｰ譌･譎・</dt>
+                <dd>{formatDateTimeLabel(selectedTransaction.updatedAt)}</dd>
+              </div>
+              {selectedTransaction.transferGroupId ? (
+                <div className="detail-list-item">
+                  <dt>謖ｯ譖ｿ繧ｰ繝ｫ繝ｼ繝・</dt>
+                  <dd>{selectedTransaction.transferGroupId}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <div className="category-actions">
+              <button
+                type="button"
+                className="action-button"
+                disabled={Boolean(selectedTransaction.transferGroupId)}
+                onClick={() => handleCopyTransaction(selectedTransaction)}
+              >
+                繧ｳ繝斐・縺励※譁ｰ隕丈ｽ懈・
+              </button>
+              <button
+                type="button"
+                className="action-button"
+                disabled={Boolean(selectedTransaction.transferGroupId)}
+                onClick={() => handleEditTransaction(selectedTransaction)}
+              >
+                邱ｨ髮・
+              </button>
+              <button
+                type="button"
+                className="action-button danger"
+                disabled={deletingTransactionId === selectedTransaction.transactionId}
+                onClick={() => void handleDeleteTransaction(selectedTransaction)}
+              >
+                {deletingTransactionId === selectedTransaction.transactionId
+                  ? '蜑企勁荳ｭ...'
+                  : '蜑企勁'}
+              </button>
+            </div>
+          </div>
+        )}
+      </FormModal>
+
+      <FormModal
+        open={allocationDetailOpen && selectedAllocation != null}
+        title={selectedAllocation?.description ?? '驟榊・隧ｳ邏ｰ'}
+        description="驟榊・譌･縲・遘ｻ蜍慕先棡縲・謖ｯ譖ｿ騾｣謳ｺ縺ｪ縺ｩ繧定ｦ九ｋ繝｢繝ｼ繝繝ｫ縺ｧ縺吶・"
+        eyebrow="Allocation Detail"
+        panelClassName="modal-panel-wide"
+        onClose={() => setAllocationDetailOpen(false)}
+      >
+        {selectedAllocation == null ? null : (
+          <div className="transaction-detail-stack">
+            <div className="transaction-detail-hero">
+              <p className="eyebrow">Selected Allocation</p>
+              <h3>{selectedAllocation.description}</h3>
+              <p>{formatMoney(selectedAllocation.amount)}</p>
+            </div>
+            <dl className="detail-list">
+              <div className="detail-list-item">
+                <dt>驟榊・譌･</dt>
+                <dd>{formatDateLabel(selectedAllocation.allocationDate)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>驟榊・蜈・</dt>
+                <dd>{selectedAllocation.fromGoalBucketName ?? '譛ｪ驟榊・'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>驟榊・蜈・蜈亥・</dt>
+                <dd>{selectedAllocation.toGoalBucketName ?? '譛ｪ驟榊・'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>繝｡繝｢</dt>
+                <dd>{selectedAllocation.note?.trim() || '縺ｪ縺・'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>菴懈・譌･譎・</dt>
+                <dd>{formatDateTimeLabel(selectedAllocation.createdAt)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>譖ｴ譁ｰ譌･譎・</dt>
+                <dd>{formatDateTimeLabel(selectedAllocation.updatedAt)}</dd>
+              </div>
+              {selectedAllocation.linkedTransferGroupId ? (
+                <div className="detail-list-item">
+                  <dt>謖ｯ譖ｿ騾｣謳ｺ</dt>
+                  <dd>{selectedAllocation.linkedTransferGroupId}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <div className="category-actions">
+              <button
+                type="button"
+                className="action-button"
+                onClick={() => handleEditAllocation(selectedAllocation)}
+              >
+                邱ｨ髮・
+              </button>
+              <button
+                type="button"
+                className="action-button danger"
+                disabled={deletingAllocationId === selectedAllocation.allocationId}
+                onClick={() => void handleDeleteAllocation(selectedAllocation)}
+              >
+                {deletingAllocationId === selectedAllocation.allocationId
+                  ? '蜑企勁荳ｭ...'
+                  : '蜑企勁'}
+              </button>
+            </div>
+          </div>
+        )}
+      </FormModal>
     </main>
   )
 }
@@ -1886,6 +2125,17 @@ function AllocationFields({
       </button>
     </div>
   )
+}
+
+function shiftMonthLabel(monthLabel: string, diff: number) {
+  const [year, month] = monthLabel.split('-').map(Number)
+  const date = new Date(year, month - 1 + diff, 1)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function formatMonthLabel(monthLabel: string) {
+  const [year, month] = monthLabel.split('-').map(Number)
+  return `${year}年${month}月`
 }
 
 function buildAllocationPayload(

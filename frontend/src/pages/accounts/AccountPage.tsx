@@ -53,6 +53,7 @@ export function AccountPage() {
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null)
   const [deletingAccountId, setDeletingAccountId] = useState<number | null>(null)
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -316,23 +317,7 @@ export function AccountPage() {
 
   function handleSelectAccount(account: Account) {
     setSelectedAccountId(account.accountId)
-
-    if (!window.matchMedia('(max-width: 960px)').matches) {
-      return
-    }
-
-    setMobileDetailVisible(true)
-    window.requestAnimationFrame(() => {
-      document
-        .getElementById('selected-account-detail')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-  }
-
-  function scrollToSelectedAccountDetail() {
-    document
-      .getElementById('selected-account-detail')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setDetailModalOpen(true)
   }
 
   function handleReturnToAccountList() {
@@ -411,6 +396,7 @@ export function AccountPage() {
         <section
           id="selected-account-detail"
           className={`panel account-detail-panel ${mobileDetailVisible ? 'mobile-detail-visible' : 'mobile-detail-hidden'}`}
+          hidden
         >
           <div className="panel-heading">
             <p className="eyebrow">Selected Account</p>
@@ -762,7 +748,7 @@ export function AccountPage() {
               <button
                 type="button"
                 className="secondary"
-                onClick={scrollToSelectedAccountDetail}
+                onClick={() => setDetailModalOpen(true)}
               >
                 詳細へ移動
               </button>
@@ -835,6 +821,233 @@ export function AccountPage() {
           onChange={setForm}
           onSubmit={handleSubmit}
         />
+      </FormModal>
+
+      <FormModal
+        open={detailModalOpen && selectedAccount != null}
+        title={selectedAccount?.accountName ?? '蜿｣蠎ｧ隧ｳ邏ｰ'}
+        description="蜿｣蠎ｧ縺ｮ谿矩ｫ倥∵ｬ｡蝗樊髪謇墓律縲・GoalBucket縲・髢｢騾｣蜿門ｼ輔ｒ繧｢繝ｼ繝繝ｫ縺ｧ遒ｺ隱阪＠縺ｾ縺吶・"
+        eyebrow="Account Detail"
+        panelClassName="modal-panel-xwide"
+        onClose={() => setDetailModalOpen(false)}
+      >
+        {selectedAccount == null ? null : (
+          <article className="account-detail-card">
+            <div className="account-card-header">
+              <span className={`badge ${selectedAccount.active ? 'active' : 'inactive'}`}>
+                {selectedAccount.active ? '譛牙柑' : '蛛懈ｭ｢'}
+              </span>
+              <span className="type-chip">
+                {selectedAccount.accountCategory === 'CREDIT_CARD'
+                  ? '繧ｯ繝ｬ繧ｸ繝・ヨ繧ｫ繝ｼ繝・'
+                  : '鬆宣≡繝ｻ迴ｾ驥代↑縺ｩ'}
+              </span>
+            </div>
+            <h3>
+              {selectedAccount.accountCategory === 'CREDIT_CARD'
+                ? selectedAccount.accountName
+                : `${selectedAccount.providerName} / ${selectedAccount.accountName}`}
+            </h3>
+            <p className="account-detail-provider">{selectedAccount.providerName}</p>
+            <dl className="balance-pairs">
+              {selectedAccount.accountCategory === 'CREDIT_CARD' ? (
+                <>
+                  <div>
+                    <dt>隲区ｱる｡・</dt>
+                    <dd>{formatMoney(selectedAccount.currentBalance, true)}</dd>
+                  </div>
+                  <div>
+                    <dt>谺｡縺ｮ謾ｯ謇墓律</dt>
+                    <dd>{formatNextPaymentDate(selectedAccount)}</dd>
+                  </div>
+                  <div>
+                    <dt>蠑輔″關ｽ縺ｨ縺怜哨蠎ｧ</dt>
+                    <dd>
+                      {formatPaymentAccountName(
+                        accounts,
+                        selectedAccount.creditCardProfile?.paymentAccountId,
+                      )}
+                    </dd>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <dt>迴ｾ蝨ｨ谿矩ｫ・</dt>
+                    <dd>{formatMoney(selectedAccount.currentBalance)}</dd>
+                  </div>
+                  <div>
+                    <dt>譛ｪ驟榊・</dt>
+                    <dd>{formatMoney(selectedAccount.unallocatedBalance)}</dd>
+                  </div>
+                  <div>
+                    <dt>蛻晄悄谿矩ｫ・</dt>
+                    <dd>{formatMoney(selectedAccount.initialBalance)}</dd>
+                  </div>
+                </>
+              )}
+            </dl>
+            <div className="category-actions">
+              <button
+                type="button"
+                className="action-button"
+                onClick={() => handleEdit(selectedAccount)}
+              >
+                縺薙・蜿｣蠎ｧ繧堤ｷｨ髮・
+              </button>
+            </div>
+
+            {selectedAccount.accountCategory === 'CREDIT_CARD' &&
+            selectedBillingSummary != null ? (
+              <>
+                <section className="account-detail-section">
+                  <div className="section-heading">
+                    <div>
+                      <h3>謾ｯ謇輔し繧､繧ｯ繝ｫ</h3>
+                      <p className="section-description">
+                        邱繧∵律縺ｨ謾ｯ謇墓律繧貞渕貅悶↓縲∵ｬ｡蝗樔ｻ･髯阪・莠亥ｮ壹ｒ遒ｺ隱阪〒縺阪∪縺吶・
+                      </p>
+                    </div>
+                  </div>
+                  <dl className="balance-pairs compact">
+                    <div>
+                      <dt>邱繧∵律</dt>
+                      <dd>{selectedBillingSummary.closingDayLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>謾ｯ謇墓律</dt>
+                      <dd>{selectedBillingSummary.paymentDayLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>谺｡縺ｮ邱繧∵律</dt>
+                      <dd>{selectedBillingSummary.nextClosingDate}</dd>
+                    </div>
+                    <div>
+                      <dt>谺｡縺ｮ謾ｯ謇墓律</dt>
+                      <dd>{selectedBillingSummary.nextPaymentDate}</dd>
+                    </div>
+                    <div>
+                      <dt>谺｡縲・屓謾ｯ謇墓律</dt>
+                      <dd>{selectedBillingSummary.followingPaymentDate}</dd>
+                    </div>
+                    <div>
+                      <dt>谺｡蝗樊髪謇暮｡・</dt>
+                      <dd>{selectedBillingSummary.nextPaymentAmount}</dd>
+                    </div>
+                    <div>
+                      <dt>谺｡縲・屓謾ｯ謇暮｡・</dt>
+                      <dd>{selectedBillingSummary.followingPaymentAmount}</dd>
+                    </div>
+                  </dl>
+                  <p className="account-meta-note">
+                    謾ｯ謇暮｡阪・逋ｻ骭ｲ貂医∩縺ｮ繧ｫ繝ｼ繝牙茜逕ｨ螻･豁ｴ縺九ｉ隕九◆隕玖ｾｼ縺ｿ縺ｧ縺吶よ険譖ｿ縺ｫ繧医ｋ霑疲ｸ磯｡阪・蜷ｫ繧√※縺・∪縺帙ｓ縲・
+                  </p>
+                </section>
+                <section className="account-detail-section">
+                  <div className="section-heading">
+                    <div>
+                      <h3>髢｢騾｣蜿門ｼ・</h3>
+                      <p className="section-description">
+                        逶ｴ霑代・繧ｫ繝ｼ繝牙茜逕ｨ繧呈凾邉ｻ蛻励〒遒ｺ隱阪〒縺阪∪縺吶・
+                      </p>
+                    </div>
+                  </div>
+                  <TransactionSummaryList transactions={selectedTransactions} />
+                </section>
+              </>
+            ) : null}
+
+            {selectedAccount.accountCategory !== 'CREDIT_CARD' ? (
+              <>
+                <section className="account-detail-section">
+                  <div className="section-heading">
+                    <div>
+                      <h3>邏舌▼縺冗岼逧・挨蜿｣蠎ｧ</h3>
+                      <p className="section-description">
+                        縺薙・蜿｣蠎ｧ驟堺ｸ九〒邂｡逅・＠縺ｦ縺・ｋ谿矩ｫ倥・縺ｾ縺ｨ縺ｾ繧翫〒縺吶・
+                      </p>
+                    </div>
+                  </div>
+                  {selectedGoalBuckets.length === 0 ? (
+                    <p className="status">邏舌▼縺冗岼逧・挨蜿｣蠎ｧ縺ｯ縺ｾ縺縺ゅｊ縺ｾ縺帙ｓ縲・</p>
+                  ) : (
+                    <div className="detail-chip-list">
+                      {selectedGoalBuckets.map((goalBucket) => (
+                        <article key={goalBucket.goalBucketId} className="detail-chip-card">
+                          <strong>{goalBucket.bucketName}</strong>
+                          <span>{formatMoney(goalBucket.currentBalance)}</span>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="account-detail-section">
+                  <div className="section-heading">
+                    <div>
+                      <h3>蠑輔″關ｽ縺ｨ縺怜ｯｾ雎｡繧ｫ繝ｼ繝・</h3>
+                      <p className="section-description">
+                        縺薙・蜿｣蠎ｧ縺九ｉ謾ｯ謇輔≧險ｭ螳壹・繧ｯ繝ｬ繧ｸ繝・ヨ繧ｫ繝峨→縲∵ｬ｡蝗槫ｼ輔″關ｽ縺ｨ縺嶺ｺ亥ｮ壹ｒ遒ｺ隱阪〒縺阪∪縺吶・
+                      </p>
+                    </div>
+                  </div>
+                  {selectedLinkedCreditCards.length === 0 ? (
+                    <p className="status">縺薙・蜿｣蠎ｧ繧貞ｼ輔″關ｽ縺ｨ縺怜・縺ｫ縺励※縺・ｋ繧ｫ繝ｼ繝峨・縺ゅｊ縺ｾ縺帙ｓ縲・</p>
+                  ) : (
+                    <div className="detail-list">
+                      {selectedLinkedCreditCards.map((creditCard) => (
+                        <article key={creditCard.accountId} className="detail-list-item">
+                          <div>
+                            <h4>{creditCard.accountName}</h4>
+                            <p>{creditCard.providerName}</p>
+                          </div>
+                          <dl className="detail-inline-stats">
+                            <div>
+                              <dt>谺｡蝗樊髪謇墓律</dt>
+                              <dd>{formatNextPaymentDate(creditCard)}</dd>
+                            </div>
+                            <div>
+                              <dt>谺｡蝗槫ｼ輔″關ｽ縺ｨ縺苓ｦ玖ｾｼ縺ｿ</dt>
+                              <dd>{formatMoney(creditCard.currentBalance, true)}</dd>
+                            </div>
+                          </dl>
+                          <div className="detail-item-actions">
+                            <button
+                              type="button"
+                              className="action-button secondary"
+                              onClick={() => handleSelectAccount(creditCard)}
+                            >
+                              隧ｳ邏ｰ繧定ｦ九ｋ
+                            </button>
+                            <button
+                              type="button"
+                              className="action-button"
+                              onClick={() => handleEdit(creditCard)}
+                            >
+                              縺薙・繧ｫ繝ｼ繝峨ｒ邱ｨ髮・
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="account-detail-section">
+                  <div className="section-heading">
+                    <div>
+                      <h3>髢｢騾｣蜿門ｼ・</h3>
+                      <p className="section-description">
+                        譛霑代・蜈･蜃ｺ驥代ｄ謖ｯ譖ｿ繧堤｢ｺ隱阪〒縺阪∪縺吶・
+                      </p>
+                    </div>
+                  </div>
+                  <TransactionSummaryList transactions={selectedTransactions} />
+                </section>
+              </>
+            ) : null}
+          </article>
+        )}
       </FormModal>
     </main>
   )
