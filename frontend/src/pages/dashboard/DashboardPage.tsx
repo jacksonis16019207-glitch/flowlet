@@ -25,19 +25,18 @@ const emptySummary: DashboardBalanceSummary = {
 }
 
 const emptyCashflow: DashboardMonthlyCashflow = {
-  fromMonth: '',
-  toMonth: '',
-  months: [],
-  totals: {
-    income: '0',
-    expense: '0',
-    net: '0',
-  },
+  targetMonth: '',
+  periodStartDate: '',
+  periodEndDate: '',
+  income: '0',
+  expense: '0',
+  net: '0',
 }
 
 const emptyCategoryCashflow: DashboardCategoryCashflow = {
-  fromMonth: '',
-  toMonth: '',
+  targetMonth: '',
+  periodStartDate: '',
+  periodEndDate: '',
   incomeCategories: [],
   expenseCategories: [],
   totals: {
@@ -58,13 +57,12 @@ export function DashboardPage() {
 
   useEffect(() => {
     let active = true
-
-    const { fromMonth, toMonth } = getDefaultMonthRange()
+    const targetMonth = getCurrentYearMonth()
 
     void Promise.allSettled([
       fetchDashboardBalanceSummary(),
-      fetchDashboardMonthlyCashflow(fromMonth, toMonth),
-      fetchDashboardCategoryCashflow(fromMonth, toMonth),
+      fetchDashboardMonthlyCashflow(targetMonth),
+      fetchDashboardCategoryCashflow(targetMonth),
     ]).then(([summaryResult, cashflowResult, categoryCashflowResult]) => {
       if (!active) {
         return
@@ -74,7 +72,7 @@ export function DashboardPage() {
         setSummary(summaryResult.value)
       } else {
         setErrorMessage(
-          'ダッシュボードの取得に失敗しました。バックエンドの状態を確認してください。',
+          'ダッシュボードの取得に失敗しました。バックエンド API の状態を確認してください。',
         )
       }
 
@@ -82,7 +80,7 @@ export function DashboardPage() {
         setCashflow(cashflowResult.value)
       } else {
         setCashflowErrorMessage(
-          '月次収支の取得に失敗しました。API の状態を確認してください。',
+          '月次収支の取得に失敗しました。バックエンド API の状態を確認してください。',
         )
       }
 
@@ -90,7 +88,7 @@ export function DashboardPage() {
         setCategoryCashflow(categoryCashflowResult.value)
       } else {
         setCategoryCashflowErrorMessage(
-          'カテゴリ別収支の取得に失敗しました。API の状態を確認してください。',
+          'カテゴリ別収支の取得に失敗しました。バックエンド API の状態を確認してください。',
         )
       }
 
@@ -104,7 +102,7 @@ export function DashboardPage() {
 
   const accountCount = summary.accounts.length
   const goalBucketCount = summary.goalBuckets.length
-  const monthlyNet = Number(cashflow.totals.net)
+  const monthlyNet = Number(cashflow.net)
   const creditCardDebt = summary.accounts
     .filter((account) => account.accountCategory === 'CREDIT_CARD')
     .reduce((total, account) => total + Math.abs(Number(account.currentBalance)), 0)
@@ -113,10 +111,9 @@ export function DashboardPage() {
     <main className="app-shell">
       <section className="hero-panel">
         <p className="eyebrow">flowlet / dashboard</p>
-        <h1>残高と収支をすぐ見返せる状態に整える</h1>
+        <h1>全体の残高と今月の基準期間を一覧する</h1>
         <p className="lead">
-          口座残高、目的別残高、直近の月次収支をひとまとまりで確認して、
-          今日見るべき数字にすぐ辿り着けるようにしています。
+          口座残高、GoalBucket 残高、そして現在の基準期間での収支をまとめて確認できます。
         </p>
         <div className="hero-stats dashboard-hero-stats">
           <article>
@@ -125,17 +122,17 @@ export function DashboardPage() {
             <small>{accountCount} 件の口座を集計</small>
           </article>
           <article>
-            <span>目的別残高合計</span>
+            <span>GoalBucket 残高合計</span>
             <strong>{formatMoney(summary.totals.goalBucketCurrentBalance)}</strong>
             <small>{goalBucketCount} 件の GoalBucket</small>
           </article>
           <article>
             <span>未配分残高</span>
             <strong>{formatMoney(summary.totals.unallocatedBalance)}</strong>
-            <small>{monthlyNet >= 0 ? '直近収支は黒字です' : '直近収支は赤字です'}</small>
+            <small>{monthlyNet >= 0 ? '今月は黒字傾向です' : '今月は赤字傾向です'}</small>
           </article>
           <article>
-            <span>カード負債額</span>
+            <span>カード負債合計</span>
             <strong>{formatMoney(String(creditCardDebt))}</strong>
             <small>クレジットカード残高の合計です</small>
           </article>
@@ -146,28 +143,28 @@ export function DashboardPage() {
         <section className="panel dashboard-focus-panel">
           <div className="panel-heading">
             <p className="eyebrow">Today Focus</p>
-            <h2>まず見るポイント</h2>
+            <h2>今すぐ見たい数値</h2>
           </div>
           <div className="dashboard-focus-list">
             <article className="dashboard-focus-item">
-              <span>配分待ち</span>
+              <span>未配分</span>
               <strong>{formatMoney(summary.totals.unallocatedBalance)}</strong>
-              <p>まだ行き先が決まっていない残高です。</p>
+              <p>まだ割り当てていない残高です。</p>
             </article>
             <article className="dashboard-focus-item">
-              <span>直近 4 か月収支</span>
-              <strong>{formatMoney(cashflow.totals.net)}</strong>
-              <p>黒字か赤字かを最短で把握できます。</p>
+              <span>今月の差額</span>
+              <strong>{formatMoney(cashflow.net)}</strong>
+              <p>現在の基準期間に対する収支差額です。</p>
             </article>
             <article className="dashboard-focus-item">
-              <span>大きい支出カテゴリ</span>
+              <span>最大の支出カテゴリ</span>
               <strong>
-                {categoryCashflow.expenseCategories[0]?.categoryName ?? 'まだなし'}
+                {categoryCashflow.expenseCategories[0]?.categoryName ?? 'まだありません'}
               </strong>
               <p>
                 {categoryCashflow.expenseCategories[0] == null
-                  ? 'カテゴリ別支出データがまだありません。'
-                  : `${formatMoney(categoryCashflow.expenseCategories[0].amount)} で最大です。`}
+                  ? '支出カテゴリ別集計はまだありません。'
+                  : `${formatMoney(categoryCashflow.expenseCategories[0].amount)} です。`}
               </p>
             </article>
           </div>
@@ -188,7 +185,7 @@ export function DashboardPage() {
             <p className="eyebrow">口座サマリ</p>
             <h2>口座ごとの現在残高</h2>
             <p className="lead dashboard-section-lead">
-              口座種別と未配分残高を並べて、次に動かすべき口座を判断しやすくします。
+              口座の残高と未配分残高を並べて、次に見直す口座を判断しやすくします。
             </p>
           </div>
           {loading ? (
@@ -201,9 +198,9 @@ export function DashboardPage() {
         <section className="panel">
           <div className="panel-heading">
             <p className="eyebrow">GoalBucket サマリ</p>
-            <h2>目的別残高の見え方</h2>
+            <h2>目的別口座の見え方</h2>
             <p className="lead dashboard-section-lead">
-              使い道ごとの残高を、どの口座に紐づいているかと一緒に確認できます。
+              GoalBucket ごとの残高を一覧で確認できます。
             </p>
           </div>
           {loading ? (
@@ -221,23 +218,23 @@ export function DashboardPage() {
         <section className="panel dashboard-panel-full">
           <div className="panel-heading">
             <p className="eyebrow">Monthly Cashflow</p>
-            <h2>直近の月次収支</h2>
+            <h2>今月の基準期間収支</h2>
             <p className="lead dashboard-section-lead">
-              収入と支出の差分を月ごとに見て、資金の流れを荒く把握できるようにしています。
+              グローバル設定の開始日と土日祝補正ルールを使って、現在月の1か月期間を集計しています。
             </p>
           </div>
           <div className="hero-stats dashboard-hero-stats dashboard-sub-stats">
             <article>
               <span>収入合計</span>
-              <strong>{formatMoney(cashflow.totals.income)}</strong>
+              <strong>{formatMoney(cashflow.income)}</strong>
             </article>
             <article>
               <span>支出合計</span>
-              <strong>{formatMoney(cashflow.totals.expense)}</strong>
+              <strong>{formatMoney(cashflow.expense)}</strong>
             </article>
             <article>
-              <span>収支差額</span>
-              <strong>{formatMoney(cashflow.totals.net)}</strong>
+              <span>差額</span>
+              <strong>{formatMoney(cashflow.net)}</strong>
             </article>
           </div>
           {cashflowErrorMessage ? (
@@ -256,7 +253,7 @@ export function DashboardPage() {
             <p className="eyebrow">Income Categories</p>
             <h2>収入の内訳</h2>
             <p className="lead dashboard-section-lead">
-              直近 4 か月で、どのカテゴリが入金の中心になっているかを確認できます。
+              現在の基準期間で、収入カテゴリの上位を確認できます。
             </p>
           </div>
           {categoryCashflowErrorMessage ? (
@@ -267,7 +264,7 @@ export function DashboardPage() {
             <DashboardCategoryCashflowList
               title="収入カテゴリ"
               categories={categoryCashflow.incomeCategories.slice(0, 4)}
-              emptyMessage="表示できる収入カテゴリはまだありません。"
+              emptyMessage="対象期間に収入カテゴリの集計はありません。"
               tone="income"
             />
           )}
@@ -278,7 +275,7 @@ export function DashboardPage() {
             <p className="eyebrow">Expense Categories</p>
             <h2>支出の内訳</h2>
             <p className="lead dashboard-section-lead">
-              支出の大きいカテゴリを見て、固定費と変動費の偏りをざっくり掴めます。
+              現在の基準期間で、支出カテゴリの上位を確認できます。
             </p>
           </div>
           {categoryCashflowErrorMessage ? (
@@ -289,7 +286,7 @@ export function DashboardPage() {
             <DashboardCategoryCashflowList
               title="支出カテゴリ"
               categories={categoryCashflow.expenseCategories.slice(0, 4)}
-              emptyMessage="表示できる支出カテゴリはまだありません。"
+              emptyMessage="対象期間に支出カテゴリの集計はありません。"
               tone="expense"
             />
           )}
@@ -299,14 +296,12 @@ export function DashboardPage() {
   )
 }
 
-function getDefaultMonthRange() {
-  const end = new Date()
-  const start = new Date(end.getFullYear(), end.getMonth() - 3, 1)
-
-  return {
-    fromMonth: formatYearMonth(start),
-    toMonth: formatYearMonth(end),
-  }
+function formatMoney(value: string) {
+  return new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
+    maximumFractionDigits: 0,
+  }).format(Number(value))
 }
 
 function formatYearMonth(value: Date) {
@@ -315,10 +310,6 @@ function formatYearMonth(value: Date) {
   return `${year}-${month}`
 }
 
-function formatMoney(value: string) {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(Number(value))
+function getCurrentYearMonth() {
+  return formatYearMonth(new Date())
 }

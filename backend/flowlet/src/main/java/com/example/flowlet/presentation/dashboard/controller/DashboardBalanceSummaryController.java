@@ -36,17 +36,15 @@ public class DashboardBalanceSummaryController {
 
     @GetMapping("/monthly-cashflow")
     public DashboardMonthlyCashflowResponse getMonthlyCashflow(
-        @RequestParam String fromMonth,
-        @RequestParam String toMonth
+        @RequestParam String targetMonth
     ) {
-        return dashboardMonthlyCashflowService.getMonthlyCashflow(fromMonth, toMonth);
+        return dashboardMonthlyCashflowService.getMonthlyCashflow(targetMonth);
     }
 
     @GetMapping("/category-cashflow")
     public DashboardCategoryCashflowResponse getCategoryCashflow(
-        @RequestParam String fromMonth,
-        @RequestParam String toMonth
+        @RequestParam String targetMonth
     ) {
-        return dashboardCategoryCashflowService.getCategoryCashflow(fromMonth, toMonth);
+        return dashboardCategoryCashflowService.getCategoryCashflow(targetMonth);
     }
 }

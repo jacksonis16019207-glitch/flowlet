@@ -29,24 +29,13 @@ export type DashboardBalanceSummary = {
   totals: DashboardTotals
 }
 
-export type DashboardMonthlyCashflowMonth = {
-  month: string
-  income: string
-  expense: string
-  net: string
-}
-
-export type DashboardMonthlyCashflowTotals = {
-  income: string
-  expense: string
-  net: string
-}
-
 export type DashboardMonthlyCashflow = {
-  fromMonth: string
-  toMonth: string
-  months: DashboardMonthlyCashflowMonth[]
-  totals: DashboardMonthlyCashflowTotals
+  targetMonth: string
+  periodStartDate: string
+  periodEndDate: string
+  income: string
+  expense: string
+  net: string
 }
 
 export type DashboardCategoryCashflowCategory = {
@@ -61,8 +50,9 @@ export type DashboardCategoryCashflowTotals = {
 }
 
 export type DashboardCategoryCashflow = {
-  fromMonth: string
-  toMonth: string
+  targetMonth: string
+  periodStartDate: string
+  periodEndDate: string
   incomeCategories: DashboardCategoryCashflowCategory[]
   expenseCategories: DashboardCategoryCashflowCategory[]
   totals: DashboardCategoryCashflowTotals

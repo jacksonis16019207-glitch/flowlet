@@ -4,6 +4,7 @@ import { AccountPage } from './pages/accounts/AccountPage'
 import { CategoryPage } from './pages/categories/CategoryPage'
 import { DashboardPage } from './pages/dashboard/DashboardPage'
 import { GoalBucketPage } from './pages/goalBuckets/GoalBucketPage'
+import { AppSettingPage } from './pages/settings/AppSettingPage'
 import { TransactionPage } from './pages/transactions/TransactionPage'
 import './App.css'
 
@@ -14,6 +15,7 @@ type PageKey =
   | 'goalBuckets'
   | 'categories'
   | 'transactions'
+  | 'settings'
 
 const pages: {
   key: PageKey
@@ -25,37 +27,43 @@ const pages: {
     key: 'dashboard',
     label: 'ダッシュボード',
     shortLabel: '残高と収支',
-    description: '現在の残高と直近の収支を最初に確認するページです。',
+    description: '残高と今月の基準期間収支をまとめて確認するページです。',
   },
   {
     key: 'analysis',
     label: '収支分析',
-    shortLabel: '内訳',
-    description: '月次推移とカテゴリ別内訳をまとめて確認するページです。',
+    shortLabel: 'カテゴリ分析',
+    description: '対象月ごとの1か月収支とカテゴリ別内訳を確認するページです。',
   },
   {
     key: 'accounts',
     label: '口座',
-    shortLabel: '管理',
-    description: '資産口座や支払い元口座を整理して管理します。',
+    shortLabel: '口座管理',
+    description: '資産口座やカード口座を登録・編集するページです。',
   },
   {
     key: 'goalBuckets',
     label: '目的別口座',
-    shortLabel: '配分',
-    description: '使い道ごとの残高を分けて確認しやすくします。',
+    shortLabel: 'GoalBucket',
+    description: '目的別に分けた残高を管理するページです。',
   },
   {
     key: 'categories',
     label: 'カテゴリ',
-    shortLabel: '分類',
-    description: '取引入力で使う分類をまとめて整備します。',
+    shortLabel: '分類管理',
+    description: '収支カテゴリとサブカテゴリを管理するページです。',
   },
   {
     key: 'transactions',
     label: '取引',
-    shortLabel: '記録',
-    description: '通常取引、振替、配分をまとめて登録します。',
+    shortLabel: '入出金',
+    description: '通常取引、振替、配分を登録するページです。',
+  },
+  {
+    key: 'settings',
+    label: '設定',
+    shortLabel: 'グローバル',
+    description: '表示期間の開始日と土日祝補正ルールを設定するページです。',
   },
 ]
 
@@ -100,6 +108,7 @@ function App() {
       {page === 'goalBuckets' ? <GoalBucketPage /> : null}
       {page === 'categories' ? <CategoryPage /> : null}
       {page === 'transactions' ? <TransactionPage /> : null}
+      {page === 'settings' ? <AppSettingPage /> : null}
     </>
   )
 }

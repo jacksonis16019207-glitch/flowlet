@@ -7,32 +7,29 @@ type DashboardMonthlyCashflowListProps = {
 export function DashboardMonthlyCashflowList({
   cashflow,
 }: DashboardMonthlyCashflowListProps) {
-  if (cashflow.months.length === 0) {
-    return <p className="status">表示できる月次収支データがまだありません。</p>
-  }
-
   return (
     <div className="dashboard-cashflow-list">
-      {cashflow.months.map((month) => (
-        <article key={month.month} className="account-card dashboard-cashflow-card">
-          <div className="account-card-header">
-            <span className="type-chip">{formatMonth(month.month)}</span>
-            <span className={`badge ${Number(month.net) >= 0 ? 'active' : 'inactive'}`}>
-              差額 {formatMoney(month.net)}
-            </span>
+      <article className="account-card dashboard-cashflow-card">
+        <div className="account-card-header">
+          <span className="type-chip">{formatMonth(cashflow.targetMonth)}</span>
+          <span className={`badge ${Number(cashflow.net) >= 0 ? 'active' : 'inactive'}`}>
+            差額 {formatMoney(cashflow.net)}
+          </span>
+        </div>
+        <p className="account-meta-note">
+          {formatDate(cashflow.periodStartDate)} から {formatDate(cashflow.periodEndDate)}
+        </p>
+        <dl className="balance-pairs">
+          <div>
+            <dt>収入</dt>
+            <dd>{formatMoney(cashflow.income)}</dd>
           </div>
-          <dl className="balance-pairs">
-            <div>
-              <dt>収入</dt>
-              <dd>{formatMoney(month.income)}</dd>
-            </div>
-            <div>
-              <dt>支出</dt>
-              <dd>{formatMoney(month.expense)}</dd>
-            </div>
-          </dl>
-        </article>
-      ))}
+          <div>
+            <dt>支出</dt>
+            <dd>{formatMoney(cashflow.expense)}</dd>
+          </div>
+        </dl>
+      </article>
     </div>
   )
 }
@@ -40,6 +37,11 @@ export function DashboardMonthlyCashflowList({
 function formatMonth(value: string) {
   const [year, month] = value.split('-')
   return `${year}年${Number(month)}月`
+}
+
+function formatDate(value: string) {
+  const [year, month, day] = value.split('-')
+  return `${year}年${Number(month)}月${Number(day)}日`
 }
 
 function formatMoney(value: string) {

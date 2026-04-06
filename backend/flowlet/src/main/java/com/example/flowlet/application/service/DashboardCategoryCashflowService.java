@@ -1,11 +1,14 @@
 package com.example.flowlet.application.service;
 
+import com.example.flowlet.appsetting.domain.model.AppSetting;
+import com.example.flowlet.appsetting.service.AppSettingService;
 import com.example.flowlet.category.domain.model.Category;
 import com.example.flowlet.category.domain.repository.CategoryRepository;
 import com.example.flowlet.dashboard.exception.DashboardRequestException;
 import com.example.flowlet.presentation.dashboard.dto.DashboardCategoryCashflowCategoryResponse;
 import com.example.flowlet.presentation.dashboard.dto.DashboardCategoryCashflowResponse;
 import com.example.flowlet.presentation.dashboard.dto.DashboardCategoryCashflowTotalsResponse;
+import com.example.flowlet.shared.time.MonthlyBoundaryService;
 import com.example.flowlet.transaction.domain.model.Transaction;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 import com.example.flowlet.transaction.domain.repository.TransactionRepository;
@@ -14,9 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -26,39 +29,42 @@ import java.util.stream.Collectors;
 @Service
 public class DashboardCategoryCashflowService {
 
-    private static final int MAX_MONTH_RANGE = 12;
-
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
+    private final AppSettingService appSettingService;
+    private final MonthlyBoundaryService monthlyBoundaryService;
 
     public DashboardCategoryCashflowService(
         TransactionRepository transactionRepository,
-        CategoryRepository categoryRepository
+        CategoryRepository categoryRepository,
+        AppSettingService appSettingService,
+        MonthlyBoundaryService monthlyBoundaryService
     ) {
         this.transactionRepository = transactionRepository;
         this.categoryRepository = categoryRepository;
+        this.appSettingService = appSettingService;
+        this.monthlyBoundaryService = monthlyBoundaryService;
     }
 
     @Transactional(readOnly = true)
     public DashboardCategoryCashflowResponse getCategoryCashflow(
-        String fromMonthValue,
-        String toMonthValue
+        String targetMonthValue
     ) {
-        YearMonth fromMonth = parseMonth(fromMonthValue, "fromMonth");
-        YearMonth toMonth = parseMonth(toMonthValue, "toMonth");
-        validateMonthRange(fromMonth, toMonth);
+        YearMonth targetMonth = parseMonth(targetMonthValue, "targetMonth");
+        AppSetting appSetting = appSettingService.getCurrentSetting();
+        MonthlyBoundaryService.MonthlyPeriod period = monthlyBoundaryService.resolve(appSetting, targetMonth);
 
         Map<Long, Category> categoryMap = categoryRepository.findAll().stream()
             .collect(Collectors.toMap(Category::categoryId, category -> category));
 
         Map<Long, BigDecimal> incomeTotals = aggregateCategoryTotals(
-            fromMonth,
-            toMonth,
+            period.periodStartDate(),
+            period.periodEndDate(),
             transaction -> transaction.transactionType() == TransactionType.INCOME
         );
         Map<Long, BigDecimal> expenseTotals = aggregateCategoryTotals(
-            fromMonth,
-            toMonth,
+            period.periodStartDate(),
+            period.periodEndDate(),
             transaction -> transaction.transactionType() == TransactionType.EXPENSE
         );
 
@@ -68,8 +74,9 @@ public class DashboardCategoryCashflowService {
             toCategoryResponses(expenseTotals, categoryMap);
 
         return new DashboardCategoryCashflowResponse(
-            fromMonth.toString(),
-            toMonth.toString(),
+            targetMonth.toString(),
+            period.periodStartDate().toString(),
+            period.periodEndDate().toString(),
             incomeCategories,
             expenseCategories,
             new DashboardCategoryCashflowTotalsResponse(
@@ -80,15 +87,15 @@ public class DashboardCategoryCashflowService {
     }
 
     private Map<Long, BigDecimal> aggregateCategoryTotals(
-        YearMonth fromMonth,
-        YearMonth toMonth,
+        LocalDate periodStartDate,
+        LocalDate periodEndDate,
         Predicate<Transaction> predicate
     ) {
         return transactionRepository.findAll().stream()
             .filter(predicate)
             .filter(transaction -> {
-                YearMonth transactionMonth = YearMonth.from(transaction.transactionDate());
-                return !transactionMonth.isBefore(fromMonth) && !transactionMonth.isAfter(toMonth);
+                LocalDate transactionDate = transaction.transactionDate();
+                return !transactionDate.isBefore(periodStartDate) && !transactionDate.isAfter(periodEndDate);
             })
             .collect(Collectors.toMap(
                 Transaction::categoryId,
@@ -142,26 +149,6 @@ public class DashboardCategoryCashflowService {
                 "INVALID_MONTH_FORMAT",
                 "error.dashboard.invalidMonthFormat",
                 fieldName
-            );
-        }
-    }
-
-    private void validateMonthRange(YearMonth fromMonth, YearMonth toMonth) {
-        if (fromMonth.isAfter(toMonth)) {
-            throw new DashboardRequestException(
-                HttpStatus.BAD_REQUEST,
-                "INVALID_MONTH_RANGE",
-                "error.dashboard.invalidMonthRange"
-            );
-        }
-
-        long monthCount = ChronoUnit.MONTHS.between(fromMonth, toMonth) + 1;
-        if (monthCount > MAX_MONTH_RANGE) {
-            throw new DashboardRequestException(
-                HttpStatus.BAD_REQUEST,
-                "MONTH_RANGE_TOO_LARGE",
-                "error.dashboard.monthRangeTooLarge",
-                MAX_MONTH_RANGE
             );
         }
     }

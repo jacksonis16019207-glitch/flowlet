@@ -1,11 +1,13 @@
 package com.example.flowlet.presentation.dashboard.dto;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 public record DashboardMonthlyCashflowResponse(
-    String fromMonth,
-    String toMonth,
-    List<DashboardMonthlyCashflowMonthResponse> months,
-    DashboardMonthlyCashflowTotalsResponse totals
+    String targetMonth,
+    String periodStartDate,
+    String periodEndDate,
+    BigDecimal income,
+    BigDecimal expense,
+    BigDecimal net
 ) {
 }

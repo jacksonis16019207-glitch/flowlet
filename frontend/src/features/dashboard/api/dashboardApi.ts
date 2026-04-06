@@ -10,10 +10,9 @@ export function fetchDashboardBalanceSummary(): Promise<DashboardBalanceSummary>
 }
 
 export function fetchDashboardMonthlyCashflow(
-  fromMonth: string,
-  toMonth: string,
+  targetMonth: string,
 ): Promise<DashboardMonthlyCashflow> {
-  const searchParams = new URLSearchParams({ fromMonth, toMonth })
+  const searchParams = new URLSearchParams({ targetMonth })
 
   return requestJson<DashboardMonthlyCashflow>(
     `/api/dashboard/monthly-cashflow?${searchParams.toString()}`,
@@ -21,10 +20,9 @@ export function fetchDashboardMonthlyCashflow(
 }
 
 export function fetchDashboardCategoryCashflow(
-  fromMonth: string,
-  toMonth: string,
+  targetMonth: string,
 ): Promise<DashboardCategoryCashflow> {
-  const searchParams = new URLSearchParams({ fromMonth, toMonth })
+  const searchParams = new URLSearchParams({ targetMonth })
 
   return requestJson<DashboardCategoryCashflow>(
     `/api/dashboard/category-cashflow?${searchParams.toString()}`,

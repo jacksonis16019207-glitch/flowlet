@@ -11,19 +11,18 @@ import type {
 } from '../../features/dashboard/types/dashboard'
 
 const emptyCashflow: DashboardMonthlyCashflow = {
-  fromMonth: '',
-  toMonth: '',
-  months: [],
-  totals: {
-    income: '0',
-    expense: '0',
-    net: '0',
-  },
+  targetMonth: '',
+  periodStartDate: '',
+  periodEndDate: '',
+  income: '0',
+  expense: '0',
+  net: '0',
 }
 
 const emptyCategoryCashflow: DashboardCategoryCashflow = {
-  fromMonth: '',
-  toMonth: '',
+  targetMonth: '',
+  periodStartDate: '',
+  periodEndDate: '',
   incomeCategories: [],
   expenseCategories: [],
   totals: {
@@ -33,10 +32,9 @@ const emptyCategoryCashflow: DashboardCategoryCashflow = {
 }
 
 export function CashflowAnalysisPage() {
-  const defaultRange = getDefaultMonthRange()
-  const [fromMonth, setFromMonth] = useState(defaultRange.fromMonth)
-  const [toMonth, setToMonth] = useState(defaultRange.toMonth)
-  const [appliedRange, setAppliedRange] = useState(defaultRange)
+  const defaultTargetMonth = getCurrentYearMonth()
+  const [targetMonth, setTargetMonth] = useState(defaultTargetMonth)
+  const [appliedTargetMonth, setAppliedTargetMonth] = useState(defaultTargetMonth)
   const [cashflow, setCashflow] = useState<DashboardMonthlyCashflow>(emptyCashflow)
   const [categoryCashflow, setCategoryCashflow] =
     useState<DashboardCategoryCashflow>(emptyCategoryCashflow)
@@ -49,8 +47,8 @@ export function CashflowAnalysisPage() {
     setErrorMessage('')
 
     void Promise.all([
-      fetchDashboardMonthlyCashflow(appliedRange.fromMonth, appliedRange.toMonth),
-      fetchDashboardCategoryCashflow(appliedRange.fromMonth, appliedRange.toMonth),
+      fetchDashboardMonthlyCashflow(appliedTargetMonth),
+      fetchDashboardCategoryCashflow(appliedTargetMonth),
     ])
       .then(([cashflowResponse, categoryCashflowResponse]) => {
         if (!active) {
@@ -66,7 +64,7 @@ export function CashflowAnalysisPage() {
         }
 
         setErrorMessage(
-          '収支分析データの取得に失敗しました。バックエンドの状態を確認してください。',
+          '収支分析データの取得に失敗しました。バックエンド API の状態を確認してください。',
         )
       })
       .finally(() => {
@@ -78,59 +76,51 @@ export function CashflowAnalysisPage() {
     return () => {
       active = false
     }
-  }, [appliedRange])
+  }, [appliedTargetMonth])
 
   return (
     <main className="app-shell">
       <section className="hero-panel">
         <p className="eyebrow">flowlet / analysis</p>
-        <h1>収支の偏りと推移をまとめて確認する</h1>
+        <h1>1か月単位の収支を振り返る</h1>
         <p className="lead">
-          月次の増減とカテゴリ別の偏りを同じ画面に並べて、どこで増えたか、
-          どこで使ったかを短時間で把握できるようにしています。
+          対象月を選ぶと、グローバル設定した開始日と土日祝補正ルールに従って、
+          その月の表示期間を1か月で集計します。
         </p>
         <form
           className="analysis-filter-row"
           onSubmit={(event) => {
             event.preventDefault()
-            setAppliedRange({ fromMonth, toMonth })
+            setAppliedTargetMonth(targetMonth)
           }}
         >
           <label>
-            開始月
+            対象月
             <input
               type="month"
-              value={fromMonth}
-              onChange={(event) => setFromMonth(event.target.value)}
-            />
-          </label>
-          <label>
-            終了月
-            <input
-              type="month"
-              value={toMonth}
-              onChange={(event) => setToMonth(event.target.value)}
+              value={targetMonth}
+              onChange={(event) => setTargetMonth(event.target.value)}
             />
           </label>
           <div className="button-row">
-            <button type="submit">分析を更新</button>
+            <button type="submit">集計を更新</button>
           </div>
         </form>
         <div className="hero-stats dashboard-hero-stats">
           <article>
             <span>収入合計</span>
-            <strong>{formatMoney(cashflow.totals.income)}</strong>
-            <small>{cashflow.fromMonth || appliedRange.fromMonth} から集計</small>
+            <strong>{formatMoney(cashflow.income)}</strong>
+            <small>{formatPeriod(cashflow.periodStartDate, cashflow.periodEndDate)}</small>
           </article>
           <article>
             <span>支出合計</span>
-            <strong>{formatMoney(cashflow.totals.expense)}</strong>
-            <small>{cashflow.toMonth || appliedRange.toMonth} まで集計</small>
+            <strong>{formatMoney(cashflow.expense)}</strong>
+            <small>対象月 {cashflow.targetMonth || appliedTargetMonth}</small>
           </article>
           <article>
             <span>差額</span>
-            <strong>{formatMoney(cashflow.totals.net)}</strong>
-            <small>カテゴリ別内訳も同期間で集計</small>
+            <strong>{formatMoney(cashflow.net)}</strong>
+            <small>カテゴリ別内訳も同じ期間で集計</small>
           </article>
         </div>
       </section>
@@ -147,9 +137,9 @@ export function CashflowAnalysisPage() {
         <section className="panel dashboard-panel-full">
           <div className="panel-heading">
             <p className="eyebrow">Monthly Cashflow</p>
-            <h2>月次推移</h2>
+            <h2>対象期間の収支</h2>
             <p className="lead dashboard-section-lead">
-              月ごとの収入、支出、差額を並べて、波の大きい月を見つけやすくします。
+              グローバル設定した月初基準に従って、対象月に対応する1か月期間の収支を表示します。
             </p>
           </div>
           {loading ? (
@@ -164,7 +154,7 @@ export function CashflowAnalysisPage() {
         <section className="panel">
           <div className="panel-heading">
             <p className="eyebrow">Income Categories</p>
-            <h2>収入カテゴリ内訳</h2>
+            <h2>収入カテゴリ別内訳</h2>
           </div>
           {loading ? (
             <p className="status">読み込み中...</p>
@@ -172,7 +162,7 @@ export function CashflowAnalysisPage() {
             <DashboardCategoryCashflowList
               title="収入カテゴリ"
               categories={categoryCashflow.incomeCategories}
-              emptyMessage="表示できる収入カテゴリはまだありません。"
+              emptyMessage="対象期間に収入カテゴリの集計はありません。"
               tone="income"
             />
           )}
@@ -181,7 +171,7 @@ export function CashflowAnalysisPage() {
         <section className="panel">
           <div className="panel-heading">
             <p className="eyebrow">Expense Categories</p>
-            <h2>支出カテゴリ内訳</h2>
+            <h2>支出カテゴリ別内訳</h2>
           </div>
           {loading ? (
             <p className="status">読み込み中...</p>
@@ -189,7 +179,7 @@ export function CashflowAnalysisPage() {
             <DashboardCategoryCashflowList
               title="支出カテゴリ"
               categories={categoryCashflow.expenseCategories}
-              emptyMessage="表示できる支出カテゴリはまだありません。"
+              emptyMessage="対象期間に支出カテゴリの集計はありません。"
               tone="expense"
             />
           )}
@@ -199,14 +189,8 @@ export function CashflowAnalysisPage() {
   )
 }
 
-function getDefaultMonthRange() {
-  const end = new Date()
-  const start = new Date(end.getFullYear(), end.getMonth() - 5, 1)
-
-  return {
-    fromMonth: formatYearMonth(start),
-    toMonth: formatYearMonth(end),
-  }
+function getCurrentYearMonth() {
+  return formatYearMonth(new Date())
 }
 
 function formatYearMonth(value: Date) {
@@ -221,4 +205,12 @@ function formatMoney(value: string) {
     currency: 'JPY',
     maximumFractionDigits: 0,
   }).format(Number(value))
+}
+
+function formatPeriod(startDate: string, endDate: string) {
+  if (!startDate || !endDate) {
+    return '期間を計算中'
+  }
+
+  return `${startDate} から ${endDate}`
 }

@@ -3,7 +3,10 @@ package com.example.flowlet.dashboard;
 import com.example.flowlet.account.domain.model.Account;
 import com.example.flowlet.account.domain.model.AccountCategory;
 import com.example.flowlet.account.domain.model.BalanceSide;
+import com.example.flowlet.account.domain.model.PaymentDateAdjustmentRule;
 import com.example.flowlet.account.domain.repository.AccountRepository;
+import com.example.flowlet.appsetting.domain.model.AppSetting;
+import com.example.flowlet.appsetting.domain.repository.AppSettingRepository;
 import com.example.flowlet.goalbucket.domain.repository.GoalBucketRepository;
 import com.example.flowlet.infrastructure.jpa.category.entity.CategoryEntity;
 import com.example.flowlet.infrastructure.jpa.category.entity.SubcategoryEntity;
@@ -55,6 +58,9 @@ class DashboardCategoryCashflowControllerTest {
     @Autowired
     private SpringDataSubcategoryRepository subcategoryRepository;
 
+    @Autowired
+    private AppSettingRepository appSettingRepository;
+
     @BeforeEach
     void setUp() {
         goalBucketAllocationRepository.deleteAll();
@@ -66,7 +72,16 @@ class DashboardCategoryCashflowControllerTest {
     }
 
     @Test
-    void getCategoryCashflowReturnsIncomeAndExpenseBreakdown() throws Exception {
+    void getCategoryCashflowReturnsIncomeAndExpenseBreakdownWithinConfiguredPeriod() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        appSettingRepository.save(new AppSetting(
+            1L,
+            23,
+            PaymentDateAdjustmentRule.PREVIOUS_BUSINESS_DAY,
+            now,
+            now
+        ));
+
         Account main = accountRepository.save(new Account(
             null,
             "MUFG",
@@ -76,21 +91,19 @@ class DashboardCategoryCashflowControllerTest {
             BigDecimal.valueOf(100000),
             true,
             10,
-            LocalDateTime.now(),
-            LocalDateTime.now()
+            now,
+            now
         ));
 
         CategoryEntity salary = saveCategory("給与", com.example.flowlet.category.domain.model.CategoryType.INCOME, 10);
         CategoryEntity bonus = saveCategory("賞与", com.example.flowlet.category.domain.model.CategoryType.INCOME, 20);
         CategoryEntity food = saveCategory("食費", com.example.flowlet.category.domain.model.CategoryType.EXPENSE, 10);
         CategoryEntity housing = saveCategory("住居費", com.example.flowlet.category.domain.model.CategoryType.EXPENSE, 20);
-        CategoryEntity transfer = saveCategory("振替", com.example.flowlet.category.domain.model.CategoryType.TRANSFER, 30);
 
-        SubcategoryEntity salarySubcategory = saveSubcategory(salary.getCategoryId(), "月給");
-        SubcategoryEntity bonusSubcategory = saveSubcategory(bonus.getCategoryId(), "賞与");
-        SubcategoryEntity foodSubcategory = saveSubcategory(food.getCategoryId(), "外食");
+        SubcategoryEntity salarySubcategory = saveSubcategory(salary.getCategoryId(), "月次");
+        SubcategoryEntity bonusSubcategory = saveSubcategory(bonus.getCategoryId(), "特別");
+        SubcategoryEntity foodSubcategory = saveSubcategory(food.getCategoryId(), "日常");
         SubcategoryEntity housingSubcategory = saveSubcategory(housing.getCategoryId(), "家賃");
-        SubcategoryEntity transferSubcategory = saveSubcategory(transfer.getCategoryId(), "移動");
 
         transactionRepository.save(new Transaction(
             null,
@@ -99,13 +112,13 @@ class DashboardCategoryCashflowControllerTest {
             salary.getCategoryId(),
             salarySubcategory.getSubcategoryId(),
             TransactionType.INCOME,
-            LocalDate.of(2026, 3, 1),
+            LocalDate.of(2026, 2, 20),
             BigDecimal.valueOf(280000),
-            "給与",
+            "salary",
             null,
             null,
-            LocalDateTime.now(),
-            LocalDateTime.now()
+            now,
+            now
         ));
         transactionRepository.save(new Transaction(
             null,
@@ -114,28 +127,13 @@ class DashboardCategoryCashflowControllerTest {
             bonus.getCategoryId(),
             bonusSubcategory.getSubcategoryId(),
             TransactionType.INCOME,
-            LocalDate.of(2026, 3, 15),
-            BigDecimal.valueOf(50000),
-            "賞与",
-            null,
-            null,
-            LocalDateTime.now(),
-            LocalDateTime.now()
-        ));
-        transactionRepository.save(new Transaction(
-            null,
-            main.accountId(),
-            null,
-            food.getCategoryId(),
-            foodSubcategory.getSubcategoryId(),
-            TransactionType.EXPENSE,
             LocalDate.of(2026, 3, 5),
-            BigDecimal.valueOf(24000),
-            "外食",
+            BigDecimal.valueOf(50000),
+            "bonus",
             null,
             null,
-            LocalDateTime.now(),
-            LocalDateTime.now()
+            now,
+            now
         ));
         transactionRepository.save(new Transaction(
             null,
@@ -144,13 +142,13 @@ class DashboardCategoryCashflowControllerTest {
             food.getCategoryId(),
             foodSubcategory.getSubcategoryId(),
             TransactionType.EXPENSE,
-            LocalDate.of(2026, 4, 5),
-            BigDecimal.valueOf(11000),
-            "スーパー",
+            LocalDate.of(2026, 3, 10),
+            BigDecimal.valueOf(35000),
+            "food",
             null,
             null,
-            LocalDateTime.now(),
-            LocalDateTime.now()
+            now,
+            now
         ));
         transactionRepository.save(new Transaction(
             null,
@@ -159,36 +157,36 @@ class DashboardCategoryCashflowControllerTest {
             housing.getCategoryId(),
             housingSubcategory.getSubcategoryId(),
             TransactionType.EXPENSE,
-            LocalDate.of(2026, 4, 10),
+            LocalDate.of(2026, 3, 22),
             BigDecimal.valueOf(72000),
-            "家賃",
+            "housing",
             null,
             null,
-            LocalDateTime.now(),
-            LocalDateTime.now()
+            now,
+            now
         ));
         transactionRepository.save(new Transaction(
             null,
             main.accountId(),
             null,
-            transfer.getCategoryId(),
-            transferSubcategory.getSubcategoryId(),
-            TransactionType.TRANSFER_OUT,
-            LocalDate.of(2026, 4, 12),
-            BigDecimal.valueOf(20000),
-            "積立",
+            housing.getCategoryId(),
+            housingSubcategory.getSubcategoryId(),
+            TransactionType.EXPENSE,
+            LocalDate.of(2026, 3, 23),
+            BigDecimal.valueOf(11111),
+            "next period",
             null,
             null,
-            LocalDateTime.now(),
-            LocalDateTime.now()
+            now,
+            now
         ));
 
         mockMvc.perform(get("/api/dashboard/category-cashflow")
-                .param("fromMonth", "2026-03")
-                .param("toMonth", "2026-04"))
+                .param("targetMonth", "2026-02"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.fromMonth").value("2026-03"))
-            .andExpect(jsonPath("$.toMonth").value("2026-04"))
+            .andExpect(jsonPath("$.targetMonth").value("2026-02"))
+            .andExpect(jsonPath("$.periodStartDate").value("2026-02-20"))
+            .andExpect(jsonPath("$.periodEndDate").value("2026-03-22"))
             .andExpect(jsonPath("$.incomeCategories.length()").value(2))
             .andExpect(jsonPath("$.incomeCategories[0].categoryName").value("給与"))
             .andExpect(jsonPath("$.incomeCategories[0].amount").value(280000))
@@ -206,8 +204,7 @@ class DashboardCategoryCashflowControllerTest {
     @Test
     void getCategoryCashflowRejectsInvalidMonthFormat() throws Exception {
         mockMvc.perform(get("/api/dashboard/category-cashflow")
-                .param("fromMonth", "2026/03")
-                .param("toMonth", "2026-04"))
+                .param("targetMonth", "2026/03"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("INVALID_MONTH_FORMAT"));
     }
