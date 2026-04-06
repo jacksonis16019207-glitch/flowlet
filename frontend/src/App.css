@@ -411,6 +411,12 @@
   margin: 0 auto 24px;
 }
 
+.transaction-action-panel,
+.transaction-allocation-panel {
+  max-width: 1180px;
+  margin: 0 auto 24px;
+}
+
 .transaction-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -504,6 +510,7 @@
 }
 
 .transaction-workbench-grid {
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -521,6 +528,11 @@
 
 .transaction-month-switcher strong {
   font-size: 1.05rem;
+}
+
+.transaction-period-label {
+  margin-top: -8px;
+  margin-bottom: 20px;
 }
 
 .transaction-filter-grid {

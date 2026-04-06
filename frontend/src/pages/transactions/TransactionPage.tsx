@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Dispatch, FormEvent, SetStateAction } from 'react'
 import { fetchAccounts } from '../../features/account/api/accountApi'
+import { fetchAppSetting } from '../../features/appSetting/api/appSettingApi'
+import type { AppSetting } from '../../features/appSetting/types/appSetting'
 import type { Account } from '../../features/account/types/account'
+import type { PaymentDateAdjustmentRule } from '../../features/account/types/account'
 import {
   createCategory,
   createSubcategory,
@@ -47,6 +50,11 @@ type TransactionFilterType = 'ALL' | TransactionType
 type TransactionEntryMode = 'single' | 'batch'
 
 const today = new Date().toISOString().slice(0, 10)
+const defaultAppSetting: AppSetting = {
+  monthStartDay: 1,
+  monthStartAdjustmentRule: 'NONE',
+  updatedAt: '',
+}
 
 const initialTransactionForm: CreateTransactionInput = {
   accountId: 0,
@@ -133,6 +141,7 @@ export function TransactionPage() {
   const [transactionEntryMode, setTransactionEntryMode] =
     useState<TransactionEntryMode>('single')
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [appSetting, setAppSetting] = useState<AppSetting>(defaultAppSetting)
   const [goalBuckets, setGoalBuckets] = useState<GoalBucket[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [subcategories, setSubcategories] = useState<Subcategory[]>([])
@@ -223,6 +232,10 @@ export function TransactionPage() {
       goalBuckets.filter((goalBucket) => goalBucket.accountId === allocationAccountId),
     [goalBuckets, allocationAccountId],
   )
+  const displayPeriod = useMemo(
+    () => resolveMonthlyPeriod(appSetting, displayMonth),
+    [appSetting, displayMonth],
+  )
   const currentTabMeta =
     transactionTabMeta.find((tab) => tab.key === activeTab) ?? transactionTabMeta[0]
   const sortedTransactions = useMemo(
@@ -232,7 +245,10 @@ export function TransactionPage() {
   const filteredTransactions = useMemo(
     () =>
       sortedTransactions.filter((transaction) => {
-        if (!transaction.transactionDate.startsWith(displayMonth)) {
+        if (
+          transaction.transactionDate < displayPeriod.periodStartDate ||
+          transaction.transactionDate > displayPeriod.periodEndDate
+        ) {
           return false
         }
 
@@ -268,7 +284,8 @@ export function TransactionPage() {
       }),
     [
       sortedTransactions,
-      displayMonth,
+      displayPeriod.periodEndDate,
+      displayPeriod.periodStartDate,
       transactionFilterType,
       transactionFilterAccountId,
       transactionFilterKeyword,
@@ -307,6 +324,7 @@ export function TransactionPage() {
     setErrorMessage('')
     try {
       const [
+        appSettingData,
         accountData,
         goalBucketData,
         categoryData,
@@ -314,6 +332,7 @@ export function TransactionPage() {
         transactionData,
         allocationData,
       ] = await Promise.all([
+        fetchAppSetting(),
         fetchAccounts(),
         fetchGoalBuckets(),
         fetchCategories(undefined, true),
@@ -321,12 +340,14 @@ export function TransactionPage() {
         fetchTransactions(),
         fetchGoalBucketAllocations(),
       ])
+      setAppSetting(appSettingData)
       setAccounts(accountData)
       setGoalBuckets(goalBucketData)
       setCategories(categoryData)
       setSubcategories(subcategoryData)
       setTransactions(transactionData)
       setAllocations(allocationData)
+      setDisplayMonth(resolveContainingMonth(appSettingData, new Date()))
 
       const defaultAccountId = accountData[0]?.accountId ?? 0
       const expenseCategoryId =
@@ -762,7 +783,7 @@ export function TransactionPage() {
         </p>
       </section>
 
-      <section className="panel">
+      <section className="panel transaction-action-panel">
         <div className="panel-heading">
           <h2>取引アクション</h2>
           <button type="button" onClick={() => setEntryModalOpen(true)}>
@@ -1211,6 +1232,9 @@ export function TransactionPage() {
               {'>'}
             </button>
           </div>
+          <p className="section-description transaction-period-label">
+            {formatPeriodLabel(displayPeriod.periodStartDate, displayPeriod.periodEndDate)}
+          </p>
           <div className="transaction-filter-grid">
             <label>
               種別
@@ -2136,6 +2160,78 @@ function shiftMonthLabel(monthLabel: string, diff: number) {
 function formatMonthLabel(monthLabel: string) {
   const [year, month] = monthLabel.split('-').map(Number)
   return `${year}年${month}月`
+}
+
+function formatPeriodLabel(startDate: string, endDate: string) {
+  return `${formatDateLabel(startDate)} から ${formatDateLabel(endDate)}`
+}
+
+function resolveContainingMonth(appSetting: AppSetting, date: Date) {
+  const currentMonth = formatYearMonth(date.getFullYear(), date.getMonth() + 1)
+  const currentPeriod = resolveMonthlyPeriod(appSetting, currentMonth)
+  const dateLabel = formatDateInput(date)
+  if (dateLabel >= currentPeriod.periodStartDate && dateLabel <= currentPeriod.periodEndDate) {
+    return currentMonth
+  }
+
+  const previousDate = new Date(date.getFullYear(), date.getMonth() - 1, 1)
+  return formatYearMonth(previousDate.getFullYear(), previousDate.getMonth() + 1)
+}
+
+function resolveMonthlyPeriod(appSetting: AppSetting, monthLabel: string) {
+  const [year, month] = monthLabel.split('-').map(Number)
+  const periodStartDate = adjustMonthBoundary(
+    new Date(year, month - 1, clampDayToMonth(year, month, appSetting.monthStartDay)),
+    appSetting.monthStartAdjustmentRule,
+  )
+  const nextMonth = shiftMonthLabel(monthLabel, 1)
+  const [nextYear, nextMonthNumber] = nextMonth.split('-').map(Number)
+  const nextPeriodStartDate = adjustMonthBoundary(
+    new Date(
+      nextYear,
+      nextMonthNumber - 1,
+      clampDayToMonth(nextYear, nextMonthNumber, appSetting.monthStartDay),
+    ),
+    appSetting.monthStartAdjustmentRule,
+  )
+
+  return {
+    periodStartDate: formatDateInput(periodStartDate),
+    periodEndDate: formatDateInput(
+      new Date(
+        nextPeriodStartDate.getFullYear(),
+        nextPeriodStartDate.getMonth(),
+        nextPeriodStartDate.getDate() - 1,
+      ),
+    ),
+  }
+}
+
+function adjustMonthBoundary(date: Date, rule: PaymentDateAdjustmentRule) {
+  const adjusted = new Date(date)
+  if (rule === 'NONE') {
+    return adjusted
+  }
+
+  while (adjusted.getDay() === 0 || adjusted.getDay() === 6) {
+    adjusted.setDate(adjusted.getDate() + (rule === 'NEXT_BUSINESS_DAY' ? 1 : -1))
+  }
+
+  return adjusted
+}
+
+function clampDayToMonth(year: number, month: number, day: number) {
+  return Math.min(day, new Date(year, month, 0).getDate())
+}
+
+function formatYearMonth(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, '0')}`
+}
+
+function formatDateInput(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate(),
+  ).padStart(2, '0')}`
 }
 
 function buildAllocationPayload(
