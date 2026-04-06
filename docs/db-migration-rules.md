@@ -50,3 +50,13 @@
 
 - テーブル再作成を行う migration では、再作成前に旧テーブルを `drop table` する手順を必ず含める。
 - 全テーブルで `created_at` と `updated_at` は末尾 2 列に固定する。
+- 
+## 明文化した必須ルール
+
+- migration SQL のコメントは必須とする
+- 新規テーブルだけでなく、既存テーブル再作成 migration でも table comment / column comment を必ず付ける
+- 既存テーブルのカラム追加・削除・型変更・制約変更は、原則として `ALTER TABLE` ではなくテーブル再作成で行う
+- カラム位置を整える目的の変更も、既存データ移行を伴うテーブル再作成として扱う
+- 既存データ移行を伴う場合は `flowlet_backup_v<version>` スキーマへバックアップテーブルを作成してから実施する
+- バックアップを同一 migration 内で削除しない
+- 既存 migration に不備があっても、過去 migration の直接修正はせず、後続 version で是正する
