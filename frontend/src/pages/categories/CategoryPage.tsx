@@ -46,10 +46,14 @@ const categoryTypeDescriptions: Record<CategoryType, string> = {
 }
 
 type CategoryModalMode = 'create' | 'edit' | null
+type CategorySortOrder = 'displayOrder' | 'name'
 
 export function CategoryPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [subcategories, setSubcategories] = useState<Subcategory[]>([])
+  const [activeCategoryType, setActiveCategoryType] = useState<CategoryType>('EXPENSE')
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [sortOrder, setSortOrder] = useState<CategorySortOrder>('displayOrder')
   const [createCategoryForm, setCreateCategoryForm] =
     useState<CategoryUpsertInput>(emptyCategoryForm)
   const [createSubcategoryForms, setCreateSubcategoryForms] = useState<
@@ -113,12 +117,41 @@ export function CategoryPage() {
       categoryTypeOrder.map((categoryType) => ({
         categoryType,
         label: categoryTypeLabels[categoryType],
-        items: categories.filter(
-          (category) => category.categoryType === categoryType,
-        ),
+        items: categories
+          .filter((category) => category.categoryType === categoryType)
+          .filter((category) => {
+            const keyword = searchKeyword.trim().toLowerCase()
+            if (!keyword) {
+              return true
+            }
+
+            const relatedSubcategories = subcategories.filter(
+              (subcategory) => subcategory.categoryId === category.categoryId,
+            )
+            const targets = [
+              category.categoryName,
+              ...relatedSubcategories.map((subcategory) => subcategory.subcategoryName),
+            ]
+
+            return targets.some((target) => target.toLowerCase().includes(keyword))
+          })
+          .sort((left, right) => {
+            if (sortOrder === 'name') {
+              return left.categoryName.localeCompare(right.categoryName, 'ja')
+            }
+
+            if (left.displayOrder !== right.displayOrder) {
+              return left.displayOrder - right.displayOrder
+            }
+
+            return left.categoryName.localeCompare(right.categoryName, 'ja')
+          }),
       })),
-    [categories],
+    [categories, searchKeyword, sortOrder, subcategories],
   )
+  const activeGroup =
+    groupedCategories.find((group) => group.categoryType === activeCategoryType) ??
+    groupedCategories[0]
 
   const categoryFormValue =
     categoryModalMode === 'edit' ? editingCategoryForm : createCategoryForm
@@ -333,6 +366,10 @@ export function CategoryPage() {
             <span>サブカテゴリ数</span>
             <strong>{subcategories.length}</strong>
           </article>
+          <article>
+            <span>表示中</span>
+            <strong>{categoryTypeLabels[activeCategoryType]}</strong>
+          </article>
         </div>
       </section>
 
@@ -356,6 +393,46 @@ export function CategoryPage() {
             </button>
           </div>
 
+          <div className="category-toolbar">
+            <div className="category-type-tabs" role="tablist" aria-label="カテゴリ種別">
+              {categoryTypeOrder.map((categoryType) => (
+                <button
+                  key={categoryType}
+                  type="button"
+                  role="tab"
+                  className={activeCategoryType === categoryType ? 'active' : ''}
+                  aria-selected={activeCategoryType === categoryType}
+                  onClick={() => setActiveCategoryType(categoryType)}
+                >
+                  {categoryTypeLabels[categoryType]}
+                </button>
+              ))}
+            </div>
+            <div className="category-filter-row">
+              <label>
+                キーワード検索
+                <input
+                  type="search"
+                  value={searchKeyword}
+                  onChange={(event) => setSearchKeyword(event.target.value)}
+                  placeholder="カテゴリ名・サブカテゴリ名で絞り込む"
+                />
+              </label>
+              <label>
+                並び順
+                <select
+                  value={sortOrder}
+                  onChange={(event) =>
+                    setSortOrder(event.target.value as CategorySortOrder)
+                  }
+                >
+                  <option value="displayOrder">表示順</option>
+                  <option value="name">名前順</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
           {loading ? <div className="status">カテゴリを読み込み中です...</div> : null}
           {!loading && errorMessage ? (
             <div className="status error">{errorMessage}</div>
@@ -363,52 +440,54 @@ export function CategoryPage() {
 
           {!loading && !errorMessage ? (
             <div className="category-management">
-              {groupedCategories.map((group) => (
-                <section key={group.categoryType} className="category-type-group">
-                  <div className="section-heading">
-                    <div>
-                      <h3>{group.label}</h3>
-                      <p className="section-description">
-                        {categoryTypeDescriptions[group.categoryType]}
-                      </p>
+              <section key={activeGroup.categoryType} className="category-type-group">
+                <div className="section-heading">
+                  <div>
+                    <h3>{activeGroup.label}</h3>
+                    <p className="section-description">
+                      {categoryTypeDescriptions[activeGroup.categoryType]}
+                    </p>
+                  </div>
+                  <span>{activeGroup.items.length}件</span>
+                </div>
+
+                <div className="category-stack">
+                  {activeGroup.items.length === 0 ? (
+                    <div className="status">
+                      {searchKeyword
+                        ? '条件に一致するカテゴリはありません。'
+                        : 'まだ登録されていません。'}
                     </div>
-                    <span>{group.items.length}件</span>
-                  </div>
+                  ) : null}
 
-                  <div className="category-stack">
-                    {group.items.length === 0 ? (
-                      <div className="status">まだ登録されていません。</div>
-                    ) : null}
-
-                    {group.items.map((category) => (
-                      <CategoryCard
-                        key={category.categoryId}
-                        category={category}
-                        categories={categories}
-                        subcategories={subcategories.filter(
-                          (subcategory) => subcategory.categoryId === category.categoryId,
-                        )}
-                        createSubcategoryForm={
-                          createSubcategoryForms[category.categoryId] ??
-                          emptySubcategoryForm(category.categoryId)
-                        }
-                        editingSubcategoryId={editingSubcategoryId}
-                        editingSubcategoryForm={editingSubcategoryForm}
-                        submitting={submitting}
-                        onBeginCategoryEdit={beginCategoryEdit}
-                        onDeleteCategory={handleDeleteCategory}
-                        onBeginSubcategoryEdit={beginSubcategoryEdit}
-                        onDeleteSubcategory={handleDeleteSubcategory}
-                        onSubcategoryFormChange={setEditingSubcategoryForm}
-                        onCancelSubcategoryEdit={() => setEditingSubcategoryId(null)}
-                        onUpdateSubcategory={handleUpdateSubcategory}
-                        onCreateSubcategoryFormChange={updateCreateSubcategoryForm}
-                        onCreateSubcategory={handleCreateSubcategory}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
+                  {activeGroup.items.map((category) => (
+                    <CategoryCard
+                      key={category.categoryId}
+                      category={category}
+                      categories={categories}
+                      subcategories={subcategories.filter(
+                        (subcategory) => subcategory.categoryId === category.categoryId,
+                      )}
+                      createSubcategoryForm={
+                        createSubcategoryForms[category.categoryId] ??
+                        emptySubcategoryForm(category.categoryId)
+                      }
+                      editingSubcategoryId={editingSubcategoryId}
+                      editingSubcategoryForm={editingSubcategoryForm}
+                      submitting={submitting}
+                      onBeginCategoryEdit={beginCategoryEdit}
+                      onDeleteCategory={handleDeleteCategory}
+                      onBeginSubcategoryEdit={beginSubcategoryEdit}
+                      onDeleteSubcategory={handleDeleteSubcategory}
+                      onSubcategoryFormChange={setEditingSubcategoryForm}
+                      onCancelSubcategoryEdit={() => setEditingSubcategoryId(null)}
+                      onUpdateSubcategory={handleUpdateSubcategory}
+                      onCreateSubcategoryFormChange={updateCreateSubcategoryForm}
+                      onCreateSubcategory={handleCreateSubcategory}
+                    />
+                  ))}
+                </div>
+              </section>
             </div>
           ) : null}
         </section>
@@ -596,6 +675,14 @@ function CategoryCard({
   onCreateSubcategoryFormChange,
   onCreateSubcategory,
 }: CategoryCardProps) {
+  const sortedSubcategories = [...subcategories].sort((left, right) => {
+    if (left.displayOrder !== right.displayOrder) {
+      return left.displayOrder - right.displayOrder
+    }
+
+    return left.subcategoryName.localeCompare(right.subcategoryName, 'ja')
+  })
+
   return (
     <article className="account-card">
       <div className="account-card-header">
@@ -634,11 +721,11 @@ function CategoryCard({
         </div>
 
         <div className="subcategory-list">
-          {subcategories.length === 0 ? (
+          {sortedSubcategories.length === 0 ? (
             <div className="status">まだ登録されていません。</div>
           ) : null}
 
-          {subcategories.map((subcategory) => (
+          {sortedSubcategories.map((subcategory) => (
             <div key={subcategory.subcategoryId} className="subcategory-item">
               <div>
                 <strong>{subcategory.subcategoryName}</strong>
@@ -670,7 +757,7 @@ function CategoryCard({
         </div>
 
         {editingSubcategoryId !== null &&
-        subcategories.some(
+        sortedSubcategories.some(
           (subcategory) => subcategory.subcategoryId === editingSubcategoryId,
         ) ? (
           <form
