@@ -48,3 +48,22 @@ export type DashboardMonthlyCashflow = {
   months: DashboardMonthlyCashflowMonth[]
   totals: DashboardMonthlyCashflowTotals
 }
+
+export type DashboardCategoryCashflowCategory = {
+  categoryId: number
+  categoryName: string
+  amount: string
+}
+
+export type DashboardCategoryCashflowTotals = {
+  income: string
+  expense: string
+}
+
+export type DashboardCategoryCashflow = {
+  fromMonth: string
+  toMonth: string
+  incomeCategories: DashboardCategoryCashflowCategory[]
+  expenseCategories: DashboardCategoryCashflowCategory[]
+  totals: DashboardCategoryCashflowTotals
+}

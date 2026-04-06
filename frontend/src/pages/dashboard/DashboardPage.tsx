@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import {
   fetchDashboardBalanceSummary,
+  fetchDashboardCategoryCashflow,
   fetchDashboardMonthlyCashflow,
 } from '../../features/dashboard/api/dashboardApi'
 import { DashboardAccountList } from '../../features/dashboard/components/DashboardAccountList'
+import { DashboardCategoryCashflowList } from '../../features/dashboard/components/DashboardCategoryCashflowList'
 import { DashboardGoalBucketList } from '../../features/dashboard/components/DashboardGoalBucketList'
 import { DashboardMonthlyCashflowList } from '../../features/dashboard/components/DashboardMonthlyCashflowList'
 import type {
   DashboardBalanceSummary,
+  DashboardCategoryCashflow,
   DashboardMonthlyCashflow,
 } from '../../features/dashboard/types/dashboard'
 
@@ -32,12 +35,26 @@ const emptyCashflow: DashboardMonthlyCashflow = {
   },
 }
 
+const emptyCategoryCashflow: DashboardCategoryCashflow = {
+  fromMonth: '',
+  toMonth: '',
+  incomeCategories: [],
+  expenseCategories: [],
+  totals: {
+    income: '0',
+    expense: '0',
+  },
+}
+
 export function DashboardPage() {
   const [summary, setSummary] = useState<DashboardBalanceSummary>(emptySummary)
   const [cashflow, setCashflow] = useState<DashboardMonthlyCashflow>(emptyCashflow)
+  const [categoryCashflow, setCategoryCashflow] =
+    useState<DashboardCategoryCashflow>(emptyCategoryCashflow)
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [cashflowErrorMessage, setCashflowErrorMessage] = useState('')
+  const [categoryCashflowErrorMessage, setCategoryCashflowErrorMessage] = useState('')
 
   useEffect(() => {
     let active = true
@@ -47,7 +64,8 @@ export function DashboardPage() {
     void Promise.allSettled([
       fetchDashboardBalanceSummary(),
       fetchDashboardMonthlyCashflow(fromMonth, toMonth),
-    ]).then(([summaryResult, cashflowResult]) => {
+      fetchDashboardCategoryCashflow(fromMonth, toMonth),
+    ]).then(([summaryResult, cashflowResult, categoryCashflowResult]) => {
       if (!active) {
         return
       }
@@ -68,6 +86,14 @@ export function DashboardPage() {
         )
       }
 
+      if (categoryCashflowResult.status === 'fulfilled') {
+        setCategoryCashflow(categoryCashflowResult.value)
+      } else {
+        setCategoryCashflowErrorMessage(
+          'カテゴリ別収支の取得に失敗しました。API の状態を確認してください。',
+        )
+      }
+
       setLoading(false)
     })
 
@@ -79,6 +105,9 @@ export function DashboardPage() {
   const accountCount = summary.accounts.length
   const goalBucketCount = summary.goalBuckets.length
   const monthlyNet = Number(cashflow.totals.net)
+  const creditCardDebt = summary.accounts
+    .filter((account) => account.accountCategory === 'CREDIT_CARD')
+    .reduce((total, account) => total + Math.abs(Number(account.currentBalance)), 0)
 
   return (
     <main className="app-shell">
@@ -105,6 +134,11 @@ export function DashboardPage() {
             <strong>{formatMoney(summary.totals.unallocatedBalance)}</strong>
             <small>{monthlyNet >= 0 ? '直近収支は黒字です' : '直近収支は赤字です'}</small>
           </article>
+          <article>
+            <span>カード負債額</span>
+            <strong>{formatMoney(String(creditCardDebt))}</strong>
+            <small>クレジットカード残高の合計です</small>
+          </article>
         </div>
       </section>
 
@@ -124,6 +158,17 @@ export function DashboardPage() {
               <span>直近 4 か月収支</span>
               <strong>{formatMoney(cashflow.totals.net)}</strong>
               <p>黒字か赤字かを最短で把握できます。</p>
+            </article>
+            <article className="dashboard-focus-item">
+              <span>大きい支出カテゴリ</span>
+              <strong>
+                {categoryCashflow.expenseCategories[0]?.categoryName ?? 'まだなし'}
+              </strong>
+              <p>
+                {categoryCashflow.expenseCategories[0] == null
+                  ? 'カテゴリ別支出データがまだありません。'
+                  : `${formatMoney(categoryCashflow.expenseCategories[0].amount)} で最大です。`}
+              </p>
             </article>
           </div>
         </section>
@@ -201,6 +246,52 @@ export function DashboardPage() {
             <p className="status">読み込み中...</p>
           ) : (
             <DashboardMonthlyCashflowList cashflow={cashflow} />
+          )}
+        </section>
+      </section>
+
+      <section className="content-grid dashboard-grid">
+        <section className="panel">
+          <div className="panel-heading">
+            <p className="eyebrow">Income Categories</p>
+            <h2>収入の内訳</h2>
+            <p className="lead dashboard-section-lead">
+              直近 4 か月で、どのカテゴリが入金の中心になっているかを確認できます。
+            </p>
+          </div>
+          {categoryCashflowErrorMessage ? (
+            <p className="status error">{categoryCashflowErrorMessage}</p>
+          ) : loading ? (
+            <p className="status">読み込み中...</p>
+          ) : (
+            <DashboardCategoryCashflowList
+              title="収入カテゴリ"
+              categories={categoryCashflow.incomeCategories.slice(0, 4)}
+              emptyMessage="表示できる収入カテゴリはまだありません。"
+              tone="income"
+            />
+          )}
+        </section>
+
+        <section className="panel">
+          <div className="panel-heading">
+            <p className="eyebrow">Expense Categories</p>
+            <h2>支出の内訳</h2>
+            <p className="lead dashboard-section-lead">
+              支出の大きいカテゴリを見て、固定費と変動費の偏りをざっくり掴めます。
+            </p>
+          </div>
+          {categoryCashflowErrorMessage ? (
+            <p className="status error">{categoryCashflowErrorMessage}</p>
+          ) : loading ? (
+            <p className="status">読み込み中...</p>
+          ) : (
+            <DashboardCategoryCashflowList
+              title="支出カテゴリ"
+              categories={categoryCashflow.expenseCategories.slice(0, 4)}
+              emptyMessage="表示できる支出カテゴリはまだありません。"
+              tone="expense"
+            />
           )}
         </section>
       </section>

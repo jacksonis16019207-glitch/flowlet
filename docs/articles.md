@@ -33,6 +33,7 @@
 10. 引き落とし不足判定のロジックをどうモデル化するか
 11. モバイルでも見やすい家計・資産管理 UI をどう組み立てるか
 12. 残高集計の次に、月次収支をどう切り出したか
+13. 家計簿ダッシュボードでカテゴリ別収支をどう見せるか
 
 ## 最初に書く記事
 
@@ -64,6 +65,7 @@
 | 作成中 | 個人開発で Codex Skills を育てながら進める: flowlet で試しているやり方 | `docs/articles/005-codex-skills-in-personal-dev.md` |
 | 下書き中 | flowlet で学んだ、AI コーディング運用を Skill と AGENTS.md に落とし込むやり方 | `docs/articles/006-skill-and-agents-md-for-ai-dev.md` |
 | 下書き中 | 残高集計の次に、月次収支をどう切り出したか: flowlet でやったこと | `docs/articles/007-monthly-cashflow-dashboard.md` |
+| ネタ | 家計簿ダッシュボードでカテゴリ別収支をどう見せるか | `docs/category-cashflow-api-spec.md` を起点に整理 |
 
 ## メモ
 

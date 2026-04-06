@@ -1,6 +1,7 @@
 import { requestJson } from '../../../shared/lib/api/client'
 import type {
   DashboardBalanceSummary,
+  DashboardCategoryCashflow,
   DashboardMonthlyCashflow,
 } from '../types/dashboard'
 
@@ -16,5 +17,16 @@ export function fetchDashboardMonthlyCashflow(
 
   return requestJson<DashboardMonthlyCashflow>(
     `/api/dashboard/monthly-cashflow?${searchParams.toString()}`,
+  )
+}
+
+export function fetchDashboardCategoryCashflow(
+  fromMonth: string,
+  toMonth: string,
+): Promise<DashboardCategoryCashflow> {
+  const searchParams = new URLSearchParams({ fromMonth, toMonth })
+
+  return requestJson<DashboardCategoryCashflow>(
+    `/api/dashboard/category-cashflow?${searchParams.toString()}`,
   )
 }

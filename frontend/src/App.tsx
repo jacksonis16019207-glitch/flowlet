@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CashflowAnalysisPage } from './pages/analysis/CashflowAnalysisPage'
 import { AccountPage } from './pages/accounts/AccountPage'
 import { CategoryPage } from './pages/categories/CategoryPage'
 import { DashboardPage } from './pages/dashboard/DashboardPage'
@@ -8,6 +9,7 @@ import './App.css'
 
 type PageKey =
   | 'dashboard'
+  | 'analysis'
   | 'accounts'
   | 'goalBuckets'
   | 'categories'
@@ -24,6 +26,12 @@ const pages: {
     label: 'ダッシュボード',
     shortLabel: '残高と収支',
     description: '現在の残高と直近の収支を最初に確認するページです。',
+  },
+  {
+    key: 'analysis',
+    label: '収支分析',
+    shortLabel: '内訳',
+    description: '月次推移とカテゴリ別内訳をまとめて確認するページです。',
   },
   {
     key: 'accounts',
@@ -87,6 +95,7 @@ function App() {
         </nav>
       </header>
       {page === 'dashboard' ? <DashboardPage /> : null}
+      {page === 'analysis' ? <CashflowAnalysisPage /> : null}
       {page === 'accounts' ? <AccountPage /> : null}
       {page === 'goalBuckets' ? <GoalBucketPage /> : null}
       {page === 'categories' ? <CategoryPage /> : null}

@@ -268,6 +268,8 @@
 - `docs/requirements.md` の「登録できる」だけでなく実運用上の編集成立を担保する
 
 ### P2. 取引一覧と取引詳細を再設計する
+- 2026-04-06: 取引画面を `登録フォーム` と `一覧 + 詳細` に分け、種別・口座・キーワードの絞り込みと詳細確認を同一画面でできる構成へ再設計した。コミット `fb72ad2 feat: 取引一覧と取引詳細を再設計` をもって P2 を完了扱いに更新した。
+
 目的:
 - 登録と参照を分離し、取引を一覧で素早く確認・絞り込み・詳細確認できるようにする
 
@@ -292,6 +294,8 @@
 - 記事候補: 家計簿の取引一覧をフォーム中心から台帳中心へ再設計した話
 
 ### P3. ダッシュボードと収支分析を強化する
+- 2026-04-06: ダッシュボードに `月次収支 / カテゴリ別収支 / 口座残高 / GoalBucket 残高 / 未配分残高 / クレジットカード負債額` を表示し、期間指定つきの `収支分析` ページを追加した。`/api/dashboard/category-cashflow` を新設してカテゴリ別集計を返せるようにし、P3 を完了扱いに更新した。
+
 目的:
 - 月次収支と口座状況をひと目で把握できるようにし、収支分析に繋がる基盤を整える
 
@@ -314,6 +318,11 @@
 - 集計定義は API 仕様として先に整理する
 - 残高、未配分、負債額の定義を実装前に揃える
 - 記事候補: 家計簿ダッシュボードの集計項目をどう設計したか
+
+関連:
+- [dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/dashboard-balance-api-spec.md)
+- [monthly-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/monthly-cashflow-api-spec.md)
+- [category-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/category-cashflow-api-spec.md)
 
 ### P4. カテゴリ一覧を区分別に整理し管理しやすくする
 目的:
