@@ -451,6 +451,108 @@
   grid-column: 1 / -1;
 }
 
+.transaction-workbench-grid {
+  align-items: start;
+}
+
+.transaction-filter-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+
+.transaction-filter-keyword {
+  grid-column: 1 / -1;
+}
+
+.transaction-list {
+  display: grid;
+  gap: 16px;
+}
+
+.transaction-card {
+  padding: 0;
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.transaction-card.selected {
+  border-color: rgba(150, 92, 37, 0.48);
+  box-shadow: 0 16px 32px rgba(64, 37, 13, 0.12);
+}
+
+.transaction-card-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.transaction-card-button time {
+  color: #65584b;
+  font-size: 0.92rem;
+}
+
+.transaction-detail-panel {
+  position: sticky;
+  top: 24px;
+}
+
+.transaction-detail-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.transaction-detail-hero {
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 248, 237, 0.94), rgba(249, 238, 219, 0.82));
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.transaction-detail-hero h3 {
+  margin: 8px 0;
+}
+
+.transaction-detail-hero p:last-child {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.detail-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.detail-list dt,
+.detail-list dd {
+  margin: 0;
+}
+
+.detail-list dt {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8f7257;
+}
+
+.detail-list dd {
+  margin-top: 6px;
+  color: #2c2015;
+}
+
+.transaction-allocation-panel {
+  max-width: 1180px;
+  margin: 0 auto 24px;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1184,6 +1286,14 @@
 
   .transaction-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .transaction-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .transaction-detail-panel {
+    position: static;
   }
 
   .account-filter-row {
