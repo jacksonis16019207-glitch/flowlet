@@ -83,3 +83,7 @@
 | --- | --- | --- |
 | `400 Bad Request` | `INVALID_MONTH_FORMAT` | `targetMonth` が `YYYY-MM` 形式でない |
 | `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | サーバー内部エラー |
+## 補足
+
+- `targetMonth` は省略可能
+- 省略時は今日の日付を含む期間の `targetMonth` をサーバー側で決定する

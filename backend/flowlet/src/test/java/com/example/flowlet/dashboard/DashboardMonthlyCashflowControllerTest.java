@@ -21,13 +21,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,6 +43,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class DashboardMonthlyCashflowControllerTest {
+
+    private static final ZoneId APP_ZONE_ID = ZoneId.of("Asia/Tokyo");
+    private static final Instant FIXED_INSTANT = Instant.parse("2026-04-07T00:00:00Z");
 
     @Autowired
     private MockMvc mockMvc;
@@ -310,6 +319,94 @@ class DashboardMonthlyCashflowControllerTest {
     }
 
     @Test
+    void getMonthlyCashflowUsesCurrentPeriodWhenTargetMonthIsOmitted() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        appSettingRepository.save(new AppSetting(
+            1L,
+            10,
+            PaymentDateAdjustmentRule.NONE,
+            now,
+            now
+        ));
+
+        Account main = accountRepository.save(new Account(
+            null,
+            "MUFG",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.valueOf(100000),
+            true,
+            10,
+            now,
+            now
+        ));
+
+        CategoryEntity incomeCategory = saveCategory("給与", com.example.flowlet.category.domain.model.CategoryType.INCOME);
+        CategoryEntity expenseCategory = saveCategory("生活費", com.example.flowlet.category.domain.model.CategoryType.EXPENSE);
+        SubcategoryEntity incomeSubcategory = saveSubcategory(incomeCategory.getCategoryId(), "本業");
+        SubcategoryEntity expenseSubcategory = saveSubcategory(expenseCategory.getCategoryId(), "日用品");
+
+        transactionRepository.save(new Transaction(
+            null,
+            main.accountId(),
+            null,
+            incomeCategory.getCategoryId(),
+            incomeSubcategory.getSubcategoryId(),
+            TransactionType.INCOME,
+            CashflowTreatment.AUTO,
+            LocalDate.of(2026, 3, 15),
+            BigDecimal.valueOf(200000),
+            "included income",
+            null,
+            null,
+            now,
+            now
+        ));
+        transactionRepository.save(new Transaction(
+            null,
+            main.accountId(),
+            null,
+            expenseCategory.getCategoryId(),
+            expenseSubcategory.getSubcategoryId(),
+            TransactionType.EXPENSE,
+            CashflowTreatment.AUTO,
+            LocalDate.of(2026, 4, 7),
+            BigDecimal.valueOf(50000),
+            "included expense",
+            null,
+            null,
+            now,
+            now
+        ));
+        transactionRepository.save(new Transaction(
+            null,
+            main.accountId(),
+            null,
+            expenseCategory.getCategoryId(),
+            expenseSubcategory.getSubcategoryId(),
+            TransactionType.EXPENSE,
+            CashflowTreatment.AUTO,
+            LocalDate.of(2026, 4, 10),
+            BigDecimal.valueOf(99999),
+            "next period",
+            null,
+            null,
+            now,
+            now
+        ));
+
+        mockMvc.perform(get("/api/dashboard/monthly-cashflow"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.targetMonth").value("2026-03"))
+            .andExpect(jsonPath("$.periodStartDate").value("2026-03-10"))
+            .andExpect(jsonPath("$.periodEndDate").value("2026-04-09"))
+            .andExpect(jsonPath("$.income").value(200000))
+            .andExpect(jsonPath("$.expense").value(50000))
+            .andExpect(jsonPath("$.net").value(150000));
+    }
+
+    @Test
     void getMonthlyCashflowRejectsInvalidMonthFormat() throws Exception {
         mockMvc.perform(get("/api/dashboard/monthly-cashflow")
                 .param("targetMonth", "2026/02"))
@@ -337,5 +434,15 @@ class DashboardMonthlyCashflowControllerTest {
         subcategory.setCreatedAt(LocalDateTime.now());
         subcategory.setUpdatedAt(LocalDateTime.now());
         return subcategoryRepository.save(subcategory);
+    }
+
+    @TestConfiguration
+    static class TestClockConfiguration {
+
+        @Bean
+        @Primary
+        Clock testClock() {
+            return Clock.fixed(FIXED_INSTANT, APP_ZONE_ID);
+        }
     }
 }

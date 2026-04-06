@@ -4,6 +4,7 @@ import com.example.flowlet.account.domain.model.PaymentDateAdjustmentRule;
 import com.example.flowlet.appsetting.domain.model.AppSetting;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
 
@@ -11,9 +12,11 @@ import java.time.YearMonth;
 public class MonthlyBoundaryService {
 
     private final JapanHolidayService japanHolidayService;
+    private final Clock clock;
 
-    public MonthlyBoundaryService(JapanHolidayService japanHolidayService) {
+    public MonthlyBoundaryService(JapanHolidayService japanHolidayService, Clock clock) {
         this.japanHolidayService = japanHolidayService;
+        this.clock = clock;
     }
 
     public MonthlyPeriod resolve(AppSetting appSetting, YearMonth targetMonth) {
@@ -27,6 +30,34 @@ public class MonthlyBoundaryService {
             appSetting.monthStartAdjustmentRule()
         );
         return new MonthlyPeriod(targetMonth, periodStartDate, nextPeriodStartDate.minusDays(1));
+    }
+
+    public MonthlyPeriod resolveCurrent(AppSetting appSetting) {
+        return resolveContaining(appSetting, LocalDate.now(clock));
+    }
+
+    public MonthlyPeriod resolveContaining(AppSetting appSetting, LocalDate date) {
+        YearMonth baseMonth = YearMonth.from(date);
+        MonthlyPeriod currentPeriod = resolve(appSetting, baseMonth);
+        if (contains(currentPeriod, date)) {
+            return currentPeriod;
+        }
+
+        MonthlyPeriod previousPeriod = resolve(appSetting, baseMonth.minusMonths(1));
+        if (contains(previousPeriod, date)) {
+            return previousPeriod;
+        }
+
+        MonthlyPeriod nextPeriod = resolve(appSetting, baseMonth.plusMonths(1));
+        if (contains(nextPeriod, date)) {
+            return nextPeriod;
+        }
+
+        return currentPeriod;
+    }
+
+    private boolean contains(MonthlyPeriod period, LocalDate date) {
+        return !date.isBefore(period.periodStartDate()) && !date.isAfter(period.periodEndDate());
     }
 
     private LocalDate adjust(LocalDate date, PaymentDateAdjustmentRule rule) {

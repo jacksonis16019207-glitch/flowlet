@@ -36,9 +36,9 @@ public class DashboardMonthlyCashflowService {
 
     @Transactional(readOnly = true)
     public DashboardMonthlyCashflowResponse getMonthlyCashflow(String targetMonthValue) {
-        YearMonth targetMonth = parseMonth(targetMonthValue, "targetMonth");
         AppSetting appSetting = appSettingService.getCurrentSetting();
-        MonthlyBoundaryService.MonthlyPeriod period = monthlyBoundaryService.resolve(appSetting, targetMonth);
+        MonthlyBoundaryService.MonthlyPeriod period = resolvePeriod(appSetting, targetMonthValue);
+        YearMonth targetMonth = period.targetMonth();
 
         BigDecimal totalIncome = BigDecimal.ZERO;
         BigDecimal totalExpense = BigDecimal.ZERO;
@@ -64,6 +64,17 @@ public class DashboardMonthlyCashflowService {
             totalExpense,
             totalIncome.subtract(totalExpense)
         );
+    }
+
+    private MonthlyBoundaryService.MonthlyPeriod resolvePeriod(
+        AppSetting appSetting,
+        String targetMonthValue
+    ) {
+        if (targetMonthValue == null || targetMonthValue.isBlank()) {
+            return monthlyBoundaryService.resolveCurrent(appSetting);
+        }
+
+        return monthlyBoundaryService.resolve(appSetting, parseMonth(targetMonthValue, "targetMonth"));
     }
 
     private YearMonth parseMonth(String monthValue, String fieldName) {

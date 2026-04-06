@@ -57,12 +57,11 @@ export function DashboardPage() {
 
   useEffect(() => {
     let active = true
-    const targetMonth = getCurrentYearMonth()
 
     void Promise.allSettled([
       fetchDashboardBalanceSummary(),
-      fetchDashboardMonthlyCashflow(targetMonth),
-      fetchDashboardCategoryCashflow(targetMonth),
+      fetchDashboardMonthlyCashflow(),
+      fetchDashboardCategoryCashflow(),
     ]).then(([summaryResult, cashflowResult, categoryCashflowResult]) => {
       if (!active) {
         return
@@ -302,14 +301,4 @@ function formatMoney(value: string) {
     currency: 'JPY',
     maximumFractionDigits: 0,
   }).format(Number(value))
-}
-
-function formatYearMonth(value: Date) {
-  const year = value.getFullYear()
-  const month = `${value.getMonth() + 1}`.padStart(2, '0')
-  return `${year}-${month}`
-}
-
-function getCurrentYearMonth() {
-  return formatYearMonth(new Date())
 }

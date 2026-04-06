@@ -32,9 +32,8 @@ const emptyCategoryCashflow: DashboardCategoryCashflow = {
 }
 
 export function CashflowAnalysisPage() {
-  const defaultTargetMonth = getCurrentYearMonth()
-  const [targetMonth, setTargetMonth] = useState(defaultTargetMonth)
-  const [appliedTargetMonth, setAppliedTargetMonth] = useState(defaultTargetMonth)
+  const [targetMonth, setTargetMonth] = useState('')
+  const [appliedTargetMonth, setAppliedTargetMonth] = useState('')
   const [cashflow, setCashflow] = useState<DashboardMonthlyCashflow>(emptyCashflow)
   const [categoryCashflow, setCategoryCashflow] =
     useState<DashboardCategoryCashflow>(emptyCategoryCashflow)
@@ -47,8 +46,8 @@ export function CashflowAnalysisPage() {
     setErrorMessage('')
 
     void Promise.all([
-      fetchDashboardMonthlyCashflow(appliedTargetMonth),
-      fetchDashboardCategoryCashflow(appliedTargetMonth),
+      fetchDashboardMonthlyCashflow(appliedTargetMonth || undefined),
+      fetchDashboardCategoryCashflow(appliedTargetMonth || undefined),
     ])
       .then(([cashflowResponse, categoryCashflowResponse]) => {
         if (!active) {
@@ -57,6 +56,10 @@ export function CashflowAnalysisPage() {
 
         setCashflow(cashflowResponse)
         setCategoryCashflow(categoryCashflowResponse)
+        if (!appliedTargetMonth) {
+          setTargetMonth(cashflowResponse.targetMonth)
+          setAppliedTargetMonth(cashflowResponse.targetMonth)
+        }
       })
       .catch(() => {
         if (!active) {
@@ -187,16 +190,6 @@ export function CashflowAnalysisPage() {
       </section>
     </main>
   )
-}
-
-function getCurrentYearMonth() {
-  return formatYearMonth(new Date())
-}
-
-function formatYearMonth(value: Date) {
-  const year = value.getFullYear()
-  const month = `${value.getMonth() + 1}`.padStart(2, '0')
-  return `${year}-${month}`
 }
 
 function formatMoney(value: string) {

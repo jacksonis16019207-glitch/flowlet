@@ -10,21 +10,31 @@ export function fetchDashboardBalanceSummary(): Promise<DashboardBalanceSummary>
 }
 
 export function fetchDashboardMonthlyCashflow(
-  targetMonth: string,
+  targetMonth?: string,
 ): Promise<DashboardMonthlyCashflow> {
-  const searchParams = new URLSearchParams({ targetMonth })
+  const searchParams = new URLSearchParams()
+  if (targetMonth) {
+    searchParams.set('targetMonth', targetMonth)
+  }
 
-  return requestJson<DashboardMonthlyCashflow>(
-    `/api/dashboard/monthly-cashflow?${searchParams.toString()}`,
-  )
+  const path = searchParams.size
+    ? `/api/dashboard/monthly-cashflow?${searchParams.toString()}`
+    : '/api/dashboard/monthly-cashflow'
+
+  return requestJson<DashboardMonthlyCashflow>(path)
 }
 
 export function fetchDashboardCategoryCashflow(
-  targetMonth: string,
+  targetMonth?: string,
 ): Promise<DashboardCategoryCashflow> {
-  const searchParams = new URLSearchParams({ targetMonth })
+  const searchParams = new URLSearchParams()
+  if (targetMonth) {
+    searchParams.set('targetMonth', targetMonth)
+  }
 
-  return requestJson<DashboardCategoryCashflow>(
-    `/api/dashboard/category-cashflow?${searchParams.toString()}`,
-  )
+  const path = searchParams.size
+    ? `/api/dashboard/category-cashflow?${searchParams.toString()}`
+    : '/api/dashboard/category-cashflow'
+
+  return requestJson<DashboardCategoryCashflow>(path)
 }

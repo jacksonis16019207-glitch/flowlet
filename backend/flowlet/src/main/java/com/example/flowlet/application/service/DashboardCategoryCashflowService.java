@@ -50,9 +50,9 @@ public class DashboardCategoryCashflowService {
     public DashboardCategoryCashflowResponse getCategoryCashflow(
         String targetMonthValue
     ) {
-        YearMonth targetMonth = parseMonth(targetMonthValue, "targetMonth");
         AppSetting appSetting = appSettingService.getCurrentSetting();
-        MonthlyBoundaryService.MonthlyPeriod period = monthlyBoundaryService.resolve(appSetting, targetMonth);
+        MonthlyBoundaryService.MonthlyPeriod period = resolvePeriod(appSetting, targetMonthValue);
+        YearMonth targetMonth = period.targetMonth();
 
         Map<Long, Category> categoryMap = categoryRepository.findAll().stream()
             .collect(Collectors.toMap(Category::categoryId, category -> category));
@@ -84,6 +84,17 @@ public class DashboardCategoryCashflowService {
                 sumTotals(expenseTotals)
             )
         );
+    }
+
+    private MonthlyBoundaryService.MonthlyPeriod resolvePeriod(
+        AppSetting appSetting,
+        String targetMonthValue
+    ) {
+        if (targetMonthValue == null || targetMonthValue.isBlank()) {
+            return monthlyBoundaryService.resolveCurrent(appSetting);
+        }
+
+        return monthlyBoundaryService.resolve(appSetting, parseMonth(targetMonthValue, "targetMonth"));
     }
 
     private Map<Long, BigDecimal> aggregateCategoryTotals(
