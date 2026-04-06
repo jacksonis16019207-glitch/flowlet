@@ -42,6 +42,7 @@ type TransactionTab = 'transaction' | 'transfer' | 'allocation'
 type AllocationMode = 'amount' | 'ratio'
 type QuickCreateContext = 'transaction' | 'transfer'
 type TransactionFilterType = 'ALL' | TransactionType
+type TransactionEntryMode = 'single' | 'batch'
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -70,6 +71,24 @@ const initialTransferForm: CreateTransferInput = {
 }
 
 type AllocationDraft = { toGoalBucketId: number; value: string }
+type BatchTransactionDraft = {
+  id: number
+  amount: string
+  description: string
+  note: string
+}
+
+function createBatchTransactionDraft(
+  overrides: Partial<BatchTransactionDraft> = {},
+): BatchTransactionDraft {
+  return {
+    id: Date.now() + Math.floor(Math.random() * 100000),
+    amount: '',
+    description: '',
+    note: '',
+    ...overrides,
+  }
+}
 
 const transactionTabMeta: {
   key: TransactionTab
@@ -99,6 +118,8 @@ const transactionFilterOptions: { value: TransactionFilterType; label: string }[
 
 export function TransactionPage() {
   const [activeTab, setActiveTab] = useState<TransactionTab>('transaction')
+  const [transactionEntryMode, setTransactionEntryMode] =
+    useState<TransactionEntryMode>('single')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [goalBuckets, setGoalBuckets] = useState<GoalBucket[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -106,6 +127,9 @@ export function TransactionPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [allocations, setAllocations] = useState<GoalBucketAllocation[]>([])
   const [transactionForm, setTransactionForm] = useState(initialTransactionForm)
+  const [batchTransactionDrafts, setBatchTransactionDrafts] = useState<
+    BatchTransactionDraft[]
+  >([createBatchTransactionDraft()])
   const [transferForm, setTransferForm] = useState(initialTransferForm)
   const [allocationAccountId, setAllocationAccountId] = useState(0)
   const [allocationFromGoalBucketId, setAllocationFromGoalBucketId] = useState<number | null>(null)
@@ -143,6 +167,8 @@ export function TransactionPage() {
   const [errorMessage, setErrorMessage] = useState('')
   const [quickCategoryErrorMessage, setQuickCategoryErrorMessage] = useState('')
   const [quickSubcategoryErrorMessage, setQuickSubcategoryErrorMessage] = useState('')
+  const [lastSubmittedTransactionForm, setLastSubmittedTransactionForm] =
+    useState<CreateTransactionInput | null>(null)
 
   useEffect(() => {
     void loadPageData()
@@ -342,6 +368,10 @@ export function TransactionPage() {
     }))
   }
 
+  function resetBatchTransactionDrafts() {
+    setBatchTransactionDrafts([createBatchTransactionDraft()])
+  }
+
   function resetAllocationForm() {
     setEditingAllocationId(null)
     setAllocationFromGoalBucketId(null)
@@ -360,6 +390,49 @@ export function TransactionPage() {
 
   async function handleTransactionSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (transactionEntryMode === 'batch' && editingTransactionId == null) {
+      const validDrafts = batchTransactionDrafts.filter(
+        (draft) => draft.amount.trim() && draft.description.trim(),
+      )
+      if (validDrafts.length === 0) {
+        setErrorMessage('一括登録する明細を1件以上入力してください。')
+        return
+      }
+
+      setSubmitting(true)
+      setErrorMessage('')
+      try {
+        let savedTransaction: Transaction | null = null
+        for (const draft of validDrafts) {
+          savedTransaction = await createTransaction({
+            ...transactionForm,
+            amount: draft.amount,
+            description: draft.description,
+            note: draft.note,
+          })
+        }
+        setLastSubmittedTransactionForm({
+          ...transactionForm,
+          amount: validDrafts[validDrafts.length - 1].amount,
+          description: validDrafts[validDrafts.length - 1].description,
+          note: validDrafts[validDrafts.length - 1].note,
+        })
+        await loadPageData()
+        if (savedTransaction) {
+          setSelectedTransactionId(savedTransaction.transactionId)
+        }
+        resetBatchTransactionDrafts()
+        resetTransactionForm()
+      } catch (error) {
+        setErrorMessage(
+          resolveApiErrorMessage(error, '通常取引の一括登録に失敗しました。'),
+        )
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+
     setSubmitting(true)
     setErrorMessage('')
     try {
@@ -367,6 +440,7 @@ export function TransactionPage() {
         editingTransactionId == null
           ? await createTransaction(transactionForm)
           : await updateTransaction(editingTransactionId, transactionForm)
+      setLastSubmittedTransactionForm({ ...transactionForm })
       await loadPageData()
       setSelectedTransactionId(savedTransaction.transactionId)
       resetTransactionForm()
@@ -524,6 +598,7 @@ export function TransactionPage() {
     }
     setSelectedTransactionId(transaction.transactionId)
     setActiveTab('transaction')
+    setTransactionEntryMode('single')
     setEditingTransactionId(transaction.transactionId)
     setTransactionForm({
       accountId: transaction.accountId,
@@ -536,6 +611,45 @@ export function TransactionPage() {
       description: transaction.description,
       note: transaction.note ?? '',
     })
+  }
+
+  function handleCopyTransaction(transaction: Transaction) {
+    if (
+      transaction.transactionType !== 'INCOME' &&
+      transaction.transactionType !== 'EXPENSE'
+    ) {
+      setErrorMessage('振替明細は通常取引としてコピーできません。')
+      return
+    }
+
+    setErrorMessage('')
+    setSelectedTransactionId(transaction.transactionId)
+    setActiveTab('transaction')
+    setTransactionEntryMode('single')
+    setEditingTransactionId(null)
+    setTransactionForm({
+      accountId: transaction.accountId,
+      goalBucketId: transaction.goalBucketId,
+      categoryId: transaction.categoryId,
+      subcategoryId: transaction.subcategoryId,
+      transactionType: transaction.transactionType,
+      transactionDate: transaction.transactionDate,
+      amount: transaction.amount,
+      description: transaction.description,
+      note: transaction.note ?? '',
+    })
+  }
+
+  function handleReuseLastTransactionInput() {
+    if (!lastSubmittedTransactionForm) {
+      return
+    }
+
+    setErrorMessage('')
+    setActiveTab('transaction')
+    setTransactionEntryMode('single')
+    setEditingTransactionId(null)
+    setTransactionForm({ ...lastSubmittedTransactionForm })
   }
 
   async function handleDeleteTransaction(transaction: Transaction) {
@@ -638,6 +752,40 @@ export function TransactionPage() {
                 </button>
               ) : null}
             </div>
+            <div className="transaction-form-toolbar">
+              <div className="inline-tabs transaction-entry-tabs">
+                <button
+                  type="button"
+                  className={transactionEntryMode === 'single' ? 'active' : ''}
+                  onClick={() => setTransactionEntryMode('single')}
+                >
+                  単件入力
+                </button>
+                <button
+                  type="button"
+                  className={transactionEntryMode === 'batch' ? 'active' : ''}
+                  disabled={editingTransactionId != null}
+                  onClick={() => setTransactionEntryMode('batch')}
+                >
+                  一括入力
+                </button>
+              </div>
+              <div className="transaction-form-actions">
+                <button
+                  type="button"
+                  className="action-button"
+                  disabled={!lastSubmittedTransactionForm}
+                  onClick={handleReuseLastTransactionInput}
+                >
+                  前回入力を戻す
+                </button>
+                {transactionEntryMode === 'batch' ? (
+                  <p className="status">共通項目を固定して明細だけ続けて登録できます。</p>
+                ) : (
+                  <p className="status">明細を1件ずつ登録しつつ、前回入力をすぐ再利用できます。</p>
+                )}
+              </div>
+            </div>
             <CommonTransactionFields
               form={transactionForm}
               setForm={setTransactionForm}
@@ -647,7 +795,16 @@ export function TransactionPage() {
               goalBuckets={goalBuckets.filter(
                 (goalBucket) => goalBucket.accountId === transactionForm.accountId,
               )}
+              showDetailFields={
+                !(transactionEntryMode === 'batch' && editingTransactionId == null)
+              }
             />
+            {transactionEntryMode === 'batch' && editingTransactionId == null ? (
+              <BatchTransactionEditor
+                drafts={batchTransactionDrafts}
+                setDrafts={setBatchTransactionDrafts}
+              />
+            ) : null}
             <QuickCreatePanel
               context="transaction"
               categoryOptions={transactionCategories}
@@ -1089,6 +1246,14 @@ export function TransactionPage() {
                   type="button"
                   className="action-button"
                   disabled={Boolean(selectedTransaction.transferGroupId)}
+                  onClick={() => handleCopyTransaction(selectedTransaction)}
+                >
+                  コピーして新規作成
+                </button>
+                <button
+                  type="button"
+                  className="action-button"
+                  disabled={Boolean(selectedTransaction.transferGroupId)}
                   onClick={() => handleEditTransaction(selectedTransaction)}
                 >
                   編集
@@ -1176,6 +1341,7 @@ type CommonTransactionFieldsProps = {
   categories: Category[]
   subcategories: Subcategory[]
   goalBuckets: GoalBucket[]
+  showDetailFields?: boolean
 }
 
 function CommonTransactionFields({
@@ -1185,6 +1351,7 @@ function CommonTransactionFields({
   categories,
   subcategories,
   goalBuckets,
+  showDetailFields = true,
 }: CommonTransactionFieldsProps) {
   return (
     <>
@@ -1320,7 +1487,107 @@ function CommonTransactionFields({
           }
         />
       </label>
+      {!showDetailFields ? (
+        <p className="status">金額・説明・メモは一括明細セクションで入力します。</p>
+      ) : null}
     </>
+  )
+}
+
+type BatchTransactionEditorProps = {
+  drafts: BatchTransactionDraft[]
+  setDrafts: Dispatch<SetStateAction<BatchTransactionDraft[]>>
+}
+
+function BatchTransactionEditor({
+  drafts,
+  setDrafts,
+}: BatchTransactionEditorProps) {
+  return (
+    <div className="batch-transaction-editor">
+      <div className="section-heading">
+        <h3>一括登録する明細</h3>
+        <button
+          type="button"
+          className="action-button"
+          onClick={() =>
+            setDrafts((current) => [...current, createBatchTransactionDraft()])
+          }
+        >
+          明細を追加
+        </button>
+      </div>
+      <div className="batch-transaction-list">
+        {drafts.map((draft, index) => (
+          <div key={draft.id} className="batch-transaction-row">
+            <div className="batch-transaction-row-header">
+              <strong>明細 {index + 1}</strong>
+              <button
+                type="button"
+                className="action-button danger"
+                disabled={drafts.length === 1}
+                onClick={() =>
+                  setDrafts((current) =>
+                    current.length === 1
+                      ? current
+                      : current.filter((item) => item.id !== draft.id),
+                  )
+                }
+              >
+                削除
+              </button>
+            </div>
+            <label>
+              金額
+              <input
+                value={draft.amount}
+                onChange={(event) =>
+                  setDrafts((current) =>
+                    current.map((item) =>
+                      item.id === draft.id
+                        ? { ...item, amount: event.target.value }
+                        : item,
+                    ),
+                  )
+                }
+                placeholder="2800"
+              />
+            </label>
+            <label>
+              説明
+              <input
+                value={draft.description}
+                onChange={(event) =>
+                  setDrafts((current) =>
+                    current.map((item) =>
+                      item.id === draft.id
+                        ? { ...item, description: event.target.value }
+                        : item,
+                    ),
+                  )
+                }
+                placeholder="例: コンビニ"
+              />
+            </label>
+            <label>
+              メモ
+              <textarea
+                value={draft.note}
+                onChange={(event) =>
+                  setDrafts((current) =>
+                    current.map((item) =>
+                      item.id === draft.id
+                        ? { ...item, note: event.target.value }
+                        : item,
+                    ),
+                  )
+                }
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 

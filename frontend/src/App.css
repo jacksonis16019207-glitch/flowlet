@@ -445,10 +445,62 @@
 }
 
 .transaction-form-grid > .section-heading,
+.transaction-form-grid > .transaction-form-toolbar,
 .transaction-form-grid > .quick-create-panel,
+.transaction-form-grid > .batch-transaction-editor,
 .transaction-form-grid > .allocation-editor,
 .transaction-form-grid > button[type='submit'] {
   grid-column: 1 / -1;
+}
+
+.transaction-form-toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.transaction-entry-tabs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.transaction-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.transaction-form-actions .status {
+  margin: 0;
+}
+
+.batch-transaction-editor {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255, 252, 247, 0.84);
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.batch-transaction-list {
+  display: grid;
+  gap: 16px;
+}
+
+.batch-transaction-row {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.batch-transaction-row-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
 }
 
 .transaction-workbench-grid {
@@ -1428,6 +1480,12 @@
 
   .transaction-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .transaction-form-actions,
+  .batch-transaction-row-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .transaction-filter-grid {
