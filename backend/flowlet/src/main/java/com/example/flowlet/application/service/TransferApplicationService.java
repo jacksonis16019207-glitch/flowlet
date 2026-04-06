@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,6 +38,63 @@ public class TransferApplicationService {
 
     @Transactional
     public TransferResponse create(CreateTransferRequest request) {
+        validateTransferRequest(request);
+        UUID transferGroupId = UUID.randomUUID();
+        List<Transaction> saved = saveTransferTransactions(
+            transferGroupId,
+            request,
+            null,
+            null
+        );
+        return toResponse(transferGroupId, request, saved);
+    }
+
+    @Transactional
+    public TransferResponse update(UUID transferGroupId, CreateTransferRequest request) {
+        validateTransferRequest(request);
+
+        List<Transaction> existingTransactions = transactionRepository.findAll().stream()
+            .filter(transaction -> transferGroupId.equals(transaction.transferGroupId()))
+            .sorted(Comparator.comparing(Transaction::transactionId))
+            .toList();
+        if (existingTransactions.size() != 2) {
+            throw new BusinessRuleException(
+                HttpStatus.NOT_FOUND,
+                "TRANSFER_NOT_FOUND",
+                "error.transaction.notFound",
+                transferGroupId
+            );
+        }
+
+        Transaction existingOutgoing = existingTransactions.stream()
+            .filter(transaction -> transaction.transactionType() == TransactionType.TRANSFER_OUT)
+            .findFirst()
+            .orElseThrow(() -> new BusinessRuleException(
+                HttpStatus.CONFLICT,
+                "TRANSFER_GROUP_INVALID",
+                "error.transaction.transferTransactionUpdateNotAllowed",
+                transferGroupId
+            ));
+        Transaction existingIncoming = existingTransactions.stream()
+            .filter(transaction -> transaction.transactionType() == TransactionType.TRANSFER_IN)
+            .findFirst()
+            .orElseThrow(() -> new BusinessRuleException(
+                HttpStatus.CONFLICT,
+                "TRANSFER_GROUP_INVALID",
+                "error.transaction.transferTransactionUpdateNotAllowed",
+                transferGroupId
+            ));
+
+        List<Transaction> saved = saveTransferTransactions(
+            transferGroupId,
+            request,
+            existingOutgoing,
+            existingIncoming
+        );
+        return toResponse(transferGroupId, request, saved);
+    }
+
+    private void validateTransferRequest(CreateTransferRequest request) {
         if (request.getFromAccountId().equals(request.getToAccountId())) {
             throw new BusinessRuleException(HttpStatus.CONFLICT, "SAME_ACCOUNT_TRANSFER", "error.transfer.sameAccount");
         }
@@ -55,12 +113,18 @@ public class TransferApplicationService {
             request.getSubcategoryId(),
             TransactionType.TRANSFER_IN
         );
+    }
 
-        UUID transferGroupId = UUID.randomUUID();
+    private List<Transaction> saveTransferTransactions(
+        UUID transferGroupId,
+        CreateTransferRequest request,
+        Transaction existingOutgoing,
+        Transaction existingIncoming
+    ) {
         LocalDateTime now = LocalDateTime.now(clock);
-        List<Transaction> saved = transactionRepository.saveAll(List.of(
+        return transactionRepository.saveAll(List.of(
             new Transaction(
-                null,
+                existingOutgoing == null ? null : existingOutgoing.transactionId(),
                 request.getFromAccountId(),
                 request.getFromGoalBucketId(),
                 request.getCategoryId(),
@@ -72,11 +136,11 @@ public class TransferApplicationService {
                 request.getDescription().trim(),
                 normalizeNote(request.getNote()),
                 transferGroupId,
-                now,
+                existingOutgoing == null ? now : existingOutgoing.createdAt(),
                 now
             ),
             new Transaction(
-                null,
+                existingIncoming == null ? null : existingIncoming.transactionId(),
                 request.getToAccountId(),
                 null,
                 request.getCategoryId(),
@@ -88,18 +152,42 @@ public class TransferApplicationService {
                 request.getDescription().trim(),
                 normalizeNote(request.getNote()),
                 transferGroupId,
-                now,
+                existingIncoming == null ? now : existingIncoming.createdAt(),
                 now
             )
         ));
+    }
 
-        List<TransactionResponse> responses = transactionService.toResponses(saved);
+    private TransferResponse toResponse(
+        UUID transferGroupId,
+        CreateTransferRequest request,
+        List<Transaction> savedTransactions
+    ) {
+        List<TransactionResponse> responses = transactionService.toResponses(savedTransactions);
+        TransactionResponse outgoingTransaction = responses.stream()
+            .filter(transaction -> transaction.transactionType() == TransactionType.TRANSFER_OUT)
+            .findFirst()
+            .orElseThrow(() -> new BusinessRuleException(
+                HttpStatus.CONFLICT,
+                "TRANSFER_GROUP_INVALID",
+                "error.transaction.transferTransactionUpdateNotAllowed",
+                transferGroupId
+            ));
+        TransactionResponse incomingTransaction = responses.stream()
+            .filter(transaction -> transaction.transactionType() == TransactionType.TRANSFER_IN)
+            .findFirst()
+            .orElseThrow(() -> new BusinessRuleException(
+                HttpStatus.CONFLICT,
+                "TRANSFER_GROUP_INVALID",
+                "error.transaction.transferTransactionUpdateNotAllowed",
+                transferGroupId
+            ));
         return new TransferResponse(
             transferGroupId,
             request.getTransactionDate(),
             request.getAmount(),
-            responses.get(0),
-            responses.get(1)
+            outgoingTransaction,
+            incomingTransaction
         );
     }
 

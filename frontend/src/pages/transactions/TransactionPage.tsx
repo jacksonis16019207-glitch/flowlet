@@ -31,6 +31,7 @@ import {
   fetchGoalBucketAllocations,
   fetchTransactions,
   updateGoalBucketAllocation,
+  updateTransfer,
   updateTransaction,
 } from '../../features/transaction/api/transactionApi'
 import type {
@@ -163,6 +164,7 @@ export function TransactionPage() {
   const [transferAllocationMode, setTransferAllocationMode] = useState<AllocationMode>('amount')
   const [transferAllocationDrafts, setTransferAllocationDrafts] = useState<AllocationDraft[]>([])
   const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null)
+  const [editingTransferGroupId, setEditingTransferGroupId] = useState<string | null>(null)
   const [editingAllocationId, setEditingAllocationId] = useState<number | null>(null)
   const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null)
   const [selectedAllocationId, setSelectedAllocationId] = useState<number | null>(null)
@@ -238,6 +240,14 @@ export function TransactionPage() {
   )
   const currentTabMeta =
     transactionTabMeta.find((tab) => tab.key === activeTab) ?? transactionTabMeta[0]
+  const entryModalTitle =
+    editingTransactionId != null
+      ? '取引を編集'
+      : editingAllocationId != null
+        ? '配分を編集'
+        : editingTransferGroupId != null
+          ? '振替を編集'
+          : currentTabMeta.label
   const sortedTransactions = useMemo(
     () => [...transactions].sort(compareTransactions),
     [transactions],
@@ -414,6 +424,22 @@ export function TransactionPage() {
     }))
   }
 
+  function resetTransferForm() {
+    setEditingTransferGroupId(null)
+    setTransferAllocationMode('amount')
+    setTransferForm((current) => ({
+      ...current,
+      fromGoalBucketId: null,
+      subcategoryId: null,
+      outgoingCashflowTreatment: 'AUTO',
+      incomingCashflowTreatment: 'AUTO',
+      amount: '',
+      description: '',
+      note: '',
+    }))
+    setTransferAllocationDrafts([])
+  }
+
   function resetBatchTransactionDrafts() {
     setBatchTransactionDrafts([createBatchTransactionDraft()])
   }
@@ -506,39 +532,75 @@ export function TransactionPage() {
     setSubmitting(true)
     setErrorMessage('')
     try {
-      const transfer = await createTransfer(transferForm)
-      const payload = buildAllocationPayload(
-        transferForm.toAccountId,
-        null,
-        transferForm.transactionDate,
-        transferForm.description,
-        transferForm.note,
-        transferAllocationMode,
-        transferAllocationDrafts,
-        transferForm.amount,
-        transfer.transferGroupId,
-      )
-      if (payload) {
-        await createGoalBucketAllocations(payload)
-      }
+      const transfer =
+        editingTransferGroupId == null
+          ? await createTransfer(transferForm)
+          : await updateTransfer(editingTransferGroupId, transferForm)
+      await syncTransferAllocations(transfer.transferGroupId)
       await loadPageData()
       setSelectedTransactionId(transfer.outgoingTransaction.transactionId)
       setEntryModalOpen(false)
-      setTransferForm((current) => ({
-        ...current,
-        amount: '',
-        description: '',
-        note: '',
-        fromGoalBucketId: null,
-        subcategoryId: null,
-        outgoingCashflowTreatment: 'AUTO',
-        incomingCashflowTreatment: 'AUTO',
-      }))
-      setTransferAllocationDrafts([])
+      resetTransferForm()
     } catch (error) {
       setErrorMessage(resolveApiErrorMessage(error, '振替の保存に失敗しました。'))
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function syncTransferAllocations(transferGroupId: string) {
+    const payload = buildAllocationPayload(
+      transferForm.toAccountId,
+      null,
+      transferForm.transactionDate,
+      transferForm.description,
+      transferForm.note,
+      transferAllocationMode,
+      transferAllocationDrafts,
+      transferForm.amount,
+      transferGroupId,
+    )
+    const nextAllocations = payload?.allocations ?? []
+    const existingLinkedAllocations = allocations.filter(
+      (allocation) => allocation.linkedTransferGroupId === transferGroupId,
+    )
+    const existingByGoalBucketId = new Map(
+      existingLinkedAllocations
+        .filter(
+          (allocation): allocation is GoalBucketAllocation & { toGoalBucketId: number } =>
+            allocation.toGoalBucketId != null,
+        )
+        .map((allocation) => [allocation.toGoalBucketId, allocation]),
+    )
+    const nextByGoalBucketId = new Map(
+      nextAllocations.map((allocation) => [allocation.toGoalBucketId, allocation]),
+    )
+
+    for (const allocation of existingLinkedAllocations) {
+      if (
+        allocation.toGoalBucketId == null ||
+        !nextByGoalBucketId.has(allocation.toGoalBucketId)
+      ) {
+        await deleteGoalBucketAllocation(allocation.allocationId)
+      }
+    }
+
+    for (const nextAllocation of nextAllocations) {
+      const existingAllocation = existingByGoalBucketId.get(nextAllocation.toGoalBucketId)
+      const allocationPayload = {
+        accountId: transferForm.toAccountId,
+        fromGoalBucketId: null,
+        allocationDate: transferForm.transactionDate,
+        description: transferForm.description,
+        note: transferForm.note,
+        linkedTransferGroupId: transferGroupId,
+        allocations: [nextAllocation],
+      }
+      if (existingAllocation) {
+        await updateGoalBucketAllocation(existingAllocation.allocationId, allocationPayload)
+      } else {
+        await createGoalBucketAllocations(allocationPayload)
+      }
     }
   }
 
@@ -643,11 +705,65 @@ export function TransactionPage() {
 
   function handleEditTransaction(transaction: Transaction) {
     if (transaction.transferGroupId) {
+      const transferGroupId = transaction.transferGroupId
+      const outgoingTransaction = transactions.find(
+        (item) =>
+          item.transferGroupId === transferGroupId &&
+          item.transactionType === 'TRANSFER_OUT',
+      )
+      const incomingTransaction = transactions.find(
+        (item) =>
+          item.transferGroupId === transferGroupId &&
+          item.transactionType === 'TRANSFER_IN',
+      )
+      if (!outgoingTransaction || !incomingTransaction) {
+        setErrorMessage('振替データの読み込みに失敗しました。一覧を再読み込みしてください。')
+        return
+      }
+
+      setErrorMessage('')
+      setSelectedTransactionId(transaction.transactionId)
+      setTransactionDetailOpen(false)
+      setActiveTab('transfer')
+      setTransactionEntryMode('single')
+      setEditingTransactionId(null)
+      setEditingTransferGroupId(transferGroupId)
+      setTransferAllocationMode('amount')
+      setTransferForm({
+        fromAccountId: outgoingTransaction.accountId,
+        toAccountId: incomingTransaction.accountId,
+        fromGoalBucketId: outgoingTransaction.goalBucketId,
+        categoryId: outgoingTransaction.categoryId,
+        subcategoryId: outgoingTransaction.subcategoryId,
+        transactionDate: outgoingTransaction.transactionDate,
+        outgoingCashflowTreatment: outgoingTransaction.cashflowTreatment,
+        incomingCashflowTreatment: incomingTransaction.cashflowTreatment,
+        amount: outgoingTransaction.amount,
+        description: outgoingTransaction.description,
+        note: outgoingTransaction.note ?? '',
+      })
+      setTransferAllocationDrafts(
+        allocations
+          .filter((allocation) => allocation.linkedTransferGroupId === transferGroupId)
+          .filter(
+            (allocation): allocation is GoalBucketAllocation & { toGoalBucketId: number } =>
+              allocation.toGoalBucketId != null,
+          )
+          .map((allocation) => ({
+            toGoalBucketId: allocation.toGoalBucketId,
+            value: allocation.amount,
+          })),
+      )
+      setEntryModalOpen(true)
+      return
+    }
+    if (transaction.transferGroupId) {
       setErrorMessage(
         '振替で登録された取引は個別編集できません。削除して再登録してください。',
       )
       return
     }
+    setEditingTransferGroupId(null)
     setSelectedTransactionId(transaction.transactionId)
     setTransactionDetailOpen(false)
     setActiveTab('transaction')
@@ -707,6 +823,7 @@ export function TransactionPage() {
     setActiveTab('transaction')
     setTransactionEntryMode('single')
     setEditingTransactionId(null)
+    setEditingTransferGroupId(null)
     setEntryModalOpen(true)
     setTransactionForm({ ...lastSubmittedTransactionForm })
   }
@@ -737,6 +854,7 @@ export function TransactionPage() {
   function handleEditAllocation(allocation: GoalBucketAllocation) {
     setActiveTab('allocation')
     setAllocationDetailOpen(false)
+    setEditingTransferGroupId(null)
     setEditingAllocationId(allocation.allocationId)
     setSelectedAllocationId(allocation.allocationId)
     setAllocationAccountId(allocation.accountId)
@@ -797,7 +915,7 @@ export function TransactionPage() {
 
       <FormModal
         open={entryModalOpen}
-        title={editingTransactionId != null ? '取引を編集' : currentTabMeta.label}
+        title={entryModalTitle}
         description={currentTabMeta.description}
         eyebrow="Transaction Entry"
         panelClassName="modal-panel-xwide"
@@ -1395,7 +1513,6 @@ export function TransactionPage() {
                 <button
                   type="button"
                   className="action-button"
-                  disabled={Boolean(selectedTransaction.transferGroupId)}
                   onClick={() => handleEditTransaction(selectedTransaction)}
                 >
                   編集
@@ -1555,7 +1672,6 @@ export function TransactionPage() {
               <button
                 type="button"
                 className="action-button"
-                disabled={Boolean(selectedTransaction.transferGroupId)}
                 onClick={() => handleEditTransaction(selectedTransaction)}
               >
                 編集
@@ -2213,11 +2329,123 @@ function adjustMonthBoundary(date: Date, rule: PaymentDateAdjustmentRule) {
     return adjusted
   }
 
-  while (adjusted.getDay() === 0 || adjusted.getDay() === 6) {
+  while (!isJapanBusinessDay(adjusted)) {
     adjusted.setDate(adjusted.getDate() + (rule === 'NEXT_BUSINESS_DAY' ? 1 : -1))
   }
 
   return adjusted
+}
+
+const japanHolidayCache = new Map<number, Set<string>>()
+
+function isJapanBusinessDay(date: Date) {
+  const day = date.getDay()
+  return day !== 0 && day !== 6 && !isJapanHoliday(date)
+}
+
+function isJapanHoliday(date: Date) {
+  return getJapanHolidays(date.getFullYear()).has(formatDateInput(date))
+}
+
+function getJapanHolidays(year: number) {
+  const cached = japanHolidayCache.get(year)
+  if (cached) {
+    return cached
+  }
+
+  const holidays = new Set<string>()
+  const addHoliday = (month: number, day: number) => {
+    holidays.add(formatYearMonthDate(year, month, day))
+  }
+
+  addHoliday(1, 1)
+  addHolidayDate(holidays, getNthMonday(year, 1, 2))
+  addHoliday(2, 11)
+  if (year >= 2020) {
+    addHoliday(2, 23)
+  }
+  addHolidayDate(holidays, getVernalEquinoxDay(year))
+  addHoliday(4, 29)
+  addHoliday(5, 3)
+  addHoliday(5, 4)
+  addHoliday(5, 5)
+  addHolidayDate(holidays, getNthMonday(year, 7, 3))
+  if (year >= 2016) {
+    addHoliday(8, 11)
+  }
+  addHolidayDate(holidays, getNthMonday(year, 9, 3))
+  addHolidayDate(holidays, getAutumnalEquinoxDay(year))
+  addHolidayDate(holidays, getNthMonday(year, 10, 2))
+  addHoliday(11, 3)
+  addHoliday(11, 23)
+
+  applyCitizensHolidays(year, holidays)
+  applySubstituteHolidays(year, holidays)
+
+  japanHolidayCache.set(year, holidays)
+  return holidays
+}
+
+function addHolidayDate(holidays: Set<string>, date: Date) {
+  holidays.add(formatDateInput(date))
+}
+
+function applyCitizensHolidays(year: number, holidays: Set<string>) {
+  const date = new Date(year, 0, 2)
+  const lastDate = new Date(year, 11, 30)
+  while (date <= lastDate) {
+    const current = formatDateInput(date)
+    const previous = formatDateInput(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1))
+    const next = formatDateInput(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1))
+    if (!holidays.has(current) && holidays.has(previous) && holidays.has(next)) {
+      holidays.add(current)
+    }
+    date.setDate(date.getDate() + 1)
+  }
+}
+
+function applySubstituteHolidays(year: number, holidays: Set<string>) {
+  const originalHolidays = [...holidays]
+  for (const holiday of originalHolidays) {
+    const date = parseDateLabel(holiday)
+    if (date.getDay() !== 0) {
+      continue
+    }
+
+    const substitute = new Date(date)
+    substitute.setDate(substitute.getDate() + 1)
+    while (holidays.has(formatDateInput(substitute))) {
+      substitute.setDate(substitute.getDate() + 1)
+    }
+    if (substitute.getFullYear() === year) {
+      holidays.add(formatDateInput(substitute))
+    }
+  }
+}
+
+function getNthMonday(year: number, month: number, week: number) {
+  const firstDay = new Date(year, month - 1, 1)
+  const shift = (8 - firstDay.getDay()) % 7
+  return new Date(year, month - 1, 1 + shift + (week - 1) * 7)
+}
+
+function getVernalEquinoxDay(year: number) {
+  const day = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4))
+  return new Date(year, 2, day)
+}
+
+function getAutumnalEquinoxDay(year: number) {
+  const day = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4))
+  return new Date(year, 8, day)
+}
+
+function formatYearMonthDate(year: number, month: number, day: number) {
+  return `${formatYearMonth(year, month)}-${String(day).padStart(2, '0')}`
+}
+
+function parseDateLabel(value: string) {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
 }
 
 function clampDayToMonth(year: number, month: number, day: number) {

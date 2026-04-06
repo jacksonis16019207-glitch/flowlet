@@ -13,6 +13,7 @@ import com.example.flowlet.infrastructure.jpa.category.repository.SpringDataCate
 import com.example.flowlet.infrastructure.jpa.category.repository.SpringDataSubcategoryRepository;
 import com.example.flowlet.infrastructure.jpa.transaction.entity.TransactionEntity;
 import com.example.flowlet.infrastructure.jpa.transaction.repository.SpringDataTransactionRepository;
+import com.example.flowlet.transaction.domain.model.CashflowTreatment;
 import com.example.flowlet.transaction.domain.repository.GoalBucketAllocationRepository;
 import com.example.flowlet.transaction.domain.model.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
@@ -273,6 +274,7 @@ class CategoryControllerTest {
         transaction.setCategoryId(categoryId);
         transaction.setSubcategoryId(subcategoryId);
         transaction.setTransactionType(TransactionType.EXPENSE);
+        transaction.setCashflowTreatment(CashflowTreatment.AUTO);
         transaction.setTransactionDate(LocalDate.of(2026, 4, 1));
         transaction.setAmount(BigDecimal.valueOf(1800));
         transaction.setDescription("テスト取引");

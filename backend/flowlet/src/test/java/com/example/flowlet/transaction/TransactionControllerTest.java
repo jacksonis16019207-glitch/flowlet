@@ -243,6 +243,74 @@ class TransactionControllerTest {
     }
 
     @Test
+    void updatesTransferPair() throws Exception {
+        Account main = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Main",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.ZERO,
+            true,
+            10,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        Account savings = accountRepository.save(new Account(
+            null,
+            "SBI",
+            "Savings",
+            AccountCategory.BANK,
+            BalanceSide.ASSET,
+            BigDecimal.ZERO,
+            true,
+            20,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+        GoalBucket reserve = goalBucketRepository.save(new GoalBucket(
+            null,
+            main.accountId(),
+            "Reserve",
+            true,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        ));
+
+        CategoryEntity transfer = saveCategory("Transfer", com.example.flowlet.category.domain.model.CategoryType.TRANSFER);
+        SubcategoryEntity transferDetail = saveSubcategory(transfer.getCategoryId(), "Account move");
+
+        String transferResponse = mockMvc.perform(post("/api/transfers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"fromAccountId":%d,"toAccountId":%d,"fromGoalBucketId":null,"categoryId":%d,"subcategoryId":%d,"transactionDate":"2026-04-02","outgoingCashflowTreatment":"IGNORE","incomingCashflowTreatment":"AUTO","amount":50000,"description":"monthly move","note":"before update"}
+                    """.formatted(main.accountId(), savings.accountId(), transfer.getCategoryId(), transferDetail.getSubcategoryId())))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+        String transferGroupId = com.jayway.jsonpath.JsonPath.read(transferResponse, "$.transferGroupId");
+
+        mockMvc.perform(put("/api/transfers/{transferGroupId}", transferGroupId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"fromAccountId":%d,"toAccountId":%d,"fromGoalBucketId":%d,"categoryId":%d,"subcategoryId":%d,"transactionDate":"2026-04-05","outgoingCashflowTreatment":"EXPENSE","incomingCashflowTreatment":"INCOME","amount":42000,"description":"updated move","note":"after update"}
+                    """.formatted(main.accountId(), savings.accountId(), reserve.goalBucketId(), transfer.getCategoryId(), transferDetail.getSubcategoryId())))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.transferGroupId").value(transferGroupId))
+            .andExpect(jsonPath("$.transactionDate").value("2026-04-05"))
+            .andExpect(jsonPath("$.amount").value(42000))
+            .andExpect(jsonPath("$.outgoingTransaction.transactionType").value("TRANSFER_OUT"))
+            .andExpect(jsonPath("$.outgoingTransaction.goalBucketId").value(reserve.goalBucketId()))
+            .andExpect(jsonPath("$.outgoingTransaction.cashflowTreatment").value("EXPENSE"))
+            .andExpect(jsonPath("$.outgoingTransaction.description").value("updated move"))
+            .andExpect(jsonPath("$.incomingTransaction.transactionType").value("TRANSFER_IN"))
+            .andExpect(jsonPath("$.incomingTransaction.goalBucketId").isEmpty())
+            .andExpect(jsonPath("$.incomingTransaction.cashflowTreatment").value("INCOME"))
+            .andExpect(jsonPath("$.incomingTransaction.description").value("updated move"));
+    }
+
+    @Test
     void rejectsTransactionWithTransferType() throws Exception {
         Account main = accountRepository.save(new Account(
             null,

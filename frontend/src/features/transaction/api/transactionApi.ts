@@ -50,6 +50,16 @@ export function createTransfer(
   })
 }
 
+export function updateTransfer(
+  transferGroupId: string,
+  input: CreateTransferInput,
+): Promise<TransferResponse> {
+  return requestJson<TransferResponse>(`/api/transfers/${transferGroupId}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
 export function fetchGoalBucketAllocations(
   accountId?: number,
 ): Promise<GoalBucketAllocation[]> {
