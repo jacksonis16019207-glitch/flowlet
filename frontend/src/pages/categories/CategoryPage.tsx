@@ -75,6 +75,9 @@ export function CategoryPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [categoryModalMode, setCategoryModalMode] =
     useState<CategoryModalMode>(null)
+  const [expandedCategoryMap, setExpandedCategoryMap] = useState<
+    Record<number, boolean>
+  >({})
 
   useEffect(() => {
     void loadPageData()
@@ -98,6 +101,17 @@ export function CategoryPage() {
         for (const category of categoryData) {
           if (!next[category.categoryId]) {
             next[category.categoryId] = emptySubcategoryForm(category.categoryId)
+          }
+        }
+
+        return next
+      })
+      setExpandedCategoryMap((current) => {
+        const next = { ...current }
+
+        for (const category of categoryData) {
+          if (!(category.categoryId in next)) {
+            next[category.categoryId] = false
           }
         }
 
@@ -313,7 +327,18 @@ export function CategoryPage() {
       displayOrder: subcategory.displayOrder,
       active: subcategory.active,
     })
+    setExpandedCategoryMap((current) => ({
+      ...current,
+      [subcategory.categoryId]: true,
+    }))
     resetMessages()
+  }
+
+  function toggleCategoryExpansion(categoryId: number) {
+    setExpandedCategoryMap((current) => ({
+      ...current,
+      [categoryId]: !current[categoryId],
+    }))
   }
 
   function updateCreateSubcategoryForm(
@@ -474,7 +499,12 @@ export function CategoryPage() {
                       }
                       editingSubcategoryId={editingSubcategoryId}
                       editingSubcategoryForm={editingSubcategoryForm}
+                      isExpanded={
+                        searchKeyword.trim().length > 0 ||
+                        expandedCategoryMap[category.categoryId] === true
+                      }
                       submitting={submitting}
+                      onToggleExpanded={toggleCategoryExpansion}
                       onBeginCategoryEdit={beginCategoryEdit}
                       onDeleteCategory={handleDeleteCategory}
                       onBeginSubcategoryEdit={beginSubcategoryEdit}
@@ -636,7 +666,9 @@ type CategoryCardProps = {
   createSubcategoryForm: SubcategoryUpsertInput
   editingSubcategoryId: number | null
   editingSubcategoryForm: SubcategoryUpsertInput
+  isExpanded: boolean
   submitting: boolean
+  onToggleExpanded: (categoryId: number) => void
   onBeginCategoryEdit: (category: Category) => void
   onDeleteCategory: (categoryId: number) => void
   onBeginSubcategoryEdit: (subcategory: Subcategory) => void
@@ -664,7 +696,9 @@ function CategoryCard({
   createSubcategoryForm,
   editingSubcategoryId,
   editingSubcategoryForm,
+  isExpanded,
   submitting,
+  onToggleExpanded,
   onBeginCategoryEdit,
   onDeleteCategory,
   onBeginSubcategoryEdit,
@@ -717,180 +751,201 @@ function CategoryCard({
       <div className="nested-panel">
         <div className="section-heading">
           <h4>サブカテゴリ</h4>
-          <span>{subcategories.length}件</span>
-        </div>
-
-        <div className="subcategory-list">
-          {sortedSubcategories.length === 0 ? (
-            <div className="status">まだ登録されていません。</div>
-          ) : null}
-
-          {sortedSubcategories.map((subcategory) => (
-            <div key={subcategory.subcategoryId} className="subcategory-item">
-              <div>
-                <strong>{subcategory.subcategoryName}</strong>
-                <p>表示順 {subcategory.displayOrder}</p>
-              </div>
-              <div className="category-actions">
-                <span
-                  className={`badge ${subcategory.active ? 'active' : 'inactive'}`}
-                >
-                  {subcategory.active ? '有効' : '停止'}
-                </span>
-                <button
-                  type="button"
-                  className="action-button"
-                  onClick={() => onBeginSubcategoryEdit(subcategory)}
-                >
-                  編集
-                </button>
-                <button
-                  type="button"
-                  className="action-button danger"
-                  onClick={() => void onDeleteSubcategory(subcategory.subcategoryId)}
-                >
-                  削除
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {editingSubcategoryId !== null &&
-        sortedSubcategories.some(
-          (subcategory) => subcategory.subcategoryId === editingSubcategoryId,
-        ) ? (
-          <form
-            className="account-form nested-form"
-            onSubmit={(event) => void onUpdateSubcategory(event, editingSubcategoryId)}
-          >
-            <label>
-              サブカテゴリ名
-              <input
-                value={editingSubcategoryForm.subcategoryName}
-                onChange={(event) =>
-                  onSubcategoryFormChange({
-                    ...editingSubcategoryForm,
-                    subcategoryName: event.target.value,
-                  })
-                }
-                maxLength={100}
-                required
-              />
-            </label>
-            <div className="subform-grid">
-              <label>
-                親カテゴリ
-                <select
-                  value={editingSubcategoryForm.categoryId}
-                  onChange={(event) =>
-                    onSubcategoryFormChange({
-                      ...editingSubcategoryForm,
-                      categoryId: Number(event.target.value),
-                    })
-                  }
-                >
-                  {categories.map((option) => (
-                    <option key={option.categoryId} value={option.categoryId}>
-                      {categoryTypeLabels[option.categoryType]} /{' '}
-                      {option.categoryName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                表示順
-                <input
-                  type="number"
-                  value={editingSubcategoryForm.displayOrder}
-                  onChange={(event) =>
-                    onSubcategoryFormChange({
-                      ...editingSubcategoryForm,
-                      displayOrder: Number(event.target.value),
-                    })
-                  }
-                />
-              </label>
-            </div>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={editingSubcategoryForm.active}
-                onChange={(event) =>
-                  onSubcategoryFormChange({
-                    ...editingSubcategoryForm,
-                    active: event.target.checked,
-                  })
-                }
-              />
-              有効
-            </label>
-            <div className="button-row">
-              <button type="submit" disabled={submitting}>
-                保存
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                onClick={onCancelSubcategoryEdit}
-              >
-                キャンセル
-              </button>
-            </div>
-          </form>
-        ) : null}
-
-        <form
-          className="account-form nested-form"
-          onSubmit={(event) => void onCreateSubcategory(event, category.categoryId)}
-        >
-          <p className="eyebrow">新規サブカテゴリ</p>
-          <label>
-            サブカテゴリ名
-            <input
-              value={createSubcategoryForm.subcategoryName}
-              onChange={(event) =>
-                onCreateSubcategoryFormChange(category.categoryId, (current) => ({
-                  ...current,
-                  subcategoryName: event.target.value,
-                }))
-              }
-              maxLength={100}
-              required
-            />
-          </label>
-          <div className="subform-grid">
-            <label>
-              表示順
-              <input
-                type="number"
-                value={createSubcategoryForm.displayOrder}
-                onChange={(event) =>
-                  onCreateSubcategoryFormChange(category.categoryId, (current) => ({
-                    ...current,
-                    displayOrder: Number(event.target.value),
-                  }))
-                }
-              />
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={createSubcategoryForm.active}
-                onChange={(event) =>
-                  onCreateSubcategoryFormChange(category.categoryId, (current) => ({
-                    ...current,
-                    active: event.target.checked,
-                  }))
-                }
-              />
-              有効
-            </label>
+          <div className="category-actions">
+            <span>{subcategories.length}件</span>
+            <button
+              type="button"
+              className="action-button secondary"
+              aria-expanded={isExpanded}
+              aria-controls={`subcategory-panel-${category.categoryId}`}
+              onClick={() => onToggleExpanded(category.categoryId)}
+            >
+              {isExpanded ? '折りたたむ' : '展開する'}
+            </button>
           </div>
-          <button type="submit" disabled={submitting}>
-            サブカテゴリを追加
-          </button>
-        </form>
+        </div>
+
+        <div id={`subcategory-panel-${category.categoryId}`}>
+          {isExpanded ? (
+            <>
+              <div className="subcategory-list">
+                {sortedSubcategories.length === 0 ? (
+                  <div className="status">まだ登録されていません。</div>
+                ) : null}
+
+                {sortedSubcategories.map((subcategory) => (
+                  <div key={subcategory.subcategoryId} className="subcategory-item">
+                    <div>
+                      <strong>{subcategory.subcategoryName}</strong>
+                      <p>表示順 {subcategory.displayOrder}</p>
+                    </div>
+                    <div className="category-actions">
+                      <span
+                        className={`badge ${subcategory.active ? 'active' : 'inactive'}`}
+                      >
+                        {subcategory.active ? '有効' : '停止'}
+                      </span>
+                      <button
+                        type="button"
+                        className="action-button"
+                        onClick={() => onBeginSubcategoryEdit(subcategory)}
+                      >
+                        編集
+                      </button>
+                      <button
+                        type="button"
+                        className="action-button danger"
+                        onClick={() => void onDeleteSubcategory(subcategory.subcategoryId)}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {editingSubcategoryId !== null &&
+              sortedSubcategories.some(
+                (subcategory) => subcategory.subcategoryId === editingSubcategoryId,
+              ) ? (
+                <form
+                  className="account-form nested-form"
+                  onSubmit={(event) => void onUpdateSubcategory(event, editingSubcategoryId)}
+                >
+                  <label>
+                    サブカテゴリ名
+                    <input
+                      value={editingSubcategoryForm.subcategoryName}
+                      onChange={(event) =>
+                        onSubcategoryFormChange({
+                          ...editingSubcategoryForm,
+                          subcategoryName: event.target.value,
+                        })
+                      }
+                      maxLength={100}
+                      required
+                    />
+                  </label>
+                  <div className="subform-grid">
+                    <label>
+                      親カテゴリ
+                      <select
+                        value={editingSubcategoryForm.categoryId}
+                        onChange={(event) =>
+                          onSubcategoryFormChange({
+                            ...editingSubcategoryForm,
+                            categoryId: Number(event.target.value),
+                          })
+                        }
+                      >
+                        {categories.map((option) => (
+                          <option key={option.categoryId} value={option.categoryId}>
+                            {categoryTypeLabels[option.categoryType]} /{' '}
+                            {option.categoryName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      表示順
+                      <input
+                        type="number"
+                        value={editingSubcategoryForm.displayOrder}
+                        onChange={(event) =>
+                          onSubcategoryFormChange({
+                            ...editingSubcategoryForm,
+                            displayOrder: Number(event.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={editingSubcategoryForm.active}
+                      onChange={(event) =>
+                        onSubcategoryFormChange({
+                          ...editingSubcategoryForm,
+                          active: event.target.checked,
+                        })
+                      }
+                    />
+                    有効
+                  </label>
+                  <div className="button-row">
+                    <button type="submit" disabled={submitting}>
+                      保存
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={onCancelSubcategoryEdit}
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </form>
+              ) : null}
+
+              <form
+                className="account-form nested-form"
+                onSubmit={(event) => void onCreateSubcategory(event, category.categoryId)}
+              >
+                <p className="eyebrow">新規サブカテゴリ</p>
+                <label>
+                  サブカテゴリ名
+                  <input
+                    value={createSubcategoryForm.subcategoryName}
+                    onChange={(event) =>
+                      onCreateSubcategoryFormChange(category.categoryId, (current) => ({
+                        ...current,
+                        subcategoryName: event.target.value,
+                      }))
+                    }
+                    maxLength={100}
+                    required
+                  />
+                </label>
+                <div className="subform-grid">
+                  <label>
+                    表示順
+                    <input
+                      type="number"
+                      value={createSubcategoryForm.displayOrder}
+                      onChange={(event) =>
+                        onCreateSubcategoryFormChange(category.categoryId, (current) => ({
+                          ...current,
+                          displayOrder: Number(event.target.value),
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={createSubcategoryForm.active}
+                      onChange={(event) =>
+                        onCreateSubcategoryFormChange(category.categoryId, (current) => ({
+                          ...current,
+                          active: event.target.checked,
+                        }))
+                      }
+                    />
+                    有効
+                  </label>
+                </div>
+                <button type="submit" disabled={submitting}>
+                  サブカテゴリを追加
+                </button>
+              </form>
+            </>
+          ) : (
+            <p className="account-meta-note">
+              必要なカテゴリだけ展開して、サブカテゴリの確認・編集を行えます。
+            </p>
+          )}
+        </div>
       </div>
     </article>
   )
