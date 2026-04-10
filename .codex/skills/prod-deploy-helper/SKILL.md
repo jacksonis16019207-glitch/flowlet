@@ -1,4 +1,4 @@
----
+﻿---
 name: prod-deploy-helper
 description: flowlet の本番 Docker 環境を安全にデプロイ・再起動・状態確認するときに使う project-local Skill。`infra/.env` と `infra/docker-compose.prod.yml` を前提に、デプロイ前確認、`docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --build` の実行、起動確認、ログ確認、障害切り分けを進めたいときに使う。本番 DB の volume 削除や migration リセットのような破壊的操作を伴う場合の確認順も含む。
 ---
@@ -21,7 +21,7 @@ description: flowlet の本番 Docker 環境を安全にデプロイ・再起動
 2. デプロイ前確認をする
 - `infra/.env` の DB 名、ユーザー、ポート、コンテナ名を確認する。
 - `infra/docker-compose.prod.yml` の `db` と `app` の依存関係、ポート、`SPRING_PROFILES_ACTIVE=prod` を確認する。
-- 必要なら `docs/setup.md` の本番起動手順と停止手順を確認する。
+- 必要なら `docs/ops/setup.md` の本番起動手順と停止手順を確認する。
 
 3. 通常デプロイを実行する
 - 標準手順は `docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --build`。
@@ -57,4 +57,5 @@ description: flowlet の本番 Docker 環境を安全にデプロイ・再起動
 ## References
 
 - デプロイ・停止・ログ確認コマンド: [references/prod-deploy-commands.md](references/prod-deploy-commands.md)
-- 公式の repo 手順: [docs/setup.md](/C:/Users/jacks/Documents/flowlet/docs/setup.md)
+- 公式の repo 手順: [docs/ops/setup.md](/C:/Users/jacks/Documents/flowlet/docs/ops/setup.md)
+

@@ -1,4 +1,4 @@
-# flowlet
+﻿# flowlet
 
 `flowlet` は、実在する銀行口座とアプリ内の目的別口座を分けて管理し、資金の配置状況と引き落とし余力を見える化するための家計・資産管理アプリです。
 
@@ -25,7 +25,7 @@
 
 ## セットアップ
 
-詳細は [`docs/setup.md`](/C:/Users/jacks/Documents/flowlet/docs/setup.md) を参照してください。
+詳細は [`docs/ops/setup.md`](/C:/Users/jacks/Documents/flowlet/docs/ops/setup.md) を参照してください。
 
 ### 開発環境
 
@@ -62,10 +62,11 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --bu
 
 ## 補足
 
-- DB マイグレーション運用ルールは [docs/db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/db-migration-rules.md) を参照してください
-- 今後の実行順は [docs/execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/execution-task-list.md) を参照してください
-- 今後タスクの追加手順は [docs/task-addition-workflow.md](/C:/Users/jacks/Documents/flowlet/docs/task-addition-workflow.md) を参照してください
-- ダッシュボード残高集計 API の仕様は [docs/dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/dashboard-balance-api-spec.md) を参照してください
+- DB マイグレーション運用ルールは [docs/ops/db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/ops/db-migration-rules.md) を参照してください
+- 今後の実行順は [docs/project/execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/project/execution-task-list.md) を参照してください
+- 今後タスクの追加手順は [docs/project/task-addition-workflow.md](/C:/Users/jacks/Documents/flowlet/docs/project/task-addition-workflow.md) を参照してください
+- ダッシュボード残高集計 API の仕様は [docs/specs/dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/dashboard-balance-api-spec.md) を参照してください
 - 開発用ダミーデータと固定マスタデータは Flyway ではなく `infra/sql/` 配下で管理します
 - 本番相当では frontend build を Docker image build 内で取り込みます
 - project-local Skills を優先して実装方針を揃えています
+

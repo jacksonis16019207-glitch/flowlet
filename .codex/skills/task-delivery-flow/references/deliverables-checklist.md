@@ -1,4 +1,4 @@
-# Deliverables Checklist
+﻿# Deliverables Checklist
 
 ## Use This Reference
 
@@ -26,6 +26,7 @@
 - DB 変更なら、コミット済み migration を編集せずに新しい version を追加しているか
 - DB 変更なら、seed を migration に混ぜず `infra/sql/` 配下へ分離しているか
 - DB 変更なら、データ保持の要否を確認し、必要な場合は backup schema と移行手順を残しているか
-- DB 変更なら、`docs/setup.md` や関連仕様メモに必要な更新を反映しているか
+- DB 変更なら、`docs/ops/setup.md` や関連仕様メモに必要な更新を反映しているか
 - 記事化や Skill 化の価値がある学びを見落としていないか
 - コミット対象に不要差分が混ざっていないか
+

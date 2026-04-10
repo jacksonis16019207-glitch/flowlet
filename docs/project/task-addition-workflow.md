@@ -1,4 +1,4 @@
-# flowlet 今後タスク追加ワークフロー
+﻿# flowlet 今後タスク追加ワークフロー
 
 ## 目的
 
@@ -78,11 +78,11 @@
 ### 6. 記録先を決める
 
 - すぐ着手するもの:
-  [execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/execution-task-list.md) に追加する
+  [execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/project/execution-task-list.md) に追加する
 - 仕様や背景の整理が必要なもの:
   対応する設計ドキュメントに追記する
 - 保留アイデア:
-  Backlog として [execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/execution-task-list.md) か関連ドキュメントへ短く残す
+  Backlog として [execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/project/execution-task-list.md) か関連ドキュメントへ短く残す
 
 ### 7. 着手前に確認する
 
@@ -137,7 +137,7 @@
 - 課題: 引き落とし不足を事前確認したい
 - 種別: `feature`
 - 優先度: `P1`
-- 記録先: [execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/execution-task-list.md)
+- 記録先: [execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/project/execution-task-list.md)
 
 ### 例2. CSV 取込アイデアが再度出た
 
@@ -145,3 +145,4 @@
 - 種別: `research`
 - 優先度: `Backlog`
 - 記録先: 保留メモとして残し、直近の実行タスクへは入れない
+

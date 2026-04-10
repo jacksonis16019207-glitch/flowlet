@@ -1,4 +1,4 @@
-# flowlet 記事管理
+﻿# flowlet 記事管理
 
 ## 目的
 
@@ -65,11 +65,12 @@
 | 作成中 | 個人開発で Codex Skills を育てながら進める: flowlet で試しているやり方 | `docs/articles/005-codex-skills-in-personal-dev.md` |
 | 下書き中 | flowlet で学んだ、AI コーディング運用を Skill と AGENTS.md に落とし込むやり方 | `docs/articles/006-skill-and-agents-md-for-ai-dev.md` |
 | 下書き中 | 残高集計の次に、月次収支をどう切り出したか: flowlet でやったこと | `docs/articles/007-monthly-cashflow-dashboard.md` |
-| ネタ | 家計簿ダッシュボードでカテゴリ別収支をどう見せるか | `docs/category-cashflow-api-spec.md` を起点に整理 |
+| ネタ | 家計簿ダッシュボードでカテゴリ別収支をどう見せるか | `docs/specs/category-cashflow-api-spec.md` を起点に整理 |
 
 ## メモ
 
 - 記事は `docs/articles/` 配下に下書きを増やしてもよい
 - README 更新や要件整理の節目では、記事化候補を見直す
 - 実装だけでなく、判断理由を残せるように進める
+
 

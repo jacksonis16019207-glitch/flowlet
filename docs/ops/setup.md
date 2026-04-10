@@ -1,4 +1,4 @@
-# セットアップメモ
+﻿# セットアップメモ
 
 ## 前提
 
@@ -89,10 +89,10 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 - 本番構成では Docker image build の中で frontend build を含め、app コンテナだけを公開する
 - 本番再起動でコード変更がない場合は `up -d` を優先し、`up -d --build` は初回起動または変更反映時だけ使う
 - `m_account`、`m_credit_card_profile`、`m_goal_bucket`、`m_category`、`m_subcategory`、`t_transaction`、`t_goal_bucket_allocation` の初期スキーマは Flyway migration で管理する
-- DB マイグレーション運用ルールは [db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/db-migration-rules.md) を参照する
+- DB マイグレーション運用ルールは [db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/ops/db-migration-rules.md) を参照する
 - 開発用ダミーデータは `infra/sql/dev-seed/`、固定マスタデータは `infra/sql/master-data/` の SQL を手動で投入する
 - `infra/sql/master-data/001_insert_m_category.sql` と `infra/sql/master-data/002_insert_m_subcategory.sql` は、本番初期設定でも使えるようにカテゴリ体系を広めに用意している
-- `infra/sql/dev-seed/` のデータは [public-demo-data-policy.md](/C:/Users/jacks/Documents/flowlet/docs/public-demo-data-policy.md) に合わせた公開用ダミーデータを使う
+- `infra/sql/dev-seed/` のデータは [public-demo-data-policy.md](/C:/Users/jacks/Documents/flowlet/docs/ops/public-demo-data-policy.md) に合わせた公開用ダミーデータを使う
 
 ```powershell
 docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml down -v
@@ -132,3 +132,4 @@ docker exec flowlet-db-dev psql -U flowlet -d flowlet_dev -f /tmp/005_insert_t_g
 - 生活口座から積立口座への振替と、その後の GoalBucket 配分を確認できる
 - クレジットカード利用と支払い用口座からの返済の流れを確認できる
 - 口座、目的別口座、取引、配分の主要画面を公開用ダミーデータで確認できる
+

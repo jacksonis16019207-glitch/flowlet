@@ -1,4 +1,4 @@
-# ScheduledPayment 設計メモ
+﻿# ScheduledPayment 設計メモ
 
 ## 目的
 
@@ -205,7 +205,7 @@ hasShortage = projectedBalance < 0
 - `DELETE /api/scheduled-payments/{scheduledPaymentId}`
 - `GET /api/dashboard/payment-forecast`
 
-詳細は [scheduled-payment-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/scheduled-payment-api-spec.md) に分離する。
+詳細は [scheduled-payment-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/scheduled-payment-api-spec.md) に分離する。
 
 ### 画面
 
@@ -281,3 +281,4 @@ hasShortage = projectedBalance < 0
 
 初版は期間合計で判定する。
 日別の残高推移を先に入れると、UI も API も一段複雑になるため後続に回す。
+

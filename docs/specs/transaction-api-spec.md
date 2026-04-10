@@ -1,4 +1,4 @@
-# 取引系 API 仕様
+﻿# 取引系 API 仕様
 
 ## 1. 目的
 
@@ -512,4 +512,5 @@
 - `GET /api/accounts` に `accountCategory=CREDIT_CARD` などの絞り込みをどこまで入れるか
 - `GoalBucketAllocation` の合計配分額に対して未配分残高超過を登録時エラーにするか、警告に留めるか
 - `TRANSFER_IN` の `goalBucketId` を将来も不許可のままにするか
-- ダッシュボード集計 API は [dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/dashboard-balance-api-spec.md) に分離して管理する
+- ダッシュボード集計 API は [dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/dashboard-balance-api-spec.md) に分離して管理する
+

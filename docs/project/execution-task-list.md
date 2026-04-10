@@ -1,4 +1,4 @@
-# flowlet 実装タスクリスト
+﻿# flowlet 実装タスクリスト
 
 ## 方針
 - 直近の実装体験をもとに、次に着手すべきタスクを優先度付きで整理する
@@ -267,7 +267,7 @@
 
 メモ:
 - 2026-04-05 の本番利用メモをもとに追加
-- `docs/requirements.md` の「登録できる」だけでなく実運用上の編集成立を担保する
+- `docs/project/requirements.md` の「登録できる」だけでなく実運用上の編集成立を担保する
 
 #### P1-8. 取引一覧を表形式中心に再構成する
 
@@ -354,9 +354,9 @@
 - 記事候補: 家計簿ダッシュボードの集計項目をどう設計したか
 
 関連:
-- [dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/dashboard-balance-api-spec.md)
-- [monthly-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/monthly-cashflow-api-spec.md)
-- [category-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/category-cashflow-api-spec.md)
+- [dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/dashboard-balance-api-spec.md)
+- [monthly-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/monthly-cashflow-api-spec.md)
+- [category-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/category-cashflow-api-spec.md)
 
 ### P4. カテゴリ一覧を区分別に整理し管理しやすくする
 - 2026-04-06: カテゴリ画面に `収入 / 支出 / 振替` タブ、キーワード検索、`表示順 / 名前順` の並び替えを追加し、カテゴリ名とサブカテゴリ名の両方で絞り込めるようにした。P4 を完了扱いに更新した。
@@ -406,7 +406,7 @@
 - 関連ロジックのテストが追加されている
 
 関連:
-- [dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/dashboard-balance-api-spec.md)
+- [dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/dashboard-balance-api-spec.md)
 
 ### P7. 既存ドメインロジックのテストを強化する
 目的:
@@ -433,7 +433,7 @@
 - 開発用ダミーデータ方針を整理する
 - 固定マスタデータを `infra/sql/master-data/` に整理する
 - 開発用データを `infra/sql/dev-seed/` に整理する
-- seed セットの適用手順を `docs/setup.md` に追記する
+- seed セットの適用手順を `docs/ops/setup.md` に追記する
 
 完了条件:
 - ローカル環境で seed を投入すれば主要画面をすぐ確認できる
@@ -455,7 +455,7 @@
 - 集計条件が仕様として明文化されている
 
 関連:
-- [monthly-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/monthly-cashflow-api-spec.md)
+- [monthly-cashflow-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/monthly-cashflow-api-spec.md)
 
 ### P10. ScheduledPayment を実装する
 目的:
@@ -476,8 +476,8 @@
 - 関連画面と API の基本動作を確認できる
 
 関連:
-- [scheduled-payment-design.md](/C:/Users/jacks/Documents/flowlet/docs/scheduled-payment-design.md)
-- [scheduled-payment-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/scheduled-payment-api-spec.md)
+- [scheduled-payment-design.md](/C:/Users/jacks/Documents/flowlet/docs/specs/scheduled-payment-design.md)
+- [scheduled-payment-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/scheduled-payment-api-spec.md)
 
 ### P11. モバイル確認フローを整備する
 目的:
@@ -687,3 +687,4 @@
 - CSV 取り込み時のルール整備
 - CSV プレビュー
 - CSV 異常系フロー
+
