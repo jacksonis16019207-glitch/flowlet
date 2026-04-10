@@ -9,6 +9,7 @@
 
 ## よく使う資料
 
+- Skill 一覧: [skill-catalog.md](/C:/Users/jacks/Documents/flowlet/docs/project/skill-catalog.md)
 - GitHub タスク運用: [github-task-management.md](/C:/Users/jacks/Documents/flowlet/docs/project/github-task-management.md)
 - 実行タスク移行元: [execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/project/execution-task-list.md)
 - 要件: [requirements.md](/C:/Users/jacks/Documents/flowlet/docs/project/requirements.md)

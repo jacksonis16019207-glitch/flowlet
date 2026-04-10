@@ -1,4 +1,0 @@
-interface:
-  display_name: "Task Delivery Flow"
-  short_description: "flowlet の 1 タスクごとの標準開発フローを進める"
-  default_prompt: "flowlet の1タスクを、標準開発フローに沿って進めてください。"

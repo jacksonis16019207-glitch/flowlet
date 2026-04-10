@@ -77,12 +77,11 @@
 - `history` issue には可能な限り `area:*` ラベルを付けて検索しやすくする
 - 履歴の親 Issue を作り、関連する `history` issue をまとめて見返せるようにする
 
-## 旧 Skill 整理方針
+## Skill 整理方針
 
-- 旧 Skill は、新 Skill と GitHub 運用で実作業を回しながら段階的に削除する
-- 先に消すのではなく、代替 Skill と docs が揃ったことを確認してから削除する
-- 削除対象の整理では `task-addition-helper`, `task-delivery-flow`, `java-spring-helper`, `react-typescript-helper`, `db-design-helper`, `db-migration-helper`, `prod-deploy-helper` を優先候補とする
-- `article-writing-helper` は独立性が高いため後回しでよい
+- 現在の正本 Skill は `task-execution`, `backend-implementation`, `frontend-implementation`, `db-change-management`, `github-task-management`, `release-ops` とする
+- 役割が重複する Skill は追加せず、必要なら正本 Skill を拡張する
+- Skill の一覧と優先順位は [skill-catalog.md](/C:/Users/jacks/Documents/flowlet/docs/project/skill-catalog.md) を参照する
 
 ## docs との関係
 

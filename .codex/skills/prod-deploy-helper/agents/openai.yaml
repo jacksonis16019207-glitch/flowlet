@@ -1,4 +1,0 @@
-interface:
-  display_name: "Prod Deploy Helper"
-  short_description: "flowlet の本番 Docker デプロイ手順を安全に進める"
-  default_prompt: "flowlet の本番環境デプロイを確認から反映まで進めてください。"

@@ -13,12 +13,12 @@
 ## Skills Policy
 このリポジトリでは、実装や設計を進める際に project-local Skills を優先して利用してください。新しい会話でも同じ方針を適用します。
 
-- まず `task-delivery-flow` を使い、1 タスクごとに要件確認、設計確認、ドキュメント更新、実装計画、実装、検証、実装後ドキュメント更新、記事化判断、Skills 改善提案、コミット、必要時のプッシュまでの流れを通す
+- まず `task-execution` を使い、1 タスクごとに要件確認、設計確認、ドキュメント更新、実装計画、実装、検証、実装後ドキュメント更新、記事化判断、Skills 改善提案、コミット、必要時のプッシュまでの流れを通す
 - まず `./.codex/skills/` 配下の Skills を確認し、該当するものがあれば優先して使う
-- このリポジトリで優先利用する Skills は `task-delivery-flow`、`db-design-helper`、`java-spring-helper`、`react-typescript-helper`
+- このリポジトリで優先利用する Skills は `task-execution`、`db-change-management`、`backend-implementation`、`frontend-implementation`
 - タスク整理や検証観点の補助として `task-breakdown-helper`、`test-design-helper` も使う
 - project-local Skills で不足する部分のみ、グローバル Skills や通常の調査で補完する
-- 記事化できそうな論点があれば `article-writing-helper` を積極的に使う
+- 記事化できそうな論点があれば `docs/articles/` へ候補や下書きを残すことを検討する
 - サブエージェントは、独立に並列化できる調査、実装、検証、レビューに積極利用する。直近の次アクションがその結果待ちならメインで進める
 - Skills を使う場合は、着手時にどの Skill を使うか短く共有する
 
