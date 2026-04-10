@@ -1175,6 +1175,61 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
+.dashboard-hero-panel {
+  display: grid;
+  gap: 28px;
+}
+
+.dashboard-hero-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+}
+
+.dashboard-month-switcher {
+  min-width: min(100%, 360px);
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: rgba(255, 248, 239, 0.88);
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.dashboard-month-label {
+  margin: 0;
+  color: #8b5e34;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-month-switcher-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.dashboard-month-switcher-row strong {
+  color: #24180d;
+  font-size: 24px;
+  text-align: center;
+}
+
+.dashboard-month-range {
+  margin: 0;
+  color: #65584b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dashboard-summary-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .dashboard-focus-grid {
   margin-bottom: 24px;
 }
@@ -1245,6 +1300,65 @@
 
 .dashboard-sub-stats strong {
   font-size: 28px;
+}
+
+.dashboard-activity-list {
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-activity-card {
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: rgba(255, 249, 241, 0.82);
+  border: 1px solid rgba(139, 94, 52, 0.12);
+}
+
+.dashboard-activity-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: start;
+}
+
+.dashboard-activity-type {
+  margin: 0 0 8px;
+  color: #8b5e34;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-activity-card h3 {
+  margin: 0;
+  color: #1d1309;
+  font-size: 20px;
+}
+
+.dashboard-activity-meta {
+  margin: 8px 0 0;
+  color: #6d5d4b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dashboard-activity-money {
+  white-space: nowrap;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.dashboard-activity-money.is-positive {
+  color: #1f7a46;
+}
+
+.dashboard-activity-money.is-negative {
+  color: #9f3e28;
+}
+
+.dashboard-inline-status {
+  margin-top: 16px;
 }
 
 .dashboard-cashflow-list {
@@ -1754,6 +1868,19 @@
     grid-template-columns: 1fr;
   }
 
+  .dashboard-hero-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-month-switcher {
+    min-width: 0;
+  }
+
+  .dashboard-summary-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .dashboard-hero-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1921,6 +2048,19 @@
 
   .dashboard-hero-stats {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-summary-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-month-switcher-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-activity-main {
+    flex-direction: column;
   }
 
   .account-hero-stats {
