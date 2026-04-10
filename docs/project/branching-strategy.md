@@ -52,6 +52,75 @@ git branch -d feature/account-settings
 - `main`: review 1 件以上、CI 必須、direct push 禁止
 - `prod`: review 1 件以上、deploy 前チェック必須、direct push 禁止
 
+## GitHub Branch Protection Settings
+
+GitHub の `Settings > Branches` で、少なくとも `main` と `prod` に branch protection rule を設定する。
+
+### `main` に設定する項目
+
+- Branch name pattern: `main`
+- Require a pull request before merging: ON
+- Require approvals: `1`
+- Dismiss stale pull request approvals when new commits are pushed: ON
+- Require review from code owners: OFF
+- Require conversation resolution before merging: ON
+- Require status checks to pass before merging: ON
+- Require branches to be up to date before merging: ON
+- Required status checks: CI 導入後に `test`、`build`、`lint` などを追加する
+- Require signed commits: OFF
+- Require linear history: OFF
+- Do not allow bypassing the above settings: ON
+- Restrict pushes that create matching branches: OFF
+- Allow force pushes: OFF
+- Allow deletions: OFF
+
+### `prod` に設定する項目
+
+- Branch name pattern: `prod`
+- Require a pull request before merging: ON
+- Require approvals: `1`
+- Dismiss stale pull request approvals when new commits are pushed: ON
+- Require conversation resolution before merging: ON
+- Require status checks to pass before merging: ON
+- Require branches to be up to date before merging: ON
+- Required status checks: deploy 前に必要な `build`、`smoke-test`、`release-check` を追加する
+- Require signed commits: OFF
+- Require linear history: OFF
+- Do not allow bypassing the above settings: ON
+- Restrict pushes that create matching branches: OFF
+- Allow force pushes: OFF
+- Allow deletions: OFF
+
+`prod` は release 用ブランチなので、通常の feature PR のマージ先にしない。
+
+## GitHub Repository Settings
+
+GitHub の repository settings では merge method を絞る。
+
+- Allow merge commits: ON
+- Allow squash merging: OFF
+- Allow rebase merging: OFF
+- Automatically delete head branches: ON
+
+`main -> prod` の release 履歴と `hotfix/* -> prod` の履歴を残しやすくするため、このリポジトリでは merge commit を標準にする。
+
+## Required Checks Policy
+
+現時点では GitHub Actions workflow が未整備のため、required checks の名前は固定しない。Actions を追加したら、次の方針で rule に反映する。
+
+- `main`: `frontend-test`、`backend-test`、`frontend-build` など、通常開発で必須の検証を登録する
+- `prod`: `main` と同等以上に加え、デプロイ直前の確認ジョブを登録する
+
+status check 名は workflow 追加後に実際の job 名に合わせて更新する。
+
+## Pull Request Rules
+
+- `feature/*` は `main` 向け PR のみ作成する
+- `main` への直接 push は行わない
+- `prod` への直接 push は行わない
+- release は `main -> prod` の PR で行う
+- hotfix は `hotfix/* -> prod` の PR で行い、その後 `prod -> main` を必ず反映する
+
 ## Release Flow
 
 通常リリースは `main -> prod` の Pull Request で行う。
