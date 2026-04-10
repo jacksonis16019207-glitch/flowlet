@@ -319,33 +319,116 @@ export function TransactionPage() {
       transactionFilterKeyword,
     ],
   )
-  const selectedTransaction =
-    filteredTransactions.find(
-      (transaction) => transaction.transactionId === selectedTransactionId,
-    ) ?? filteredTransactions[0] ?? null
-  const latestAllocations = useMemo(
-    () => [...allocations].sort(compareAllocations).slice(0, 8),
-    [allocations],
+  const filteredLedgerTransactions = useMemo(() => {
+    if (activeTab === 'allocation') {
+      return []
+    }
+
+    return filteredTransactions.filter((transaction) => {
+      const isTransfer =
+        transaction.transactionType === 'TRANSFER_IN' ||
+        transaction.transactionType === 'TRANSFER_OUT' ||
+        Boolean(transaction.transferGroupId)
+
+      if (activeTab === 'transfer') {
+        return isTransfer
+      }
+
+      return !isTransfer
+    })
+  }, [activeTab, filteredTransactions])
+  const filteredAllocations = useMemo(
+    () =>
+      [...allocations]
+        .filter((allocation) => {
+          if (
+            allocation.allocationDate < displayPeriod.periodStartDate ||
+            allocation.allocationDate > displayPeriod.periodEndDate
+          ) {
+            return false
+          }
+
+          if (
+            transactionFilterAccountId !== 0 &&
+            allocation.accountId !== transactionFilterAccountId
+          ) {
+            return false
+          }
+
+          if (transactionFilterGoalBucketId !== 0) {
+            const matchedGoalBucket =
+              allocation.fromGoalBucketId === transactionFilterGoalBucketId ||
+              allocation.toGoalBucketId === transactionFilterGoalBucketId
+
+            if (!matchedGoalBucket) {
+              return false
+            }
+          }
+
+          const keyword = transactionFilterKeyword.trim().toLowerCase()
+          if (!keyword) {
+            return true
+          }
+
+          const searchTargets = [
+            allocation.description,
+            allocation.note ?? '',
+            allocation.fromGoalBucketName ?? '',
+            allocation.toGoalBucketName ?? '',
+          ]
+
+          return searchTargets.some((target) => target.toLowerCase().includes(keyword))
+        })
+        .sort(compareAllocations),
+    [
+      allocations,
+      displayPeriod.periodEndDate,
+      displayPeriod.periodStartDate,
+      transactionFilterAccountId,
+      transactionFilterGoalBucketId,
+      transactionFilterKeyword,
+    ],
   )
+  const selectedTransaction =
+    filteredLedgerTransactions.find(
+      (transaction) => transaction.transactionId === selectedTransactionId,
+    ) ?? filteredLedgerTransactions[0] ?? null
   const selectedAllocation =
-    latestAllocations.find((allocation) => allocation.allocationId === selectedAllocationId) ??
+    filteredAllocations.find((allocation) => allocation.allocationId === selectedAllocationId) ??
+    filteredAllocations[0] ??
     null
 
   useEffect(() => {
-    if (filteredTransactions.length === 0) {
+    if (filteredLedgerTransactions.length === 0) {
       if (selectedTransactionId != null) {
         setSelectedTransactionId(null)
       }
       return
     }
 
-    const matched = filteredTransactions.some(
+    const matched = filteredLedgerTransactions.some(
       (transaction) => transaction.transactionId === selectedTransactionId,
     )
     if (!matched) {
-      setSelectedTransactionId(filteredTransactions[0].transactionId)
+      setSelectedTransactionId(filteredLedgerTransactions[0].transactionId)
     }
-  }, [filteredTransactions, selectedTransactionId])
+  }, [filteredLedgerTransactions, selectedTransactionId])
+
+  useEffect(() => {
+    if (filteredAllocations.length === 0) {
+      if (selectedAllocationId != null) {
+        setSelectedAllocationId(null)
+      }
+      return
+    }
+
+    const matched = filteredAllocations.some(
+      (allocation) => allocation.allocationId === selectedAllocationId,
+    )
+    if (!matched) {
+      setSelectedAllocationId(filteredAllocations[0].allocationId)
+    }
+  }, [filteredAllocations, selectedAllocationId])
 
   async function loadPageData() {
     setLoading(true)
@@ -1360,6 +1443,7 @@ export function TransactionPage() {
       </section>
       </FormModal>
 
+      {activeTab === 'allocation' ? null : (
       <section className="content-grid transaction-workbench-grid">
         <section className="panel">
           <div className="panel-heading">
@@ -1515,7 +1599,7 @@ export function TransactionPage() {
             ) : null}
           </div>
           <div className="transaction-table-shell">
-            {filteredTransactions.length === 0 ? (
+            {filteredLedgerTransactions.length === 0 ? (
               <p className="status">条件に一致する取引はありません。</p>
             ) : (
               <div className="transaction-table-scroll">
@@ -1533,7 +1617,7 @@ export function TransactionPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTransactions.map((transaction) => {
+                    {filteredLedgerTransactions.map((transaction) => {
                       const selected =
                         transaction.transactionId === selectedTransaction?.transactionId
 
@@ -1681,17 +1765,19 @@ export function TransactionPage() {
           )}
         </section>
       </section>
+      )}
 
+      {activeTab !== 'allocation' ? null : (
       <section className="panel transaction-allocation-panel">
         <div className="panel-heading">
           <h2>直近の配分</h2>
-          <span>{latestAllocations.length} 件</span>
+          <span>{filteredAllocations.length} 件</span>
         </div>
         <div className="account-list">
-          {latestAllocations.length === 0 ? (
+          {filteredAllocations.length === 0 ? (
             <p className="status">配分はまだありません。</p>
           ) : (
-            latestAllocations.map((allocation) => (
+            filteredAllocations.map((allocation) => (
               <article key={allocation.allocationId} className="account-card">
                 <div className="account-card-header">
                   <span className="type-chip">{formatMoney(allocation.amount)}</span>
@@ -1741,6 +1827,7 @@ export function TransactionPage() {
           )}
         </div>
       </section>
+      )}
 
       <FormModal
         open={transactionDetailOpen && selectedTransaction != null}

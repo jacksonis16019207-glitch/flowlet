@@ -21,7 +21,8 @@ import {
 import { GoalBucketForm } from '../../features/goalBucket/components/GoalBucketForm'
 import type { CreateGoalBucketInput, GoalBucket } from '../../features/goalBucket/types/goalBucket'
 import { fetchTransactions } from '../../features/transaction/api/transactionApi'
-import type { Transaction } from '../../features/transaction/types/transaction'
+import { fetchGoalBucketAllocations } from '../../features/transaction/api/transactionApi'
+import type { GoalBucketAllocation, Transaction } from '../../features/transaction/types/transaction'
 import { FormModal } from '../../shared/components/FormModal'
 import { ApiRequestError } from '../../shared/lib/api/client'
 
@@ -65,6 +66,7 @@ export function AccountPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [goalBuckets, setGoalBuckets] = useState<GoalBucket[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [allocations, setAllocations] = useState<GoalBucketAllocation[]>([])
   const [accountForm, setAccountForm] = useState<CreateAccountInput>(initialAccountForm)
   const [goalBucketForm, setGoalBucketForm] =
     useState<CreateGoalBucketInput>(initialGoalBucketForm)
@@ -92,6 +94,7 @@ export function AccountPage() {
   const [accountModalOpen, setAccountModalOpen] = useState(false)
   const [goalBucketModalOpen, setGoalBucketModalOpen] = useState(false)
   const [bankMonth, setBankMonth] = useState(getCurrentMonthLabel())
+  const [goalBucketMonth, setGoalBucketMonth] = useState(getCurrentMonthLabel())
 
   useEffect(() => {
     void loadAccounts()
@@ -216,6 +219,19 @@ export function AccountPage() {
             .slice(0, 5),
     [selectedGoalBucket, transactions],
   )
+  const selectedGoalBucketAllocations = useMemo(
+    () =>
+      selectedGoalBucket == null
+        ? []
+        : allocations
+            .filter(
+              (allocation) =>
+                allocation.fromGoalBucketId === selectedGoalBucket.goalBucketId ||
+                allocation.toGoalBucketId === selectedGoalBucket.goalBucketId,
+            )
+            .sort(compareAllocations),
+    [allocations, selectedGoalBucket],
+  )
   const selectedCreditCardTransactions = useMemo(
     () =>
       selectedCreditCard == null
@@ -262,21 +278,42 @@ export function AccountPage() {
     )
     .reduce((sum, transaction) => sum + Number(transaction.amount), 0)
   const selectedBankNet = selectedBankIncome - selectedBankExpense
+  const selectedGoalBucketMonthlyAllocations = useMemo(() => {
+    if (selectedGoalBucket == null) {
+      return []
+    }
+
+    const { periodStartDate, periodEndDate } = resolveMonthPeriod(goalBucketMonth)
+    return selectedGoalBucketAllocations.filter(
+      (allocation) =>
+        allocation.allocationDate >= periodStartDate &&
+        allocation.allocationDate <= periodEndDate,
+    )
+  }, [goalBucketMonth, selectedGoalBucket, selectedGoalBucketAllocations])
+  const selectedGoalBucketIncoming = selectedGoalBucketMonthlyAllocations
+    .filter((allocation) => allocation.toGoalBucketId === selectedGoalBucket?.goalBucketId)
+    .reduce((sum, allocation) => sum + Number(allocation.amount), 0)
+  const selectedGoalBucketOutgoing = selectedGoalBucketMonthlyAllocations
+    .filter((allocation) => allocation.fromGoalBucketId === selectedGoalBucket?.goalBucketId)
+    .reduce((sum, allocation) => sum + Number(allocation.amount), 0)
+  const selectedGoalBucketNet = selectedGoalBucketIncoming - selectedGoalBucketOutgoing
 
   async function loadAccounts() {
     setLoading(true)
     setErrorMessage('')
 
     try {
-      const [accountData, goalBucketData, transactionData] = await Promise.all([
+      const [accountData, goalBucketData, transactionData, allocationData] = await Promise.all([
         fetchAccounts(),
         fetchGoalBuckets(),
         fetchTransactions(),
+        fetchGoalBucketAllocations(),
       ])
 
       setAccounts(accountData)
       setGoalBuckets(goalBucketData)
       setTransactions(transactionData)
+      setAllocations(allocationData)
     } catch {
       setErrorMessage('口座情報の読み込みに失敗しました。')
     } finally {
@@ -716,7 +753,12 @@ export function AccountPage() {
             <GoalBucketDetail
               goalBucket={selectedGoalBucket}
               account={selectedGoalBucketAccount}
+              movementMonth={goalBucketMonth}
+              monthlyIncoming={selectedGoalBucketIncoming}
+              monthlyOutgoing={selectedGoalBucketOutgoing}
+              monthlyNet={selectedGoalBucketNet}
               recentTransactions={selectedGoalBucketTransactions}
+              onMovementMonthChange={setGoalBucketMonth}
               onBackToAccount={() =>
                 selectedGoalBucketAccount &&
                 setDetailSelection({
@@ -874,6 +916,7 @@ function BankAccountDetail(props: {
         </button>
       </div>
 
+
       <section className="account-detail-section">
         <div className="section-heading">
           <div>
@@ -1009,7 +1052,12 @@ function BankAccountDetail(props: {
 function GoalBucketDetail(props: {
   goalBucket: GoalBucket
   account: Account | null
+  movementMonth: string
+  monthlyIncoming: number
+  monthlyOutgoing: number
+  monthlyNet: number
   recentTransactions: Transaction[]
+  onMovementMonthChange: (monthLabel: string) => void
   onBackToAccount: () => void
   onEditGoalBucket: (goalBucket: GoalBucket) => void
   onDeleteGoalBucket: (goalBucket: GoalBucket) => void
@@ -1018,7 +1066,12 @@ function GoalBucketDetail(props: {
   const {
     account,
     goalBucket,
+    movementMonth,
+    monthlyIncoming,
+    monthlyOutgoing,
+    monthlyNet,
     recentTransactions,
+    onMovementMonthChange,
     onBackToAccount,
     onDeleteGoalBucket,
     onEditGoalBucket,
@@ -1069,6 +1122,46 @@ function GoalBucketDetail(props: {
           {deletingGoalBucketId === goalBucket.goalBucketId ? '削除中...' : '目的別口座を削除'}
         </button>
       </div>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>Goal Bucket の動き</h3>
+            <p className="section-description">選択月の配分額、取崩額、純増減を確認します。</p>
+          </div>
+        </div>
+        <div className="account-month-switcher">
+          <button
+            type="button"
+            className="action-button"
+            onClick={() => onMovementMonthChange(shiftMonthLabel(movementMonth, -1))}
+          >
+            前月
+          </button>
+          <strong>{formatMonthLabel(movementMonth)}</strong>
+          <button
+            type="button"
+            className="action-button"
+            onClick={() => onMovementMonthChange(shiftMonthLabel(movementMonth, 1))}
+          >
+            次月
+          </button>
+        </div>
+        <div className="detail-chip-list">
+          <article className="detail-chip-card">
+            <strong>当月配分額</strong>
+            <span>{formatMoney(monthlyIncoming)}</span>
+          </article>
+          <article className="detail-chip-card">
+            <strong>当月取崩額</strong>
+            <span>{formatMoney(monthlyOutgoing)}</span>
+          </article>
+          <article className="detail-chip-card">
+            <strong>当月純増減</strong>
+            <span>{formatMoney(monthlyNet)}</span>
+          </article>
+        </div>
+      </section>
 
       <section className="account-detail-section">
         <div className="section-heading">
@@ -1330,6 +1423,14 @@ function compareTransactions(left: Transaction, right: Transaction) {
   }
 
   return right.transactionId - left.transactionId
+}
+
+function compareAllocations(left: GoalBucketAllocation, right: GoalBucketAllocation) {
+  if (left.allocationDate !== right.allocationDate) {
+    return right.allocationDate.localeCompare(left.allocationDate)
+  }
+
+  return right.allocationId - left.allocationId
 }
 
 function getSortLabel(account: Account) {
