@@ -1832,9 +1832,12 @@
   align-items: end;
 }
 
-.allocation-row select,
-.allocation-row input {
+.allocation-row > * {
   min-width: 0;
+}
+
+.allocation-add-button {
+  justify-self: start;
 }
 
 .category-management {
