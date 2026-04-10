@@ -7,6 +7,12 @@ type DashboardMonthlyCashflowListProps = {
 export function DashboardMonthlyCashflowList({
   cashflow,
 }: DashboardMonthlyCashflowListProps) {
+  const incomeAmount = Math.max(Number(cashflow.income), 0)
+  const expenseAmount = Math.max(Number(cashflow.expense), 0)
+  const maxAmount = Math.max(incomeAmount, expenseAmount, 1)
+  const incomeRatio = (incomeAmount / maxAmount) * 100
+  const expenseRatio = (expenseAmount / maxAmount) * 100
+
   return (
     <div className="dashboard-cashflow-list">
       <article className="account-card dashboard-cashflow-card">
@@ -29,6 +35,32 @@ export function DashboardMonthlyCashflowList({
             <dd>{formatMoney(cashflow.expense)}</dd>
           </div>
         </dl>
+        <div className="dashboard-mini-chart" aria-label="収入と支出の比較グラフ">
+          <div className="dashboard-mini-chart-row">
+            <div className="dashboard-mini-chart-label">
+              <span>収入</span>
+              <strong>{formatMoney(cashflow.income)}</strong>
+            </div>
+            <div className="dashboard-mini-chart-track">
+              <div
+                className="dashboard-mini-chart-fill income"
+                style={{ width: `${incomeRatio}%` }}
+              />
+            </div>
+          </div>
+          <div className="dashboard-mini-chart-row">
+            <div className="dashboard-mini-chart-label">
+              <span>支出</span>
+              <strong>{formatMoney(cashflow.expense)}</strong>
+            </div>
+            <div className="dashboard-mini-chart-track">
+              <div
+                className="dashboard-mini-chart-fill expense"
+                style={{ width: `${expenseRatio}%` }}
+              />
+            </div>
+          </div>
+        </div>
       </article>
     </div>
   )

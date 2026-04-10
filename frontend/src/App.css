@@ -1204,6 +1204,56 @@
   min-height: 0;
 }
 
+.dashboard-mini-chart {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dashboard-mini-chart-row {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-mini-chart-label {
+  display: grid;
+  gap: 2px;
+}
+
+.dashboard-mini-chart-label span {
+  color: #6e5a44;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dashboard-mini-chart-label strong {
+  color: #2a190a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dashboard-mini-chart-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(81, 56, 24, 0.14);
+  overflow: hidden;
+}
+
+.dashboard-mini-chart-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.dashboard-mini-chart-fill.income {
+  background: linear-gradient(90deg, #4f8a38, #77b95b);
+}
+
+.dashboard-mini-chart-fill.expense {
+  background: linear-gradient(90deg, #d15a3a, #e58a63);
+}
+
 .dashboard-category-group {
   display: grid;
   gap: 14px;
@@ -1215,14 +1265,23 @@
 }
 
 .dashboard-category-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
+  display: block;
   padding: 16px 18px;
   border-radius: 18px;
   border: 1px solid rgba(139, 94, 52, 0.12);
   background: rgba(255, 249, 241, 0.82);
+}
+
+.dashboard-category-main {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-category-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
 }
 
 .dashboard-category-card.income {
@@ -1249,6 +1308,32 @@
   font-size: 20px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.dashboard-category-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(83, 62, 38, 0.12);
+  overflow: hidden;
+}
+
+.dashboard-category-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.dashboard-category-bar-fill.income {
+  background: linear-gradient(90deg, #5d9a43, #86c46a);
+}
+
+.dashboard-category-bar-fill.expense {
+  background: linear-gradient(90deg, #d56744, #e69a74);
+}
+
+.dashboard-category-ratio {
+  margin: 0;
+  color: #6b5a47;
+  font-size: 12px;
 }
 
 .analysis-filter-row {
