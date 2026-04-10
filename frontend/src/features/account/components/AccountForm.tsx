@@ -31,6 +31,13 @@ export function AccountForm({
   onChange,
   onSubmit,
 }: AccountFormProps) {
+  const isCreditCard = value.accountCategory === 'CREDIT_CARD'
+  const providerFieldLabel = isCreditCard ? 'カード会社名（発行会社）' : '金融機関名'
+  const providerFieldPlaceholder = isCreditCard ? '三井住友カード' : '住信SBIネット銀行'
+  const providerFieldHelpText = isCreditCard
+    ? 'カード券面や利用明細に記載されている会社名を入力します。'
+    : '銀行名やサービス名を入力します。'
+
   return (
     <form className="account-form" onSubmit={onSubmit}>
       {submitErrorMessage ? (
@@ -40,7 +47,7 @@ export function AccountForm({
       ) : null}
 
       <label>
-        提供元名
+        {providerFieldLabel}
         <input
           aria-invalid={fieldErrors.providerName ? 'true' : 'false'}
           value={value.providerName}
@@ -50,10 +57,11 @@ export function AccountForm({
               providerName: event.target.value,
             })
           }
-          placeholder="住信SBIネット銀行"
+          placeholder={providerFieldPlaceholder}
           maxLength={100}
           required
         />
+        <small>{providerFieldHelpText}</small>
         {fieldErrors.providerName ? (
           <span className="field-error">{fieldErrors.providerName}</span>
         ) : null}
@@ -168,7 +176,7 @@ export function AccountForm({
         />
       </label>
 
-      {value.accountCategory === 'CREDIT_CARD' && value.creditCardProfile ? (
+      {isCreditCard && value.creditCardProfile ? (
         <div className="subform-grid">
           <label>
             引き落とし元口座
