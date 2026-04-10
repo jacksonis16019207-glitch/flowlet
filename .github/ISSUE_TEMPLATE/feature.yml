@@ -1,0 +1,50 @@
+name: Feature
+description: 新機能や機能改善の Issue
+title: "[Feature] "
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      description: なぜ必要か
+      placeholder: 現状の課題や追加したい理由
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目的
+      description: この Issue で達成したいこと
+      placeholder: ユーザーや実装上の到達点
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 完了条件
+      description: チェックリストで記載
+      placeholder: |
+        - [ ] 条件1
+        - [ ] 条件2
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: area
+    attributes:
+      label: 影響範囲
+      options:
+        - label: backend
+        - label: frontend
+        - label: db
+        - label: docs
+        - label: ops
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: 補足
+      description: 関連 Issue、関連 docs、設計メモなど

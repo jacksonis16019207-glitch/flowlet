@@ -1,0 +1,51 @@
+name: Bug
+description: 不具合修正の Issue
+title: "[Bug] "
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 事象
+      description: 何が起きているか
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 再現方法を順番に記載
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待動作
+      description: 本来どうあるべきか
+    validations:
+      required: true
+
+  - type: textarea
+    id: cause
+    attributes:
+      label: 原因メモ
+      description: わかっていれば記載
+    validations:
+      required: false
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 完了条件
+      placeholder: |
+        - [ ] 原因を特定している
+        - [ ] 修正されている
+        - [ ] 必要なテストを追加している
+    validations:
+      required: true

@@ -1,0 +1,47 @@
+name: Research
+description: 調査・比較・設計検討の Issue
+title: "[Research] "
+labels: ["type:research"]
+body:
+  - type: textarea
+    id: topic
+    attributes:
+      label: 調べたいこと
+    validations:
+      required: true
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: 判断したいこと
+      description: この調査で最終的に何を決めたいか
+    validations:
+      required: true
+
+  - type: textarea
+    id: viewpoints
+    attributes:
+      label: 調査観点
+      placeholder: |
+        - 観点1
+        - 観点2
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverable
+    attributes:
+      label: 成果物
+      description: 期待するアウトプット
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 完了条件
+      placeholder: |
+        - [ ] 調査結果を整理している
+        - [ ] 推奨案または次アクションがある
+    validations:
+      required: true
