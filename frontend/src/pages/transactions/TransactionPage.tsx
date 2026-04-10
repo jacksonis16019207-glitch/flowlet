@@ -1435,6 +1435,15 @@ export function TransactionPage() {
                 条件をクリア
               </button>
             ) : null}
+            {selectedTransaction ? (
+              <button
+                type="button"
+                className="action-button secondary"
+                onClick={() => setTransactionDetailOpen(true)}
+              >
+                詳細を開く
+              </button>
+            ) : null}
           </div>
           <div className="transaction-table-shell">
             {filteredTransactions.length === 0 ? (
@@ -1447,22 +1456,17 @@ export function TransactionPage() {
                       <th scope="col">区分</th>
                       <th scope="col">日付</th>
                       <th scope="col">金額</th>
-                      <th scope="col">内容</th>
                       <th scope="col">口座</th>
                       <th scope="col">カテゴリ</th>
-                      <th scope="col">目的別</th>
-                      <th scope="col">操作</th>
+                      <th scope="col">サブカテゴリ</th>
+                      <th scope="col">内容</th>
+                      <th scope="col">メモ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredTransactions.map((transaction) => {
                       const selected =
                         transaction.transactionId === selectedTransaction?.transactionId
-                      const categoryLabel = transaction.categoryName
-                        ? transaction.subcategoryName
-                          ? `${transaction.categoryName} / ${transaction.subcategoryName}`
-                          : transaction.categoryName
-                        : '未設定'
 
                       return (
                         <tr
@@ -1491,50 +1495,18 @@ export function TransactionPage() {
                           >
                             {formatSignedMoney(transaction)}
                           </td>
-                          <td data-label="内容">
-                            <div className="transaction-primary-cell">
-                              <strong>{transaction.description}</strong>
-                              <span>{transaction.note?.trim() || 'メモなし'}</span>
-                            </div>
-                          </td>
                           <td data-label="口座">
                             {transaction.accountName ?? '未設定'}
                           </td>
-                          <td data-label="カテゴリ">{categoryLabel}</td>
-                          <td data-label="目的別">
-                            {transaction.goalBucketName ?? '未配分'}
+                          <td data-label="カテゴリ">{transaction.categoryName ?? '未設定'}</td>
+                          <td data-label="サブカテゴリ">
+                            {transaction.subcategoryName ?? '-'}
                           </td>
-                          <td data-label="操作">
-                            <div
-                              className="transaction-row-actions"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                className="action-button secondary"
-                                onClick={() => {
-                                  setSelectedTransactionId(transaction.transactionId)
-                                  setTransactionDetailOpen(true)
-                                }}
-                              >
-                                詳細
-                              </button>
-                              <button
-                                type="button"
-                                className="action-button"
-                                disabled={Boolean(transaction.transferGroupId)}
-                                onClick={() => handleCopyTransaction(transaction)}
-                              >
-                                複製
-                              </button>
-                              <button
-                                type="button"
-                                className="action-button"
-                                onClick={() => handleEditTransaction(transaction)}
-                              >
-                                編集
-                              </button>
-                            </div>
+                          <td data-label="内容" className="transaction-description-cell">
+                            {transaction.description}
+                          </td>
+                          <td data-label="メモ" className="transaction-note-cell">
+                            {transaction.note?.trim() || '-'}
                           </td>
                         </tr>
                       )

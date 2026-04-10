@@ -603,7 +603,8 @@
 }
 
 .transaction-table-scroll {
-  overflow-x: auto;
+  overflow: auto;
+  max-height: min(68vh, 820px);
   border: 1px solid rgba(139, 94, 52, 0.12);
   border-radius: 20px;
   background: rgba(255, 252, 247, 0.92);
@@ -611,7 +612,7 @@
 
 .transaction-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 920px;
   border-collapse: collapse;
 }
 
@@ -619,13 +620,14 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 14px 12px;
+  padding: 10px 10px;
   background: #f8efe1;
   border-bottom: 1px solid rgba(139, 94, 52, 0.16);
   color: #6d5235;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
   text-align: left;
+  white-space: nowrap;
 }
 
 .transaction-table tbody tr {
@@ -642,11 +644,12 @@
 }
 
 .transaction-table td {
-  padding: 14px 12px;
+  padding: 9px 10px;
   border-bottom: 1px solid rgba(139, 94, 52, 0.1);
-  vertical-align: top;
+  vertical-align: middle;
   color: #3f3020;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
+  line-height: 1.35;
 }
 
 .transaction-table tbody tr:last-child td {
@@ -670,6 +673,14 @@
 .transaction-money-cell {
   font-weight: 700;
   white-space: nowrap;
+}
+
+.transaction-description-cell,
+.transaction-note-cell {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .transaction-money-cell.is-positive {
