@@ -1436,58 +1436,117 @@ export function TransactionPage() {
               </button>
             ) : null}
           </div>
-          <div className="transaction-list">
+          <div className="transaction-table-shell">
             {filteredTransactions.length === 0 ? (
               <p className="status">条件に一致する取引はありません。</p>
             ) : (
-              filteredTransactions.map((transaction) => {
-                const selected = transaction.transactionId === selectedTransaction?.transactionId
-                return (
-                  <article
-                    key={transaction.transactionId}
-                    className={`account-card transaction-card${selected ? ' selected' : ''}`}
-                  >
-                    <button
-                      type="button"
-                      className="transaction-card-button"
-                      onClick={() => {
-                        setSelectedTransactionId(transaction.transactionId)
-                        setTransactionDetailOpen(true)
-                      }}
-                    >
-                      <div className="account-card-header">
-                        <span className="type-chip">
-                          {formatTransactionTypeLabel(transaction.transactionType)}
-                        </span>
-                        <span className="badge active">
-                          {formatSignedMoney(transaction)}
-                        </span>
-                      </div>
-                      <h3>{transaction.description}</h3>
-                      <p>
-                        {transaction.accountName ?? '口座未設定'} /{' '}
-                        {transaction.categoryName ?? 'カテゴリ未設定'}
-                        {transaction.subcategoryName
-                          ? ` / ${transaction.subcategoryName}`
-                          : ''}
-                      </p>
-                      <p>
-                        {transaction.goalBucketName
-                          ? `GoalBucket: ${transaction.goalBucketName}`
-                          : '未配分'}
-                      </p>
-                      <time dateTime={transaction.transactionDate}>
-                        取引日 {formatDateLabel(transaction.transactionDate)}
-                      </time>
-                    </button>
-                  </article>
-                )
-              })
+              <div className="transaction-table-scroll">
+                <table className="transaction-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">区分</th>
+                      <th scope="col">日付</th>
+                      <th scope="col">金額</th>
+                      <th scope="col">内容</th>
+                      <th scope="col">口座</th>
+                      <th scope="col">カテゴリ</th>
+                      <th scope="col">目的別</th>
+                      <th scope="col">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.map((transaction) => {
+                      const selected =
+                        transaction.transactionId === selectedTransaction?.transactionId
+                      const categoryLabel = transaction.categoryName
+                        ? transaction.subcategoryName
+                          ? `${transaction.categoryName} / ${transaction.subcategoryName}`
+                          : transaction.categoryName
+                        : '未設定'
+
+                      return (
+                        <tr
+                          key={transaction.transactionId}
+                          className={selected ? 'selected' : ''}
+                          onClick={() => setSelectedTransactionId(transaction.transactionId)}
+                        >
+                          <td data-label="区分">
+                            <span className="type-chip">
+                              {formatTransactionTypeLabel(transaction.transactionType)}
+                            </span>
+                          </td>
+                          <td data-label="日付">
+                            <time dateTime={transaction.transactionDate}>
+                              {formatDateLabel(transaction.transactionDate)}
+                            </time>
+                          </td>
+                          <td
+                            data-label="金額"
+                            className={`transaction-money-cell ${
+                              transaction.transactionType === 'INCOME' ||
+                              transaction.transactionType === 'TRANSFER_IN'
+                                ? 'is-positive'
+                                : 'is-negative'
+                            }`}
+                          >
+                            {formatSignedMoney(transaction)}
+                          </td>
+                          <td data-label="内容">
+                            <div className="transaction-primary-cell">
+                              <strong>{transaction.description}</strong>
+                              <span>{transaction.note?.trim() || 'メモなし'}</span>
+                            </div>
+                          </td>
+                          <td data-label="口座">
+                            {transaction.accountName ?? '未設定'}
+                          </td>
+                          <td data-label="カテゴリ">{categoryLabel}</td>
+                          <td data-label="目的別">
+                            {transaction.goalBucketName ?? '未配分'}
+                          </td>
+                          <td data-label="操作">
+                            <div
+                              className="transaction-row-actions"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                className="action-button secondary"
+                                onClick={() => {
+                                  setSelectedTransactionId(transaction.transactionId)
+                                  setTransactionDetailOpen(true)
+                                }}
+                              >
+                                詳細
+                              </button>
+                              <button
+                                type="button"
+                                className="action-button"
+                                disabled={Boolean(transaction.transferGroupId)}
+                                onClick={() => handleCopyTransaction(transaction)}
+                              >
+                                複製
+                              </button>
+                              <button
+                                type="button"
+                                className="action-button"
+                                onClick={() => handleEditTransaction(transaction)}
+                              >
+                                編集
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </section>
 
-        <section className="panel transaction-detail-panel" hidden>
+        <section className="panel transaction-detail-panel">
           <div className="panel-heading">
             <h2>取引詳細</h2>
           </div>

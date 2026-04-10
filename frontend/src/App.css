@@ -533,6 +533,10 @@
   align-items: start;
 }
 
+.transaction-list-panel {
+  min-width: 0;
+}
+
 .transaction-month-switcher {
   display: flex;
   align-items: center;
@@ -594,41 +598,107 @@
   margin-left: auto;
 }
 
-.transaction-list {
-  display: grid;
-  gap: 16px;
+.transaction-table-shell {
+  min-width: 0;
 }
 
-.transaction-card {
-  padding: 0;
+.transaction-table-scroll {
+  overflow-x: auto;
   border: 1px solid rgba(139, 94, 52, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 252, 247, 0.92);
 }
 
-.transaction-card.selected {
-  border-color: rgba(150, 92, 37, 0.48);
-  box-shadow: 0 16px 32px rgba(64, 37, 13, 0.12);
-}
-
-.transaction-card-button {
+.transaction-table {
   width: 100%;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  padding: 20px;
-  display: grid;
-  gap: 12px;
-  cursor: pointer;
+  min-width: 980px;
+  border-collapse: collapse;
 }
 
-.transaction-card-button time {
-  color: #65584b;
-  font-size: 0.92rem;
+.transaction-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 14px 12px;
+  background: #f8efe1;
+  border-bottom: 1px solid rgba(139, 94, 52, 0.16);
+  color: #6d5235;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+
+.transaction-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.transaction-table tbody tr:hover {
+  background: rgba(247, 236, 220, 0.58);
+}
+
+.transaction-table tbody tr.selected {
+  background: rgba(240, 223, 201, 0.72);
+}
+
+.transaction-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(139, 94, 52, 0.1);
+  vertical-align: top;
+  color: #3f3020;
+  font-size: 0.95rem;
+}
+
+.transaction-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.transaction-primary-cell {
+  display: grid;
+  gap: 4px;
+}
+
+.transaction-primary-cell strong {
+  font-size: 0.96rem;
+}
+
+.transaction-primary-cell span {
+  color: #7a6856;
+  font-size: 0.84rem;
+}
+
+.transaction-money-cell {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.transaction-money-cell.is-positive {
+  color: #1f7a46;
+}
+
+.transaction-money-cell.is-negative {
+  color: #9f3e28;
+}
+
+.transaction-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.transaction-row-actions .action-button {
+  min-width: 58px;
 }
 
 .transaction-detail-panel {
   position: sticky;
   top: 24px;
+}
+
+@media (min-width: 1180px) {
+  .transaction-workbench-grid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.95fr);
+  }
 }
 
 .transaction-detail-stack {
