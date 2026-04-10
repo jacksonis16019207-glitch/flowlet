@@ -806,6 +806,7 @@ export function AccountPage() {
             : '既存口座の設定を更新します。'
         }
         onClose={closeAccountModal}
+        panelClassName="modal-panel-xwide account-form-modal"
       >
         <AccountForm
           accounts={accounts.filter((account) => account.accountCategory !== 'CREDIT_CARD')}
