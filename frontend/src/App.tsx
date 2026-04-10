@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CashflowAnalysisPage } from './pages/analysis/CashflowAnalysisPage'
 import { AccountPage } from './pages/accounts/AccountPage'
 import { CategoryPage } from './pages/categories/CategoryPage'
@@ -71,6 +71,10 @@ function App() {
   const isDevelopment = import.meta.env.DEV
   const [page, setPage] = useState<PageKey>('dashboard')
   const currentPage = pages.find((candidate) => candidate.key === page) ?? pages[0]
+
+  useEffect(() => {
+    document.title = `${currentPage.label} | flowlet`
+  }, [currentPage.label])
 
   return (
     <>
