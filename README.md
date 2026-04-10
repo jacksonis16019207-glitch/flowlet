@@ -63,6 +63,7 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml up -d --bu
 ## 補足
 
 - DB マイグレーション運用ルールは [docs/ops/db-migration-rules.md](/C:/Users/jacks/Documents/flowlet/docs/ops/db-migration-rules.md) を参照してください
+- ブランチ運用と GitHub リリース手順は [docs/project/branching-strategy.md](/C:/Users/jacks/Documents/flowlet/docs/project/branching-strategy.md) を参照してください
 - 今後の実行順は [docs/project/execution-task-list.md](/C:/Users/jacks/Documents/flowlet/docs/project/execution-task-list.md) を参照してください
 - 今後タスクの追加手順は [docs/project/task-addition-workflow.md](/C:/Users/jacks/Documents/flowlet/docs/project/task-addition-workflow.md) を参照してください
 - ダッシュボード残高集計 API の仕様は [docs/specs/dashboard-balance-api-spec.md](/C:/Users/jacks/Documents/flowlet/docs/specs/dashboard-balance-api-spec.md) を参照してください
