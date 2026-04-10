@@ -1056,6 +1056,11 @@
 }
 
 .modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 31;
+  transform: translate(-50%, -50%);
   width: min(720px, 100%);
   max-height: min(90vh, 920px);
   overflow: auto;
@@ -2350,6 +2355,11 @@
   }
 
   .modal-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
     width: 100%;
     max-height: 92vh;
     border-radius: 24px 24px 0 0;
