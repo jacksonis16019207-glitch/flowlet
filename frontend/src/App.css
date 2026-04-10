@@ -746,6 +746,39 @@
   margin: 0;
 }
 
+.transaction-form-upgraded {
+  gap: 18px;
+}
+
+.transaction-field {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.transaction-field-wide {
+  grid-column: 1 / -1;
+}
+
+.transaction-field-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8b5e34;
+}
+
+.transaction-field-help {
+  font-size: 13px;
+  color: #75675a;
+  line-height: 1.5;
+}
+
+.transaction-submit-button {
+  min-width: 220px;
+  justify-self: end;
+}
+
 .batch-transaction-editor {
   display: grid;
   gap: 16px;
@@ -1990,6 +2023,15 @@
   border: 1px solid rgba(139, 94, 52, 0.12);
 }
 
+.quick-create-panel-upgraded {
+  gap: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(248, 239, 228, 0.92)),
+    radial-gradient(circle at top right, rgba(217, 146, 82, 0.14), transparent 38%);
+}
+
 .quick-create-grid {
   display: grid;
   gap: 12px;
@@ -1997,20 +2039,8 @@
   align-items: end;
 }
 
-.quick-create-grid button {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 16px;
-  font: inherit;
-  font-weight: 700;
-  color: #fff7ef;
-  background: linear-gradient(135deg, #b6641f, #d9893a);
-  cursor: pointer;
-}
-
-.quick-create-grid button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
+.quick-create-button {
+  min-width: 120px;
 }
 
 @media (max-width: 960px) {
@@ -2146,6 +2176,11 @@
   .batch-transaction-row-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .transaction-submit-button {
+    width: 100%;
+    justify-self: stretch;
   }
 
   .transaction-filter-grid {

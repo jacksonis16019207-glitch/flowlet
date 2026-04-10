@@ -43,6 +43,10 @@ import type {
   Transaction,
   TransactionType,
 } from '../../features/transaction/types/transaction'
+import { Button } from '../../shared/components/ui/button'
+import { Input } from '../../shared/components/ui/input'
+import { Select } from '../../shared/components/ui/select'
+import { Textarea } from '../../shared/components/ui/textarea'
 
 type TransactionTab = 'transaction' | 'transfer' | 'allocation'
 type AllocationMode = 'amount' | 'ratio'
@@ -1059,7 +1063,7 @@ export function TransactionPage() {
         {loading ? <p className="status">読み込み中...</p> : null}
 
         {activeTab === 'transaction' ? (
-          <form className="account-form transaction-form-grid" onSubmit={handleTransactionSubmit}>
+          <form className="account-form transaction-form-grid transaction-form-upgraded" onSubmit={handleTransactionSubmit}>
             <div className="section-heading">
               <h3>{editingTransactionId == null ? '通常取引を登録' : '通常取引を編集'}</h3>
               {editingTransactionId != null ? (
@@ -1134,13 +1138,13 @@ export function TransactionPage() {
               onQuickCreateCategory={handleQuickCreateCategory}
               onQuickCreateSubcategory={handleQuickCreateSubcategory}
             />
-            <button type="submit" disabled={submitting}>
+            <Button type="submit" className="transaction-submit-button" disabled={submitting}>
               {submitting
                 ? '保存中...'
                 : editingTransactionId == null
                   ? '通常取引を登録'
                   : '通常取引を更新'}
-            </button>
+            </Button>
           </form>
         ) : null}
 
@@ -2014,9 +2018,9 @@ function CommonTransactionFields({
 }: CommonTransactionFieldsProps) {
   return (
     <>
-      <label>
-        口座
-        <select
+      <label className="transaction-field transaction-field-wide">
+        <span className="transaction-field-label">Account</span>
+        <Select
           value={form.accountId}
           onChange={(event) =>
             setForm((current) => ({
@@ -2031,11 +2035,14 @@ function CommonTransactionFields({
               {account.providerName} / {account.accountName}
             </option>
           ))}
-        </select>
+        </Select>
+        <small className="transaction-field-help">
+          Select the account for this entry.
+        </small>
       </label>
-      <label>
-        取引種別
-        <select
+      <label className="transaction-field">
+        <span className="transaction-field-label">Type</span>
+        <Select
           value={form.transactionType}
           onChange={(event) =>
             setForm((current) => ({
@@ -2046,14 +2053,14 @@ function CommonTransactionFields({
             }))
           }
         >
-          <option value="EXPENSE">支出</option>
-          <option value="INCOME">収入</option>
-        </select>
+          <option value="EXPENSE">Expense</option>
+          <option value="INCOME">Income</option>
+        </Select>
       </label>
-      <label>
-        GoalBucket
-        <select
-          value={form.goalBucketId ?? ''}
+      <label className="transaction-field">
+        <span className="transaction-field-label">GoalBucket</span>
+        <Select
+          value={form.goalBucketId ?? ""}
           onChange={(event) =>
             setForm((current) => ({
               ...current,
@@ -2061,17 +2068,17 @@ function CommonTransactionFields({
             }))
           }
         >
-          <option value="">未配分</option>
+          <option value="">None</option>
           {goalBuckets.map((goalBucket) => (
             <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>
               {goalBucket.bucketName}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
-      <label>
-        収支集計
-        <select
+      <label className="transaction-field">
+        <span className="transaction-field-label">Cashflow</span>
+        <Select
           value={form.cashflowTreatment}
           onChange={(event) =>
             setForm((current) => ({
@@ -2085,11 +2092,11 @@ function CommonTransactionFields({
               {option.label}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
-      <label>
-        カテゴリ
-        <select
+      <label className="transaction-field">
+        <span className="transaction-field-label">Category</span>
+        <Select
           value={form.categoryId}
           onChange={(event) =>
             setForm((current) => ({
@@ -2104,12 +2111,12 @@ function CommonTransactionFields({
               {category.categoryName}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
-      <label>
-        サブカテゴリ
-        <select
-          value={form.subcategoryId ?? ''}
+      <label className="transaction-field">
+        <span className="transaction-field-label">Subcategory</span>
+        <Select
+          value={form.subcategoryId ?? ""}
           onChange={(event) =>
             setForm((current) => ({
               ...current,
@@ -2117,17 +2124,17 @@ function CommonTransactionFields({
             }))
           }
         >
-          <option value="">なし</option>
+          <option value="">None</option>
           {subcategories.map((subcategory) => (
             <option key={subcategory.subcategoryId} value={subcategory.subcategoryId}>
               {subcategory.subcategoryName}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
-      <label>
-        取引日
-        <input
+      <label className="transaction-field">
+        <span className="transaction-field-label">Date</span>
+        <Input
           type="date"
           value={form.transactionDate}
           onChange={(event) =>
@@ -2135,9 +2142,9 @@ function CommonTransactionFields({
           }
         />
       </label>
-      <label>
-        金額
-        <input
+      <label className="transaction-field">
+        <span className="transaction-field-label">Amount</span>
+        <Input
           value={form.amount}
           onChange={(event) =>
             setForm((current) => ({ ...current, amount: event.target.value }))
@@ -2145,19 +2152,19 @@ function CommonTransactionFields({
           placeholder="2800"
         />
       </label>
-      <label>
-        説明
-        <input
+      <label className="transaction-field transaction-field-wide">
+        <span className="transaction-field-label">Description</span>
+        <Input
           value={form.description}
           onChange={(event) =>
             setForm((current) => ({ ...current, description: event.target.value }))
           }
-          placeholder="例: ホテル朝食"
+          placeholder="Example: Hotel breakfast"
         />
       </label>
-      <label>
-        メモ
-        <textarea
+      <label className="transaction-field transaction-field-wide">
+        <span className="transaction-field-label">Note</span>
+        <Textarea
           value={form.note}
           onChange={(event) =>
             setForm((current) => ({ ...current, note: event.target.value }))
@@ -2165,7 +2172,7 @@ function CommonTransactionFields({
         />
       </label>
       {!showDetailFields ? (
-        <p className="status">金額・説明・メモは一括明細セクションで入力します。</p>
+        <p className="status">Amount, description, and note are shared in batch mode.</p>
       ) : null}
     </>
   )
@@ -2298,12 +2305,12 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
   } = props
 
   return (
-    <div className="quick-create-panel">
-      <p className="eyebrow">候補になければその場で追加</p>
+    <div className="quick-create-panel quick-create-panel-upgraded">
+      <p className="eyebrow">Create on the spot if the option is missing</p>
       <div className="quick-create-grid">
-        <label>
-          新規カテゴリ
-          <input
+        <label className="transaction-field">
+          <span className="transaction-field-label">New Category</span>
+          <Input
             value={quickCategoryForm.categoryName}
             onChange={(event) =>
               onQuickCategoryFormChange((current) => ({
@@ -2314,9 +2321,9 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
             maxLength={100}
           />
         </label>
-        <label>
-          種別
-          <select
+        <label className="transaction-field">
+          <span className="transaction-field-label">Type</span>
+          <Select
             value={quickCategoryForm.categoryType}
             onChange={(event) =>
               onQuickCategoryFormChange((current) => ({
@@ -2325,24 +2332,25 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
               }))
             }
           >
-            <option value="EXPENSE">支出</option>
-            <option value="INCOME">収入</option>
-            <option value="TRANSFER">振替</option>
-          </select>
+            <option value="EXPENSE">Expense</option>
+            <option value="INCOME">Income</option>
+            <option value="TRANSFER">Transfer</option>
+          </Select>
         </label>
-        <button
+        <Button
           type="button"
+          className="quick-create-button"
           disabled={quickSubmitting || !quickCategoryForm.categoryName.trim()}
           onClick={() => void onQuickCreateCategory(context)}
         >
-          作成
-        </button>
+          Add
+        </Button>
       </div>
       {quickCategoryErrorMessage ? <p className="field-error">{quickCategoryErrorMessage}</p> : null}
       <div className="quick-create-grid">
-        <label>
-          新規サブカテゴリ
-          <input
+        <label className="transaction-field">
+          <span className="transaction-field-label">New Subcategory</span>
+          <Input
             value={quickSubcategoryForm.subcategoryName}
             onChange={(event) =>
               onQuickSubcategoryFormChange((current) => ({
@@ -2353,9 +2361,9 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
             maxLength={100}
           />
         </label>
-        <label>
-          親カテゴリ
-          <select
+        <label className="transaction-field">
+          <span className="transaction-field-label">Parent Category</span>
+          <Select
             value={quickSubcategoryForm.categoryId}
             onChange={(event) =>
               onQuickSubcategoryFormChange((current) => ({
@@ -2364,21 +2372,22 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
               }))
             }
           >
-            <option value={0}>選択してください</option>
+            <option value={0}>Select category</option>
             {categoryOptions.map((category) => (
               <option key={category.categoryId} value={category.categoryId}>
                 {category.categoryName}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
-        <button
+        <Button
           type="button"
+          className="quick-create-button"
           disabled={quickSubmitting || !quickSubcategoryForm.subcategoryName.trim() || !quickSubcategoryForm.categoryId}
           onClick={() => void onQuickCreateSubcategory(context)}
         >
-          作成
-        </button>
+          Add
+        </Button>
       </div>
       {quickSubcategoryErrorMessage ? (
         <p className="field-error">{quickSubcategoryErrorMessage}</p>
