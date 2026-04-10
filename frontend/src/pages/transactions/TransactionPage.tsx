@@ -174,6 +174,8 @@ export function TransactionPage() {
   const [displayMonth, setDisplayMonth] = useState(today.slice(0, 7))
   const [transactionFilterType, setTransactionFilterType] = useState<TransactionFilterType>('ALL')
   const [transactionFilterAccountId, setTransactionFilterAccountId] = useState<number>(0)
+  const [transactionFilterCategoryId, setTransactionFilterCategoryId] = useState<number>(0)
+  const [transactionFilterGoalBucketId, setTransactionFilterGoalBucketId] = useState<number>(0)
   const [transactionFilterKeyword, setTransactionFilterKeyword] = useState('')
   const [deletingTransactionId, setDeletingTransactionId] = useState<number | null>(null)
   const [deletingAllocationId, setDeletingAllocationId] = useState<number | null>(null)
@@ -276,6 +278,20 @@ export function TransactionPage() {
           return false
         }
 
+        if (
+          transactionFilterCategoryId !== 0 &&
+          transaction.categoryId !== transactionFilterCategoryId
+        ) {
+          return false
+        }
+
+        if (
+          transactionFilterGoalBucketId !== 0 &&
+          transaction.goalBucketId !== transactionFilterGoalBucketId
+        ) {
+          return false
+        }
+
         const keyword = transactionFilterKeyword.trim().toLowerCase()
         if (!keyword) {
           return true
@@ -298,6 +314,8 @@ export function TransactionPage() {
       displayPeriod.periodStartDate,
       transactionFilterType,
       transactionFilterAccountId,
+      transactionFilterCategoryId,
+      transactionFilterGoalBucketId,
       transactionFilterKeyword,
     ],
   )
@@ -831,6 +849,8 @@ export function TransactionPage() {
   function resetTransactionFilters() {
     setTransactionFilterType('ALL')
     setTransactionFilterAccountId(0)
+    setTransactionFilterCategoryId(0)
+    setTransactionFilterGoalBucketId(0)
     setTransactionFilterKeyword('')
   }
 
@@ -900,6 +920,8 @@ export function TransactionPage() {
   const hasTransactionFilters =
     transactionFilterType !== 'ALL' ||
     transactionFilterAccountId !== 0 ||
+    transactionFilterCategoryId !== 0 ||
+    transactionFilterGoalBucketId !== 0 ||
     transactionFilterKeyword.trim() !== ''
 
   return (
@@ -1396,6 +1418,38 @@ export function TransactionPage() {
                 ))}
               </select>
             </label>
+            <label>
+              Category
+              <select
+                value={transactionFilterCategoryId}
+                onChange={(event) =>
+                  setTransactionFilterCategoryId(Number(event.target.value))
+                }
+              >
+                <option value={0}>All categories</option>
+                {categories.map((category) => (
+                  <option key={category.categoryId} value={category.categoryId}>
+                    {category.categoryName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Goal Bucket
+              <select
+                value={transactionFilterGoalBucketId}
+                onChange={(event) =>
+                  setTransactionFilterGoalBucketId(Number(event.target.value))
+                }
+              >
+                <option value={0}>All goal buckets</option>
+                {goalBuckets.map((goalBucket) => (
+                  <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>
+                    {goalBucket.bucketName}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="transaction-filter-keyword">
               キーワード
               <input
@@ -1421,6 +1475,21 @@ export function TransactionPage() {
                 口座:{' '}
                 {accounts.find((account) => account.accountId === transactionFilterAccountId)
                   ?.accountName ?? '未選択'}
+              </span>
+            ) : null}
+            {transactionFilterCategoryId !== 0 ? (
+              <span>
+                Category:{' '}
+                {categories.find((category) => category.categoryId === transactionFilterCategoryId)
+                  ?.categoryName ?? 'Not selected'}
+              </span>
+            ) : null}
+            {transactionFilterGoalBucketId !== 0 ? (
+              <span>
+                Goal Bucket:{' '}
+                {goalBuckets.find(
+                  (goalBucket) => goalBucket.goalBucketId === transactionFilterGoalBucketId,
+                )?.bucketName ?? 'Not selected'}
               </span>
             ) : null}
             {transactionFilterKeyword.trim() !== '' ? (
