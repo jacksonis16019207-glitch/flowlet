@@ -88,6 +88,7 @@ docker compose --env-file infra/.env -f infra/docker-compose.prod.yml down
 - backend は Java 25 前提で起動している
 - 開発時は `frontend` と `backend` を別プロセスで起動する
 - backend は `FLOWLET_DB_*` を env から受け取る
+- Settings から GitHub Issue を作成する場合は `FLOWLET_GITHUB_TOKEN` と `FLOWLET_GITHUB_REPOSITORY` を env に設定する
 - 本番構成では Docker image build の中で frontend build を含め、app コンテナだけを公開する
 - 本番再起動でコード変更がない場合は `up -d` を優先し、`up -d --build` は初回起動または変更反映時だけ使う
 - `m_account`、`m_credit_card_profile`、`m_goal_bucket`、`m_category`、`m_subcategory`、`t_transaction`、`t_goal_bucket_allocation` の初期スキーマは Flyway migration で管理する
