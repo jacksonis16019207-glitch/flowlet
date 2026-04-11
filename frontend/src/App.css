@@ -1470,6 +1470,11 @@
   align-items: end;
 }
 
+.dashboard-hero-actions {
+  display: flex;
+  align-items: center;
+}
+
 .dashboard-month-switcher {
   min-width: min(100%, 360px);
   display: grid;
@@ -1642,6 +1647,12 @@
 
 .dashboard-inline-status {
   margin-top: 16px;
+}
+
+.dashboard-section-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .dashboard-cashflow-list {
@@ -2152,6 +2163,11 @@
   }
 
   .dashboard-hero-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-hero-actions {
     flex-direction: column;
     align-items: stretch;
   }

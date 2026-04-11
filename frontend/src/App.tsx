@@ -65,6 +65,9 @@ const settingsSections: SettingsSection[] = [
 function App() {
   const isDevelopment = import.meta.env.DEV
   const [page, setPage] = useState<PageKey>('dashboard')
+  const [ledgerInitialDisplayMonth, setLedgerInitialDisplayMonth] = useState<string | undefined>(
+    undefined,
+  )
   const [settingsSection, setSettingsSection] =
     useState<SettingsSectionKey>('general')
 
@@ -84,10 +87,17 @@ function App() {
 
   function handlePageChange(nextPage: PageKey) {
     setPage(nextPage)
+    setLedgerInitialDisplayMonth(undefined)
 
     if (nextPage !== 'settings') {
       setSettingsSection('general')
     }
+  }
+
+  function handleOpenLedger(targetMonth: string) {
+    setLedgerInitialDisplayMonth(targetMonth)
+    setPage('ledger')
+    setSettingsSection('general')
   }
 
   return (
@@ -154,8 +164,12 @@ function App() {
           ) : null}
 
           <main className="app-page-content">
-            {page === 'dashboard' ? <DashboardPage /> : null}
-            {page === 'ledger' ? <TransactionPage /> : null}
+            {page === 'dashboard' ? (
+              <DashboardPage onOpenLedger={handleOpenLedger} />
+            ) : null}
+            {page === 'ledger' ? (
+              <TransactionPage initialDisplayMonth={ledgerInitialDisplayMonth} />
+            ) : null}
             {page === 'accounts' ? <AccountPage /> : null}
             {page === 'settings' && settingsSection === 'general' ? (
               <AppSettingPage />
