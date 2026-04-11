@@ -68,6 +68,7 @@
 - `main` と `prod` に protection rule を設定する
 - 原則として PR 経由で変更を入れ、force push と branch 削除は禁止する
 - required checks は GitHub Actions 導入後に登録する
+- `prod` は `main` または `hotfix/*` 以外を PR の流入元として受けない
 
 ## Merge Method
 
@@ -83,6 +84,7 @@
   - `frontend-test`
   - `frontend-build`
   - `lint`
+- `prod` には `prod-release-source-check / validate-source-branch` を required check として追加し、release / hotfix 以外の PR を拒否する
 - Actions を追加したら、`main` と `prod` の protection rule に必要な job を required checks として登録する
 - job 名を途中で変える場合は、branch protection 側の required checks も同時に更新する
 

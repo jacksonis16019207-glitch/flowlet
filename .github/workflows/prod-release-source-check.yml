@@ -1,0 +1,24 @@
+name: prod-release-source-check
+
+on:
+  pull_request:
+    branches:
+      - prod
+
+jobs:
+  validate-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate source branch for prod
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          case "$HEAD_REF" in
+            main|hotfix/*)
+              echo "Allowed source branch: $HEAD_REF"
+              ;;
+            *)
+              echo "prod への PR は main または hotfix/* からのみ許可します: $HEAD_REF"
+              exit 1
+              ;;
+          esac
