@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,6 +44,10 @@ class FeedbackIssueControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.issueNumber").value(321))
             .andExpect(jsonPath("$.issueUrl").value("https://github.com/jacksonis16019207-glitch/flowlet/issues/321"));
+
+        assertTrue(TestGitHubIssueGatewayConfiguration.lastCommand.labels().contains("type:feature"));
+        assertTrue(TestGitHubIssueGatewayConfiguration.lastCommand.labels().contains("area:frontend"));
+        assertTrue(TestGitHubIssueGatewayConfiguration.lastCommand.labels().contains("from:feedback"));
     }
 
     @Test
@@ -96,6 +101,8 @@ class FeedbackIssueControllerTest {
     @TestConfiguration
     static class TestGitHubIssueGatewayConfiguration {
 
+        private static CreateGitHubIssueCommand lastCommand;
+
         @Bean
         @Primary
         GitHubIssueGateway testGitHubIssueGateway() {
@@ -103,6 +110,8 @@ class FeedbackIssueControllerTest {
         }
 
         private CreatedGitHubIssue createFakeIssue(CreateGitHubIssueCommand command) {
+            lastCommand = command;
+
             if (command.title().contains("fail")) {
                 throw new BusinessRuleException(
                     HttpStatus.BAD_GATEWAY,
