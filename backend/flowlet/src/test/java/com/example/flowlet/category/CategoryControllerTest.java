@@ -231,6 +231,28 @@ class CategoryControllerTest {
         org.assertj.core.api.Assertions.assertThat(subcategoryRepository.findById(unusedSubcategory.getSubcategoryId())).isEmpty();
     }
 
+    @Test
+    void updateCategoryAcceptsTailnetOriginWithForwardedHeaders() throws Exception {
+        CategoryEntity category = saveCategory("食費", CategoryType.EXPENSE, 10, true);
+
+        mockMvc.perform(put("/api/categories/{categoryId}", category.getCategoryId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Origin", "https://shun-ito.tail567fae.ts.net")
+                .header("X-Forwarded-Proto", "https")
+                .header("X-Forwarded-Host", "shun-ito.tail567fae.ts.net")
+                .content("""
+                    {
+                      "categoryName":"食費更新",
+                      "categoryType":"EXPENSE",
+                      "displayOrder":40,
+                      "active":true
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.categoryName").value("食費更新"))
+            .andExpect(jsonPath("$.displayOrder").value(40));
+    }
+
     private AccountEntity saveAccount() {
         AccountEntity account = new AccountEntity();
         account.setProviderName("テスト銀行");
