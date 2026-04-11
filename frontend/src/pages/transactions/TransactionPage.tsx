@@ -328,17 +328,17 @@ export function TransactionPage() {
       return []
     }
 
+    if (activeTab === 'transaction') {
+      return filteredTransactions
+    }
+
     return filteredTransactions.filter((transaction) => {
       const isTransfer =
         transaction.transactionType === 'TRANSFER_IN' ||
         transaction.transactionType === 'TRANSFER_OUT' ||
         Boolean(transaction.transferGroupId)
 
-      if (activeTab === 'transfer') {
-        return isTransfer
-      }
-
-      return !isTransfer
+      return isTransfer
     })
   }, [activeTab, filteredTransactions])
   const filteredAllocations = useMemo(
