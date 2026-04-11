@@ -21,6 +21,9 @@ import {
   type SubcategoryUpsertInput,
 } from '../../features/category/types/category'
 import { FormModal } from '../../shared/components/FormModal'
+import { Button } from '../../shared/components/ui/button'
+import { Input } from '../../shared/components/ui/input'
+import { Select } from '../../shared/components/ui/select'
 import { ApiRequestError } from '../../shared/lib/api/client'
 
 const emptyCategoryForm: CategoryUpsertInput = {
@@ -413,30 +416,31 @@ export function CategoryPage() {
           ) : null}
 
           <div className="button-row">
-            <button type="button" onClick={openCreateCategoryModal}>
+            <Button type="button" variant="primary" onClick={openCreateCategoryModal}>
               新規カテゴリを追加
-            </button>
+            </Button>
           </div>
 
           <div className="category-toolbar">
             <div className="category-type-tabs" role="tablist" aria-label="カテゴリ種別">
               {categoryTypeOrder.map((categoryType) => (
-                <button
+                <Button
                   key={categoryType}
                   type="button"
                   role="tab"
+                  variant={activeCategoryType === categoryType ? 'primary' : 'default'}
                   className={activeCategoryType === categoryType ? 'active' : ''}
                   aria-selected={activeCategoryType === categoryType}
                   onClick={() => setActiveCategoryType(categoryType)}
                 >
                   {categoryTypeLabels[categoryType]}
-                </button>
+                </Button>
               ))}
             </div>
             <div className="category-filter-row">
               <label>
                 キーワード検索
-                <input
+                <Input
                   type="search"
                   value={searchKeyword}
                   onChange={(event) => setSearchKeyword(event.target.value)}
@@ -445,7 +449,7 @@ export function CategoryPage() {
               </label>
               <label>
                 並び順
-                <select
+                <Select
                   value={sortOrder}
                   onChange={(event) =>
                     setSortOrder(event.target.value as CategorySortOrder)
@@ -453,7 +457,7 @@ export function CategoryPage() {
                 >
                   <option value="displayOrder">表示順</option>
                   <option value="name">名前順</option>
-                </select>
+                </Select>
               </label>
             </div>
           </div>
@@ -549,7 +553,7 @@ export function CategoryPage() {
         >
           <label>
             カテゴリ名
-            <input
+            <Input
               aria-invalid={fieldErrors.categoryName ? 'true' : 'false'}
               value={categoryFormValue.categoryName}
               onChange={(event) => {
@@ -573,7 +577,7 @@ export function CategoryPage() {
 
           <label>
             種別
-            <select
+            <Select
               aria-invalid={fieldErrors.categoryType ? 'true' : 'false'}
               value={categoryFormValue.categoryType}
               onChange={(event) => {
@@ -593,7 +597,7 @@ export function CategoryPage() {
                   {categoryTypeLabels[categoryType]}
                 </option>
               ))}
-            </select>
+            </Select>
             {fieldErrors.categoryType ? (
               <span className="field-error">{fieldErrors.categoryType}</span>
             ) : null}
@@ -601,7 +605,7 @@ export function CategoryPage() {
 
           <label>
             表示順
-            <input
+            <Input
               type="number"
               value={categoryFormValue.displayOrder}
               onChange={(event) => {
@@ -638,20 +642,20 @@ export function CategoryPage() {
           </label>
 
           <div className="button-row modal-action-row">
-            <button type="submit" disabled={submitting}>
+            <Button type="submit" variant="primary" disabled={submitting}>
               {submitting
                 ? '保存中...'
                 : categoryModalMode === 'edit'
                   ? 'カテゴリを更新'
                   : 'カテゴリを追加'}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="secondary"
+              variant="default"
               onClick={closeCategoryModal}
             >
               キャンセル
-            </button>
+            </Button>
           </div>
         </form>
       </FormModal>
@@ -731,20 +735,22 @@ function CategoryCard({
           <span className={`badge ${category.active ? 'active' : 'inactive'}`}>
             {category.active ? '有効' : '停止'}
           </span>
-          <button
+          <Button
             type="button"
+            variant="default"
             className="action-button"
             onClick={() => onBeginCategoryEdit(category)}
           >
             編集
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="danger"
             className="action-button danger"
             onClick={() => void onDeleteCategory(category.categoryId)}
           >
             削除
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -753,15 +759,16 @@ function CategoryCard({
           <h4>サブカテゴリ</h4>
           <div className="category-actions">
             <span>{subcategories.length}件</span>
-            <button
+            <Button
               type="button"
+              variant="default"
               className="action-button secondary"
               aria-expanded={isExpanded}
               aria-controls={`subcategory-panel-${category.categoryId}`}
               onClick={() => onToggleExpanded(category.categoryId)}
             >
               {isExpanded ? '折りたたむ' : '展開する'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -785,20 +792,22 @@ function CategoryCard({
                       >
                         {subcategory.active ? '有効' : '停止'}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        variant="default"
                         className="action-button"
                         onClick={() => onBeginSubcategoryEdit(subcategory)}
                       >
                         編集
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="danger"
                         className="action-button danger"
                         onClick={() => void onDeleteSubcategory(subcategory.subcategoryId)}
                       >
                         削除
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -814,7 +823,7 @@ function CategoryCard({
                 >
                   <label>
                     サブカテゴリ名
-                    <input
+                    <Input
                       value={editingSubcategoryForm.subcategoryName}
                       onChange={(event) =>
                         onSubcategoryFormChange({
@@ -829,7 +838,7 @@ function CategoryCard({
                   <div className="subform-grid">
                     <label>
                       親カテゴリ
-                      <select
+                      <Select
                         value={editingSubcategoryForm.categoryId}
                         onChange={(event) =>
                           onSubcategoryFormChange({
@@ -844,11 +853,11 @@ function CategoryCard({
                             {option.categoryName}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </label>
                     <label>
                       表示順
-                      <input
+                      <Input
                         type="number"
                         value={editingSubcategoryForm.displayOrder}
                         onChange={(event) =>
@@ -874,16 +883,16 @@ function CategoryCard({
                     有効
                   </label>
                   <div className="button-row">
-                    <button type="submit" disabled={submitting}>
+                    <Button type="submit" variant="primary" disabled={submitting}>
                       保存
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="secondary"
+                      variant="default"
                       onClick={onCancelSubcategoryEdit}
                     >
                       キャンセル
-                    </button>
+                    </Button>
                   </div>
                 </form>
               ) : null}
@@ -895,7 +904,7 @@ function CategoryCard({
                 <p className="eyebrow">新規サブカテゴリ</p>
                 <label>
                   サブカテゴリ名
-                  <input
+                  <Input
                     value={createSubcategoryForm.subcategoryName}
                     onChange={(event) =>
                       onCreateSubcategoryFormChange(category.categoryId, (current) => ({
@@ -910,7 +919,7 @@ function CategoryCard({
                 <div className="subform-grid">
                   <label>
                     表示順
-                    <input
+                    <Input
                       type="number"
                       value={createSubcategoryForm.displayOrder}
                       onChange={(event) =>
@@ -935,9 +944,9 @@ function CategoryCard({
                     有効
                   </label>
                 </div>
-                <button type="submit" disabled={submitting}>
+                <Button type="submit" variant="primary" disabled={submitting}>
                   サブカテゴリを追加
-                </button>
+                </Button>
               </form>
             </>
           ) : (
