@@ -665,6 +665,11 @@
   margin: 0 auto 24px;
 }
 
+.transaction-allocation-grid .transaction-allocation-panel {
+  max-width: none;
+  margin: 0;
+}
+
 .transaction-action-panel .panel-heading {
   align-items: start;
   gap: 16px;
@@ -922,6 +927,27 @@
 
 .transaction-table tbody tr.selected {
   background: rgba(240, 223, 201, 0.72);
+}
+
+.transaction-table tbody tr.is-non-cashflow:not(.selected) {
+  background: rgba(250, 246, 240, 0.78);
+}
+
+.transaction-table tbody tr.is-non-cashflow td {
+  color: #8b7d6f;
+}
+
+.transaction-table tbody tr.is-non-cashflow .type-chip {
+  background: #f4ece2;
+  color: #9b8267;
+}
+
+.transaction-table tbody tr.is-non-cashflow .transaction-money-cell.is-positive {
+  color: #6f9c81;
+}
+
+.transaction-table tbody tr.is-non-cashflow .transaction-money-cell.is-negative {
+  color: #b07c6f;
 }
 
 .transaction-table td {

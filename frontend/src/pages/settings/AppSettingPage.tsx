@@ -6,6 +6,8 @@ import {
   type PaymentDateAdjustmentRule,
 } from '../../features/account/types/account'
 import { ApiRequestError } from '../../shared/lib/api/client'
+import { Button } from '../../shared/components/ui/button'
+import { Select } from '../../shared/components/ui/select'
 
 const emptySetting: AppSetting = {
   monthStartDay: 1,
@@ -88,9 +90,9 @@ export function AppSettingPage() {
     <main className="app-shell">
       <section className="hero-panel">
         <p className="eyebrow">flowlet / settings / general</p>
-        <h1>月次集計の基準を整える</h1>
+        <h1>月次表示の基準を整える</h1>
         <p className="lead">
-          Dashboard と Ledger が参照する月初日と営業日調整ルールをここで管理します。
+          Dashboard と Ledger で使う月初日と、休日に当たった場合の調整ルールをここで管理します。
         </p>
       </section>
 
@@ -98,9 +100,9 @@ export function AppSettingPage() {
         <section className="panel">
           <div className="panel-heading">
             <p className="eyebrow">General</p>
-            <h2>月初日ルールを更新する</h2>
+            <h2>月初ルールを更新する</h2>
             <p className="lead dashboard-section-lead">
-              月次収支の集計開始日と、休日に当たったときの補正ルールを設定します。
+              家計簿の表示期間をどこから区切るかを設定します。ダッシュボードと台帳の集計に反映されます。
             </p>
           </div>
           {errorMessage ? <p className="status error">{errorMessage}</p> : null}
@@ -114,7 +116,7 @@ export function AppSettingPage() {
           >
             <label>
               月初日
-              <select
+              <Select
                 value={monthStartDay}
                 onChange={(event) => setMonthStartDay(event.target.value)}
                 disabled={loading || saving}
@@ -124,12 +126,12 @@ export function AppSettingPage() {
                     {day}日
                   </option>
                 ))}
-              </select>
-              <small>選択した日を基準に月次収支の開始日を決めます。</small>
+              </Select>
+              <small>選択した日を基準に月次集計の開始日を決めます。</small>
             </label>
             <label>
-              営業日調整ルール
-              <select
+              休日調整ルール
+              <Select
                 value={monthStartAdjustmentRule}
                 onChange={(event) =>
                   setMonthStartAdjustmentRule(
@@ -143,13 +145,13 @@ export function AppSettingPage() {
                     {paymentDateAdjustmentRuleLabels[rule]}
                   </option>
                 ))}
-              </select>
-              <small>月初日が休日に当たる場合の繰り上げ、繰り下げ方法を決めます。</small>
+              </Select>
+              <small>月初日が休日に重なる場合の前倒し・後ろ倒しの扱いを設定します。</small>
             </label>
             <div className="button-row">
-              <button type="submit" disabled={loading || saving}>
+              <Button type="submit" disabled={loading || saving}>
                 {saving ? '保存中...' : 'General 設定を保存'}
-              </button>
+              </Button>
             </div>
           </form>
         </section>
@@ -159,7 +161,7 @@ export function AppSettingPage() {
             <p className="eyebrow">Current</p>
             <h2>現在の設定</h2>
             <p className="lead dashboard-section-lead">
-              現在アプリ全体に適用されている月次集計ルールです。
+              現在アプリ全体に適用されている月次表示ルールです。
             </p>
           </div>
           <div className="detail-chip-list">
@@ -168,7 +170,7 @@ export function AppSettingPage() {
               <span>{setting.monthStartDay}日</span>
             </article>
             <article className="detail-chip-card">
-              <strong>営業日調整ルール</strong>
+              <strong>休日調整ルール</strong>
               <span>{paymentDateAdjustmentRuleLabels[setting.monthStartAdjustmentRule]}</span>
             </article>
             <article className="detail-chip-card">
@@ -182,7 +184,7 @@ export function AppSettingPage() {
               <div>
                 <h3>影響範囲</h3>
                 <p className="section-description">
-                  変更後は Dashboard と Ledger の月次表示に使う集計期間が変わります。
+                  保存後は Dashboard と Ledger の月次表示に新しい基準が反映されます。
                 </p>
               </div>
             </div>
@@ -190,13 +192,13 @@ export function AppSettingPage() {
               <article className="detail-list-item">
                 <div>
                   <h4>Dashboard</h4>
-                  <p>選択月の収入、支出、収支、カテゴリ別収支の対象期間が更新されます。</p>
+                  <p>収支サマリーとカテゴリ別集計の対象期間に反映されます。</p>
                 </div>
               </article>
               <article className="detail-list-item">
                 <div>
                   <h4>Ledger</h4>
-                  <p>月ごとの取引確認時に見るべき期間の基準が変わります。</p>
+                  <p>月切り替え時に見る基準期間が新しい設定に合わせて変わります。</p>
                 </div>
               </article>
             </div>

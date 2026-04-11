@@ -142,6 +142,12 @@ const transactionFilterOptions: { value: TransactionFilterType; label: string }[
 ]
 
 export function TransactionPage() {
+  const [isMobileLayout, setIsMobileLayout] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true
+    }
+    return window.innerWidth <= 960
+  })
   const [activeTab, setActiveTab] = useState<TransactionTab>('transaction')
   const [transactionEntryMode, setTransactionEntryMode] =
     useState<TransactionEntryMode>('single')
@@ -206,6 +212,22 @@ export function TransactionPage() {
 
   useEffect(() => {
     void loadPageData()
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 960px)')
+    const updateLayout = () => setIsMobileLayout(mediaQuery.matches)
+
+    updateLayout()
+    mediaQuery.addEventListener('change', updateLayout)
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateLayout)
+    }
   }, [])
 
   const transactionCategories = useMemo(
@@ -328,17 +350,17 @@ export function TransactionPage() {
       return []
     }
 
+    if (activeTab === 'transaction') {
+      return filteredTransactions
+    }
+
     return filteredTransactions.filter((transaction) => {
       const isTransfer =
         transaction.transactionType === 'TRANSFER_IN' ||
         transaction.transactionType === 'TRANSFER_OUT' ||
         Boolean(transaction.transferGroupId)
 
-      if (activeTab === 'transfer') {
-        return isTransfer
-      }
-
-      return !isTransfer
+      return isTransfer
     })
   }, [activeTab, filteredTransactions])
   const filteredAllocations = useMemo(
@@ -1598,7 +1620,7 @@ export function TransactionPage() {
                 条件をクリア
               </button>
             ) : null}
-            {selectedTransaction ? (
+            {isMobileLayout && selectedTransaction ? (
               <button
                 type="button"
                 className="action-button secondary"
@@ -1630,11 +1652,14 @@ export function TransactionPage() {
                     {filteredLedgerTransactions.map((transaction) => {
                       const selected =
                         transaction.transactionId === selectedTransaction?.transactionId
+                      const isNonCashflow = transaction.cashflowTreatment === 'IGNORE'
 
                       return (
                         <tr
                           key={transaction.transactionId}
-                          className={selected ? 'selected' : ''}
+                          className={`${selected ? 'selected' : ''} ${
+                            isNonCashflow ? 'is-non-cashflow' : ''
+                          }`.trim()}
                           onClick={() => setSelectedTransactionId(transaction.transactionId)}
                         >
                           <td data-label="区分">
@@ -1778,6 +1803,7 @@ export function TransactionPage() {
       )}
 
       {activeTab !== 'allocation' ? null : (
+      <section className="content-grid transaction-workbench-grid transaction-allocation-grid">
       <section className="panel transaction-allocation-panel">
         <div className="panel-heading">
           <h2>直近の配分</h2>
@@ -1788,7 +1814,12 @@ export function TransactionPage() {
             <p className="status">配分はまだありません。</p>
           ) : (
             filteredAllocations.map((allocation) => (
-              <article key={allocation.allocationId} className="account-card">
+              <article
+                key={allocation.allocationId}
+                className={`account-card${
+                  selectedAllocation?.allocationId === allocation.allocationId ? ' selected' : ''
+                }`}
+              >
                 <div className="account-card-header">
                   <span className="type-chip">{formatMoney(allocation.amount)}</span>
                   <span className="badge active">
@@ -1809,7 +1840,9 @@ export function TransactionPage() {
                     className="action-button secondary"
                     onClick={() => {
                       setSelectedAllocationId(allocation.allocationId)
-                      setAllocationDetailOpen(true)
+                      if (isMobileLayout) {
+                        setAllocationDetailOpen(true)
+                      }
                     }}
                   >
                     詳細
@@ -1837,10 +1870,81 @@ export function TransactionPage() {
           )}
         </div>
       </section>
+      <section className="panel transaction-detail-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Allocation detail</p>
+            <h2>Allocation summary</h2>
+          </div>
+        </div>
+        {selectedAllocation ? (
+          <div className="transaction-detail-stack">
+            <div className="transaction-detail-hero">
+              <p className="eyebrow">Allocation summary</p>
+              <h3>{selectedAllocation.description || 'No description'}</h3>
+              <p>{formatMoney(selectedAllocation.amount)}</p>
+            </div>
+            <dl className="detail-list">
+              <div className="detail-list-item">
+                <dt>Allocation date</dt>
+                <dd>{formatDateLabel(selectedAllocation.allocationDate)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>From GoalBucket</dt>
+                <dd>{selectedAllocation.fromGoalBucketName ?? 'Unassigned'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>To GoalBucket</dt>
+                <dd>{selectedAllocation.toGoalBucketName ?? 'Unassigned'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>Note</dt>
+                <dd>{selectedAllocation.note?.trim() || 'None'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>Created at</dt>
+                <dd>{formatDateTimeLabel(selectedAllocation.createdAt)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>Updated at</dt>
+                <dd>{formatDateTimeLabel(selectedAllocation.updatedAt)}</dd>
+              </div>
+              {selectedAllocation.linkedTransferGroupId ? (
+                <div className="detail-list-item">
+                  <dt>Linked transfer group</dt>
+                  <dd>{selectedAllocation.linkedTransferGroupId}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <div className="category-actions">
+              <button
+                type="button"
+                className="action-button"
+                onClick={() => handleEditAllocation(selectedAllocation)}
+              >
+                編集
+              </button>
+              <button
+                type="button"
+                className="action-button danger"
+                disabled={deletingAllocationId === selectedAllocation.allocationId}
+                onClick={() => void handleDeleteAllocation(selectedAllocation)}
+              >
+                {deletingAllocationId === selectedAllocation.allocationId
+                  ? '削除中...'
+                  : '削除'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="status">配分を選択すると詳細を表示します。</p>
+        )}
+      </section>
+      </section>
       )}
 
       <FormModal
-        open={transactionDetailOpen && selectedTransaction != null}
+        open={isMobileLayout && transactionDetailOpen && selectedTransaction != null}
         title={selectedTransaction?.description ?? '取引詳細'}
         description="取引日、金額、口座、カテゴリ、GoalBucket、更新情報を確認できます。"
         eyebrow="取引詳細"
@@ -1931,7 +2035,7 @@ export function TransactionPage() {
       </FormModal>
 
       <FormModal
-        open={allocationDetailOpen && selectedAllocation != null}
+        open={isMobileLayout && allocationDetailOpen && selectedAllocation != null}
         title={selectedAllocation?.description ?? '配分詳細'}
         description="配分日、配分元、配分先、関連する振替情報、更新情報を確認できます。"
         eyebrow="配分詳細"
