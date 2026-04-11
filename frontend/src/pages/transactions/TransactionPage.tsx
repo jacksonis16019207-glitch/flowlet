@@ -1156,7 +1156,7 @@ export function TransactionPage() {
             <div className="section-heading">
               <h3>振替を登録</h3>
             </div>
-            <label>
+            <label className="transaction-field">
               振替元口座
               <Select
                 value={transferForm.fromAccountId}
@@ -1175,7 +1175,7 @@ export function TransactionPage() {
                 ))}
               </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               振替先口座
               <Select
                 value={transferForm.toAccountId}
@@ -1193,7 +1193,7 @@ export function TransactionPage() {
                 ))}
               </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               振替元 GoalBucket
               <Select
                 value={transferForm.fromGoalBucketId ?? ''}
@@ -1214,7 +1214,7 @@ export function TransactionPage() {
                   ))}
               </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               カテゴリ
               <Select
                 value={transferForm.categoryId}
@@ -1233,7 +1233,7 @@ export function TransactionPage() {
                 ))}
               </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               サブカテゴリ
               <Select
                 value={transferForm.subcategoryId ?? ''}
@@ -1252,7 +1252,7 @@ export function TransactionPage() {
                 ))}
               </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               振替元の収支集計
               <Select
                 value={transferForm.outgoingCashflowTreatment}
@@ -1270,7 +1270,7 @@ export function TransactionPage() {
                 ))}
               </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               振替先の収支集計
               <Select
                 value={transferForm.incomingCashflowTreatment}
@@ -1301,7 +1301,7 @@ export function TransactionPage() {
               onQuickCreateCategory={handleQuickCreateCategory}
               onQuickCreateSubcategory={handleQuickCreateSubcategory}
             />
-            <label>
+            <label className="transaction-field">
               振替日
               <Input
                 type="date"
@@ -1314,7 +1314,7 @@ export function TransactionPage() {
                 }
               />
             </label>
-            <label>
+            <label className="transaction-field">
               金額
               <Input
                 value={transferForm.amount}
@@ -1324,7 +1324,7 @@ export function TransactionPage() {
                 placeholder="50000"
               />
             </label>
-            <label>
+            <label className="transaction-field">
               説明
               <Input
                 value={transferForm.description}
@@ -1337,7 +1337,7 @@ export function TransactionPage() {
                 placeholder="例: 生活費口座へ振替"
               />
             </label>
-            <label>
+            <label className="transaction-field transaction-field-wide">
               メモ
               <Textarea
                 value={transferForm.note}
@@ -1376,7 +1376,7 @@ export function TransactionPage() {
                 </button>
               ) : null}
             </div>
-            <label>
+            <label className="transaction-field transaction-field-wide">
               対象口座
               <Select
                 value={allocationAccountId}
@@ -1392,7 +1392,7 @@ export function TransactionPage() {
                 ))}
               </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               配分元
               <Select
                 value={allocationFromGoalBucketId ?? ''}
@@ -1410,7 +1410,7 @@ export function TransactionPage() {
                 ))}
               </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               配分日
               <Input
                 type="date"
@@ -1418,14 +1418,14 @@ export function TransactionPage() {
                 onChange={(event) => setAllocationDate(event.target.value)}
               />
             </label>
-            <label>
+            <label className="transaction-field">
               説明
               <Input
                 value={allocationDescription}
                 onChange={(event) => setAllocationDescription(event.target.value)}
               />
             </label>
-            <label>
+            <label className="transaction-field transaction-field-wide">
               メモ
               <Textarea
                 value={allocationNote}
