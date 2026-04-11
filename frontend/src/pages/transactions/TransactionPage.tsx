@@ -142,6 +142,12 @@ const transactionFilterOptions: { value: TransactionFilterType; label: string }[
 ]
 
 export function TransactionPage() {
+  const [isMobileLayout, setIsMobileLayout] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true
+    }
+    return window.innerWidth <= 960
+  })
   const [activeTab, setActiveTab] = useState<TransactionTab>('transaction')
   const [transactionEntryMode, setTransactionEntryMode] =
     useState<TransactionEntryMode>('single')
@@ -206,6 +212,22 @@ export function TransactionPage() {
 
   useEffect(() => {
     void loadPageData()
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 960px)')
+    const updateLayout = () => setIsMobileLayout(mediaQuery.matches)
+
+    updateLayout()
+    mediaQuery.addEventListener('change', updateLayout)
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateLayout)
+    }
   }, [])
 
   const transactionCategories = useMemo(
@@ -1598,7 +1620,7 @@ export function TransactionPage() {
                 条件をクリア
               </button>
             ) : null}
-            {selectedTransaction ? (
+            {isMobileLayout && selectedTransaction ? (
               <button
                 type="button"
                 className="action-button secondary"
@@ -1843,7 +1865,7 @@ export function TransactionPage() {
       )}
 
       <FormModal
-        open={transactionDetailOpen && selectedTransaction != null}
+        open={isMobileLayout && transactionDetailOpen && selectedTransaction != null}
         title={selectedTransaction?.description ?? '取引詳細'}
         description="取引日、金額、口座、カテゴリ、GoalBucket、更新情報を確認できます。"
         eyebrow="取引詳細"
@@ -1934,7 +1956,7 @@ export function TransactionPage() {
       </FormModal>
 
       <FormModal
-        open={allocationDetailOpen && selectedAllocation != null}
+        open={isMobileLayout && allocationDetailOpen && selectedAllocation != null}
         title={selectedAllocation?.description ?? '配分詳細'}
         description="配分日、配分元、配分先、関連する振替情報、更新情報を確認できます。"
         eyebrow="配分詳細"
