@@ -1630,11 +1630,14 @@ export function TransactionPage() {
                     {filteredLedgerTransactions.map((transaction) => {
                       const selected =
                         transaction.transactionId === selectedTransaction?.transactionId
+                      const isNonCashflow = transaction.cashflowTreatment === 'IGNORE'
 
                       return (
                         <tr
                           key={transaction.transactionId}
-                          className={selected ? 'selected' : ''}
+                          className={`${selected ? 'selected' : ''} ${
+                            isNonCashflow ? 'is-non-cashflow' : ''
+                          }`.trim()}
                           onClick={() => setSelectedTransactionId(transaction.transactionId)}
                         >
                           <td data-label="区分">

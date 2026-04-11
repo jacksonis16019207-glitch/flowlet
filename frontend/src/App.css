@@ -924,6 +924,27 @@
   background: rgba(240, 223, 201, 0.72);
 }
 
+.transaction-table tbody tr.is-non-cashflow:not(.selected) {
+  background: rgba(250, 246, 240, 0.78);
+}
+
+.transaction-table tbody tr.is-non-cashflow td {
+  color: #8b7d6f;
+}
+
+.transaction-table tbody tr.is-non-cashflow .type-chip {
+  background: #f4ece2;
+  color: #9b8267;
+}
+
+.transaction-table tbody tr.is-non-cashflow .transaction-money-cell.is-positive {
+  color: #6f9c81;
+}
+
+.transaction-table tbody tr.is-non-cashflow .transaction-money-cell.is-negative {
+  color: #b07c6f;
+}
+
 .transaction-table td {
   padding: 9px 10px;
   border-bottom: 1px solid rgba(139, 94, 52, 0.1);
