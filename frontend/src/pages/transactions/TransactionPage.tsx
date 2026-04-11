@@ -2312,10 +2312,10 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
 
   return (
     <div className="quick-create-panel quick-create-panel-upgraded">
-      <p className="eyebrow">Create on the spot if the option is missing</p>
+      <p className="eyebrow">候補になければその場で追加</p>
       <div className="quick-create-grid">
         <label className="transaction-field">
-          <span className="transaction-field-label">New Category</span>
+          <span className="transaction-field-label">新規カテゴリ</span>
           <Input
             value={quickCategoryForm.categoryName}
             onChange={(event) =>
@@ -2328,7 +2328,7 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
           />
         </label>
         <label className="transaction-field">
-          <span className="transaction-field-label">Type</span>
+          <span className="transaction-field-label">種別</span>
           <Select
             value={quickCategoryForm.categoryType}
             onChange={(event) =>
@@ -2338,9 +2338,9 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
               }))
             }
           >
-            <option value="EXPENSE">Expense</option>
-            <option value="INCOME">Income</option>
-            <option value="TRANSFER">Transfer</option>
+            <option value="EXPENSE">支出</option>
+            <option value="INCOME">収入</option>
+            <option value="TRANSFER">振替</option>
           </Select>
         </label>
         <Button
@@ -2349,13 +2349,13 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
           disabled={quickSubmitting || !quickCategoryForm.categoryName.trim()}
           onClick={() => void onQuickCreateCategory(context)}
         >
-          Add
+          作成
         </Button>
       </div>
       {quickCategoryErrorMessage ? <p className="field-error">{quickCategoryErrorMessage}</p> : null}
       <div className="quick-create-grid">
         <label className="transaction-field">
-          <span className="transaction-field-label">New Subcategory</span>
+          <span className="transaction-field-label">新規サブカテゴリ</span>
           <Input
             value={quickSubcategoryForm.subcategoryName}
             onChange={(event) =>
@@ -2368,7 +2368,7 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
           />
         </label>
         <label className="transaction-field">
-          <span className="transaction-field-label">Parent Category</span>
+          <span className="transaction-field-label">親カテゴリ</span>
           <Select
             value={quickSubcategoryForm.categoryId}
             onChange={(event) =>
@@ -2378,7 +2378,7 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
               }))
             }
           >
-            <option value={0}>Select category</option>
+            <option value={0}>選択してください</option>
             {categoryOptions.map((category) => (
               <option key={category.categoryId} value={category.categoryId}>
                 {category.categoryName}
@@ -2392,7 +2392,7 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
           disabled={quickSubmitting || !quickSubcategoryForm.subcategoryName.trim() || !quickSubcategoryForm.categoryId}
           onClick={() => void onQuickCreateSubcategory(context)}
         >
-          Add
+          作成
         </Button>
       </div>
       {quickSubcategoryErrorMessage ? (
@@ -2464,7 +2464,7 @@ function AllocationFields({
                 )
               }
             >
-              <option value={0}>Select GoalBucket</option>
+              <option value={0}>配分先を選択</option>
               {goalBuckets.map((goalBucket) => (
                 <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>
                   {goalBucket.bucketName}
