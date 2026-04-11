@@ -53,7 +53,11 @@ const defaultAppSetting: AppSetting = {
   updatedAt: '',
 }
 
-export function DashboardPage() {
+type DashboardPageProps = {
+  onOpenLedger: (targetMonth: string) => void
+}
+
+export function DashboardPage({ onOpenLedger }: DashboardPageProps) {
   const [summary, setSummary] = useState<DashboardBalanceSummary>(emptySummary)
   const [cashflow, setCashflow] = useState<DashboardMonthlyCashflow>(emptyCashflow)
   const [categoryCashflow, setCategoryCashflow] =
@@ -179,6 +183,15 @@ export function DashboardPage() {
             <p className="lead">
               現在の総残高と、選択した月の収入、支出、収支をまとめて確認します。
             </p>
+          </div>
+          <div className="dashboard-hero-actions">
+            <button
+              type="button"
+              className="action-button"
+              onClick={() => onOpenLedger(displayMonth)}
+            >
+              Ledger で詳しく見る
+            </button>
           </div>
           <div className="dashboard-month-switcher">
             <p className="dashboard-month-label">Target Month</p>
@@ -370,6 +383,15 @@ export function DashboardPage() {
           {cashflowErrorMessage ? (
             <p className="status error dashboard-inline-status">{cashflowErrorMessage}</p>
           ) : null}
+          <div className="dashboard-section-footer">
+            <button
+              type="button"
+              className="action-button"
+              onClick={() => onOpenLedger(displayMonth)}
+            >
+              Ledger で続きを見る
+            </button>
+          </div>
         </section>
       </section>
     </main>

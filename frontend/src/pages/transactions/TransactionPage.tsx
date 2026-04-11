@@ -141,7 +141,11 @@ const transactionFilterOptions: { value: TransactionFilterType; label: string }[
   { value: 'TRANSFER_IN', label: '振替入金' },
 ]
 
-export function TransactionPage() {
+type TransactionPageProps = {
+  initialDisplayMonth?: string
+}
+
+export function TransactionPage({ initialDisplayMonth }: TransactionPageProps) {
   const [isMobileLayout, setIsMobileLayout] = useState(() => {
     if (typeof window === 'undefined') {
       return true
@@ -181,7 +185,7 @@ export function TransactionPage() {
   const [entryModalOpen, setEntryModalOpen] = useState(false)
   const [transactionDetailOpen, setTransactionDetailOpen] = useState(false)
   const [allocationDetailOpen, setAllocationDetailOpen] = useState(false)
-  const [displayMonth, setDisplayMonth] = useState(today.slice(0, 7))
+  const [displayMonth, setDisplayMonth] = useState(initialDisplayMonth ?? today.slice(0, 7))
   const [transactionFilterType, setTransactionFilterType] = useState<TransactionFilterType>('ALL')
   const [transactionFilterAccountId, setTransactionFilterAccountId] = useState<number>(0)
   const [transactionFilterCategoryId, setTransactionFilterCategoryId] = useState<number>(0)
@@ -229,6 +233,14 @@ export function TransactionPage() {
       mediaQuery.removeEventListener('change', updateLayout)
     }
   }, [])
+
+  useEffect(() => {
+    if (!initialDisplayMonth) {
+      return
+    }
+
+    setDisplayMonth(initialDisplayMonth)
+  }, [initialDisplayMonth])
 
   const transactionCategories = useMemo(
     () =>
@@ -484,7 +496,7 @@ export function TransactionPage() {
       setSubcategories(subcategoryData)
       setTransactions(transactionData)
       setAllocations(allocationData)
-      setDisplayMonth(resolveContainingMonth(appSettingData, new Date()))
+      setDisplayMonth(initialDisplayMonth ?? resolveContainingMonth(appSettingData, new Date()))
 
       const defaultAccountId = accountData[0]?.accountId ?? 0
       const expenseCategoryId =
