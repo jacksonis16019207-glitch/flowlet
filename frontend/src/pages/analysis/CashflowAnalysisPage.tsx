@@ -9,6 +9,8 @@ import type {
   DashboardCategoryCashflow,
   DashboardMonthlyCashflow,
 } from '../../features/dashboard/types/dashboard'
+import { Button } from '../../shared/components/ui/button'
+import { Input } from '../../shared/components/ui/input'
 
 const emptyCashflow: DashboardMonthlyCashflow = {
   targetMonth: '',
@@ -67,7 +69,7 @@ export function CashflowAnalysisPage() {
         }
 
         setErrorMessage(
-          '収支分析データの取得に失敗しました。バックエンド API の状態を確認してください。',
+          '集計データの取得に失敗しました。バックエンド API の状態を確認してください。',
         )
       })
       .finally(() => {
@@ -85,10 +87,9 @@ export function CashflowAnalysisPage() {
     <main className="app-shell">
       <section className="hero-panel">
         <p className="eyebrow">flowlet / analysis</p>
-        <h1>1か月単位の収支を振り返る</h1>
+        <h1>月次収支を分析する</h1>
         <p className="lead">
-          対象月を選ぶと、グローバル設定した開始日と土日祝補正ルールに従って、
-          その月の表示期間を1か月で集計します。
+          対象月を切り替えながら、収入・支出・カテゴリ別の推移をまとめて確認できます。
         </p>
         <form
           className="analysis-filter-row"
@@ -99,14 +100,14 @@ export function CashflowAnalysisPage() {
         >
           <label>
             対象月
-            <input
+            <Input
               type="month"
               value={targetMonth}
               onChange={(event) => setTargetMonth(event.target.value)}
             />
           </label>
           <div className="button-row">
-            <button type="submit">集計を更新</button>
+            <Button type="submit">集計を更新</Button>
           </div>
         </form>
         <div className="hero-stats dashboard-hero-stats">
@@ -121,9 +122,9 @@ export function CashflowAnalysisPage() {
             <small>対象月 {cashflow.targetMonth || appliedTargetMonth}</small>
           </article>
           <article>
-            <span>差額</span>
+            <span>差引</span>
             <strong>{formatMoney(cashflow.net)}</strong>
-            <small>カテゴリ別内訳も同じ期間で集計</small>
+            <small>カテゴリ別集計も同じ期間で確認できます。</small>
           </article>
         </div>
       </section>
@@ -140,9 +141,9 @@ export function CashflowAnalysisPage() {
         <section className="panel dashboard-panel-full">
           <div className="panel-heading">
             <p className="eyebrow">Monthly Cashflow</p>
-            <h2>対象期間の収支</h2>
+            <h2>対象月の収支</h2>
             <p className="lead dashboard-section-lead">
-              グローバル設定した月初基準に従って、対象月に対応する1か月期間の収支を表示します。
+              月初設定で決まる集計期間に沿って、対象月の収支サマリーを表示します。
             </p>
           </div>
           {loading ? (
@@ -157,7 +158,7 @@ export function CashflowAnalysisPage() {
         <section className="panel">
           <div className="panel-heading">
             <p className="eyebrow">Income Categories</p>
-            <h2>収入カテゴリ別内訳</h2>
+            <h2>収入カテゴリ別集計</h2>
           </div>
           {loading ? (
             <p className="status">読み込み中...</p>
@@ -165,7 +166,7 @@ export function CashflowAnalysisPage() {
             <DashboardCategoryCashflowList
               title="収入カテゴリ"
               categories={categoryCashflow.incomeCategories}
-              emptyMessage="対象期間に収入カテゴリの集計はありません。"
+              emptyMessage="対象月に収入カテゴリの集計はありません。"
               tone="income"
             />
           )}
@@ -174,7 +175,7 @@ export function CashflowAnalysisPage() {
         <section className="panel">
           <div className="panel-heading">
             <p className="eyebrow">Expense Categories</p>
-            <h2>支出カテゴリ別内訳</h2>
+            <h2>支出カテゴリ別集計</h2>
           </div>
           {loading ? (
             <p className="status">読み込み中...</p>
@@ -182,7 +183,7 @@ export function CashflowAnalysisPage() {
             <DashboardCategoryCashflowList
               title="支出カテゴリ"
               categories={categoryCashflow.expenseCategories}
-              emptyMessage="対象期間に支出カテゴリの集計はありません。"
+              emptyMessage="対象月に支出カテゴリの集計はありません。"
               tone="expense"
             />
           )}

@@ -1,4 +1,7 @@
 import type { FormEvent } from 'react'
+import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
+import { Select } from '@/shared/components/ui/select'
 import type { Account } from '../../account/types/account'
 import type { CreateGoalBucketInput } from '../types/goalBucket'
 
@@ -33,7 +36,7 @@ export function GoalBucketForm({
 
       <label>
         親口座
-        <select
+        <Select
           aria-invalid={fieldErrors.accountId ? 'true' : 'false'}
           value={value.accountId}
           onChange={(event) =>
@@ -52,7 +55,7 @@ export function GoalBucketForm({
               {account.providerName} / {account.accountName}
             </option>
           ))}
-        </select>
+        </Select>
         {fieldErrors.accountId ? (
           <span className="field-error">{fieldErrors.accountId}</span>
         ) : null}
@@ -60,7 +63,7 @@ export function GoalBucketForm({
 
       <label>
         目的別口座名
-        <input
+        <Input
           aria-invalid={fieldErrors.bucketName ? 'true' : 'false'}
           value={value.bucketName}
           onChange={(event) =>
@@ -69,7 +72,7 @@ export function GoalBucketForm({
               bucketName: event.target.value,
             })
           }
-          placeholder="緊急費"
+          placeholder="旅行費"
           maxLength={100}
           required
         />
@@ -89,12 +92,12 @@ export function GoalBucketForm({
             })
           }
         />
-        利用中の目的別口座として登録
+        有効な目的別口座として登録
       </label>
 
-      <button type="submit" disabled={submitting || accounts.length === 0}>
+      <Button type="submit" disabled={submitting || accounts.length === 0}>
         {submitting ? '登録中...' : '目的別口座を登録'}
-      </button>
+      </Button>
     </form>
   )
 }
