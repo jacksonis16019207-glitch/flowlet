@@ -3,8 +3,8 @@ package com.example.flowlet.presentation.feedbackissue.dto;
 import java.util.List;
 
 public enum FeedbackIssueKind {
-    FEATURE_REQUEST("要望", "[Feedback]", List.of("type:feature", "from:feedback")),
-    BUG_REPORT("不具合", "[Bug]", List.of("type:bug", "from:feedback"));
+    FEATURE_REQUEST("要望", "[Feedback]", List.of("type:feature", "area:frontend", "from:feedback")),
+    BUG_REPORT("不具合", "[Bug]", List.of("type:bug", "area:frontend", "from:feedback"));
 
     private final String label;
     private final String titlePrefix;

@@ -44,10 +44,10 @@
 
 - `kind = FEATURE_REQUEST`
   - title prefix: `[Feedback]`
-  - labels: `type:feature`, `from:feedback`
+  - labels: `type:feature`, `area:frontend`, `from:feedback`
 - `kind = BUG_REPORT`
   - title prefix: `[Bug]`
-  - labels: `type:bug`, `from:feedback`
+  - labels: `type:bug`, `area:frontend`, `from:feedback`
 
 issue 本文には以下を固定で入れる。
 
