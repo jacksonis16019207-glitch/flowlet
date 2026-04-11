@@ -107,7 +107,7 @@ function App() {
           DEVELOPMENT
         </div>
       ) : null}
-      <div className="app-layout-shell">
+      <div className={`app-layout-shell${isDevelopment ? ' has-environment-banner' : ''}`}>
         <aside className="app-sidebar">
           <div className="app-sidebar-brand">
             <p className="app-sidebar-kicker">flowlet workspace</p>
@@ -133,7 +133,7 @@ function App() {
           </nav>
         </aside>
 
-        <div className="app-main-shell">
+        <div className={`app-main-shell${isDevelopment ? ' has-environment-banner' : ''}`}>
           <header className="app-page-header">
             <div>
               <p className="app-page-kicker">workspace view</p>
