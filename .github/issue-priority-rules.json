@@ -1,0 +1,38 @@
+{
+  "existingPriorityLabels": ["prio:P1", "prio:P2", "prio:P3"],
+  "keywordOverrides": {
+    "prio:P1": [
+      "本番",
+      "production",
+      "prod",
+      "障害",
+      "403",
+      "404",
+      "500",
+      "500s",
+      "cannot",
+      "can't",
+      "利用不能",
+      "データ消失",
+      "security",
+      "脆弱"
+    ],
+    "prio:P3": [
+      "nice to have",
+      "将来",
+      "余裕があれば",
+      "後で",
+      "cleanup",
+      "後片付け",
+      "polish"
+    ]
+  },
+  "labelDefaults": {
+    "type:bug": "prio:P1",
+    "type:feature": "prio:P2",
+    "type:refactor": "prio:P2",
+    "type:docs": "prio:P3",
+    "type:research": "prio:P3"
+  },
+  "fallbackPriority": "prio:P2"
+}

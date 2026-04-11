@@ -32,6 +32,22 @@
 - `history`
 - `blocked`
 
+## 優先度自動付与
+
+- 新規 Issue には GitHub Actions で `prio:P1` / `prio:P2` / `prio:P3` を自動付与する
+- すでに `prio:*` ラベルが付いている場合は、自動処理で上書きしない
+- 判定ルールは `.github/issue-priority-rules.json` で管理する
+- まず本文・タイトルの強いキーワードで上書き判定し、その後 `type:*` ラベルに応じた既定優先度を付ける
+- 現在の既定値は以下
+  - `type:bug` -> `prio:P1`
+  - `type:feature` -> `prio:P2`
+  - `type:refactor` -> `prio:P2`
+  - `type:docs` -> `prio:P3`
+  - `type:research` -> `prio:P3`
+- 強い障害や本番影響を示すキーワードを含む場合は `P1` を優先する
+- `nice to have` や将来検討に寄るものは `P3` を優先する
+- ルールを変えたら、Project 側の Priority 運用とズレないかを合わせて確認する
+
 ## Project 運用
 
 - 状態管理は GitHub Project で行う
