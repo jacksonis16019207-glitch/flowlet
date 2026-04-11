@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { fetchAppSetting } from '../../features/appSetting/api/appSettingApi'
+import type { AppSetting } from '../../features/appSetting/types/appSetting'
 import {
   fetchDashboardBalanceSummary,
   fetchDashboardCategoryCashflow,
@@ -12,6 +14,7 @@ import type {
 } from '../../features/dashboard/types/dashboard'
 import { fetchTransactions } from '../../features/transaction/api/transactionApi'
 import type { Transaction, TransactionType } from '../../features/transaction/types/transaction'
+import { resolveContainingMonth } from '../../shared/lib/monthlyPeriod'
 
 const emptySummary: DashboardBalanceSummary = {
   accounts: [],
@@ -44,13 +47,20 @@ const emptyCategoryCashflow: DashboardCategoryCashflow = {
   },
 }
 
+const defaultAppSetting: AppSetting = {
+  monthStartDay: 1,
+  monthStartAdjustmentRule: 'NONE',
+  updatedAt: '',
+}
+
 export function DashboardPage() {
   const [summary, setSummary] = useState<DashboardBalanceSummary>(emptySummary)
   const [cashflow, setCashflow] = useState<DashboardMonthlyCashflow>(emptyCashflow)
   const [categoryCashflow, setCategoryCashflow] =
     useState<DashboardCategoryCashflow>(emptyCategoryCashflow)
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [displayMonth, setDisplayMonth] = useState(getCurrentMonthLabel())
+  const [displayMonth, setDisplayMonth] = useState('')
+  const [, setAppSetting] = useState<AppSetting>(defaultAppSetting)
   const [loading, setLoading] = useState(true)
   const [monthlyLoading, setMonthlyLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
@@ -61,8 +71,11 @@ export function DashboardPage() {
   useEffect(() => {
     let active = true
 
-    void Promise.allSettled([fetchDashboardBalanceSummary(), fetchTransactions()]).then(
-      ([summaryResult, transactionsResult]) => {
+    void Promise.allSettled([
+      fetchDashboardBalanceSummary(),
+      fetchTransactions(),
+      fetchAppSetting(),
+    ]).then(([summaryResult, transactionsResult, appSettingResult]) => {
         if (!active) {
           return
         }
@@ -79,6 +92,13 @@ export function DashboardPage() {
           setTransactionErrorMessage('最近の動きを取得できませんでした。')
         }
 
+        if (appSettingResult.status === 'fulfilled') {
+          setAppSetting(appSettingResult.value)
+          setDisplayMonth(resolveContainingMonth(appSettingResult.value, new Date()))
+        } else {
+          setDisplayMonth(getCurrentMonthLabel())
+        }
+
         setLoading(false)
       },
     )
@@ -89,6 +109,10 @@ export function DashboardPage() {
   }, [])
 
   useEffect(() => {
+    if (!displayMonth) {
+      return
+    }
+
     let active = true
     setMonthlyLoading(true)
     setCashflowErrorMessage('')
@@ -364,6 +388,10 @@ function shiftMonthLabel(monthLabel: string, diff: number) {
 }
 
 function formatMonthLabel(monthLabel: string) {
+  if (!monthLabel) {
+    return '--'
+  }
+
   const [year, month] = monthLabel.split('-').map(Number)
   return `${year}年${month}月`
 }

@@ -6,6 +6,8 @@ import {
   fetchAccounts,
   updateAccount,
 } from '../../features/account/api/accountApi'
+import { fetchAppSetting } from '../../features/appSetting/api/appSettingApi'
+import type { AppSetting } from '../../features/appSetting/types/appSetting'
 import { AccountForm } from '../../features/account/components/AccountForm'
 import type {
   Account,
@@ -25,6 +27,7 @@ import { fetchGoalBucketAllocations } from '../../features/transaction/api/trans
 import type { GoalBucketAllocation, Transaction } from '../../features/transaction/types/transaction'
 import { FormModal } from '../../shared/components/FormModal'
 import { ApiRequestError } from '../../shared/lib/api/client'
+import { resolveContainingMonth, resolveMonthlyPeriod } from '../../shared/lib/monthlyPeriod'
 
 const initialAccountForm: CreateAccountInput = {
   providerName: '',
@@ -41,6 +44,12 @@ const initialGoalBucketForm: CreateGoalBucketInput = {
   accountId: 0,
   bucketName: '',
   active: true,
+}
+
+const defaultAppSetting: AppSetting = {
+  monthStartDay: 1,
+  monthStartAdjustmentRule: 'NONE',
+  updatedAt: '',
 }
 
 type AccountFormField = keyof CreateAccountInput
@@ -93,8 +102,9 @@ export function AccountPage() {
   >({})
   const [accountModalOpen, setAccountModalOpen] = useState(false)
   const [goalBucketModalOpen, setGoalBucketModalOpen] = useState(false)
-  const [bankMonth, setBankMonth] = useState(getCurrentMonthLabel())
-  const [goalBucketMonth, setGoalBucketMonth] = useState(getCurrentMonthLabel())
+  const [appSetting, setAppSetting] = useState<AppSetting>(defaultAppSetting)
+  const [bankMonth, setBankMonth] = useState('')
+  const [goalBucketMonth, setGoalBucketMonth] = useState('')
 
   useEffect(() => {
     void loadAccounts()
@@ -259,13 +269,17 @@ export function AccountPage() {
       return []
     }
 
-    const { periodStartDate, periodEndDate } = resolveMonthPeriod(bankMonth)
+    if (!bankMonth) {
+      return []
+    }
+
+    const { periodStartDate, periodEndDate } = resolveMonthlyPeriod(appSetting, bankMonth)
     return selectedBankTransactions.filter(
       (transaction) =>
         transaction.transactionDate >= periodStartDate &&
         transaction.transactionDate <= periodEndDate,
     )
-  }, [bankMonth, selectedAccount, selectedBankTransactions])
+  }, [appSetting, bankMonth, selectedAccount, selectedBankTransactions])
 
   const selectedBankIncome = selectedBankMonthlyTransactions
     .filter((transaction) => transaction.transactionType === 'INCOME')
@@ -283,13 +297,20 @@ export function AccountPage() {
       return []
     }
 
-    const { periodStartDate, periodEndDate } = resolveMonthPeriod(goalBucketMonth)
+    if (!goalBucketMonth) {
+      return []
+    }
+
+    const { periodStartDate, periodEndDate } = resolveMonthlyPeriod(
+      appSetting,
+      goalBucketMonth,
+    )
     return selectedGoalBucketAllocations.filter(
       (allocation) =>
         allocation.allocationDate >= periodStartDate &&
         allocation.allocationDate <= periodEndDate,
     )
-  }, [goalBucketMonth, selectedGoalBucket, selectedGoalBucketAllocations])
+  }, [appSetting, goalBucketMonth, selectedGoalBucket, selectedGoalBucketAllocations])
   const selectedGoalBucketIncoming = selectedGoalBucketMonthlyAllocations
     .filter((allocation) => allocation.toGoalBucketId === selectedGoalBucket?.goalBucketId)
     .reduce((sum, allocation) => sum + Number(allocation.amount), 0)
@@ -303,17 +324,23 @@ export function AccountPage() {
     setErrorMessage('')
 
     try {
-      const [accountData, goalBucketData, transactionData, allocationData] = await Promise.all([
+      const [accountData, goalBucketData, transactionData, allocationData, appSettingData] =
+        await Promise.all([
         fetchAccounts(),
         fetchGoalBuckets(),
         fetchTransactions(),
         fetchGoalBucketAllocations(),
+        fetchAppSetting(),
       ])
 
       setAccounts(accountData)
       setGoalBuckets(goalBucketData)
       setTransactions(transactionData)
       setAllocations(allocationData)
+      setAppSetting(appSettingData)
+      const currentMonth = resolveContainingMonth(appSettingData, new Date())
+      setBankMonth(currentMonth)
+      setGoalBucketMonth(currentMonth)
     } catch {
       setErrorMessage('口座情報の読み込みに失敗しました。')
     } finally {
@@ -1461,30 +1488,17 @@ function getPrimaryBankAccountId(accounts: Account[]) {
   return accounts.find((account) => account.accountCategory !== 'CREDIT_CARD')?.accountId ?? 0
 }
 
-function getCurrentMonthLabel() {
-  const today = new Date()
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
-}
-
 function shiftMonthLabel(monthLabel: string, diff: number) {
   const [year, month] = monthLabel.split('-').map(Number)
   const date = new Date(year, month - 1 + diff, 1)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
-function resolveMonthPeriod(monthLabel: string) {
-  const [year, month] = monthLabel.split('-').map(Number)
-  const periodStartDate = `${year}-${String(month).padStart(2, '0')}-01`
-  const endDate = new Date(year, month, 0)
-  const periodEndDate = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(
-    2,
-    '0',
-  )}-${String(endDate.getDate()).padStart(2, '0')}`
-
-  return { periodStartDate, periodEndDate }
-}
-
 function formatMonthLabel(monthLabel: string) {
+  if (!monthLabel) {
+    return '--'
+  }
+
   const [year, month] = monthLabel.split('-').map(Number)
   return `${year}年${month}月`
 }
