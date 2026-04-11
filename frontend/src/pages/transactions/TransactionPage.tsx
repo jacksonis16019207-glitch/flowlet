@@ -1842,16 +1842,16 @@ export function TransactionPage() {
       <FormModal
         open={transactionDetailOpen && selectedTransaction != null}
         title={selectedTransaction?.description ?? '取引詳細'}
-        description="取引日、口座、GoalBucket、更新日時を確認できます。"
-        eyebrow="Transaction Detail"
+        description="取引日、金額、口座、カテゴリ、GoalBucket、更新情報を確認できます。"
+        eyebrow="取引詳細"
         panelClassName="modal-panel-wide"
         onClose={() => setTransactionDetailOpen(false)}
       >
         {selectedTransaction == null ? null : (
           <div className="transaction-detail-stack">
             <div className="transaction-detail-hero">
-              <p className="eyebrow">Selected Transaction</p>
-              <h3>{selectedTransaction.description}</h3>
+              <p className="eyebrow">取引サマリー</p>
+              <h3>{selectedTransaction.description || '説明なし'}</h3>
               <p>{formatSignedMoney(selectedTransaction)}</p>
             </div>
             <dl className="detail-list">
@@ -1933,16 +1933,16 @@ export function TransactionPage() {
       <FormModal
         open={allocationDetailOpen && selectedAllocation != null}
         title={selectedAllocation?.description ?? '配分詳細'}
-        description="配分日、移動元と移動先、関連する振替情報を確認できます。"
-        eyebrow="Allocation Detail"
+        description="配分日、配分元、配分先、関連する振替情報、更新情報を確認できます。"
+        eyebrow="配分詳細"
         panelClassName="modal-panel-wide"
         onClose={() => setAllocationDetailOpen(false)}
       >
         {selectedAllocation == null ? null : (
           <div className="transaction-detail-stack">
             <div className="transaction-detail-hero">
-              <p className="eyebrow">Selected Allocation</p>
-              <h3>{selectedAllocation.description}</h3>
+              <p className="eyebrow">配分サマリー</p>
+              <h3>{selectedAllocation.description || '説明なし'}</h3>
               <p>{formatMoney(selectedAllocation.amount)}</p>
             </div>
             <dl className="detail-list">
@@ -1972,7 +1972,7 @@ export function TransactionPage() {
               </div>
               {selectedAllocation.linkedTransferGroupId ? (
                 <div className="detail-list-item">
-                  <dt>振替連携</dt>
+                  <dt>関連する振替グループ</dt>
                   <dd>{selectedAllocation.linkedTransferGroupId}</dd>
                 </div>
               ) : null}
