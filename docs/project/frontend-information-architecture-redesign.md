@@ -338,6 +338,7 @@
 
 - `General`
 - `Categories`
+- `General / Categories` の section tab はスクロール中も表示を維持し、切り替え操作を常に行えるようにする
 
 ### General
 
