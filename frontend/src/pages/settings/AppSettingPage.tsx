@@ -37,6 +37,7 @@ export function AppSettingPage() {
         if (!active) {
           return
         }
+
         setSetting(response)
         setMonthStartDay(String(response.monthStartDay))
         setMonthStartAdjustmentRule(response.monthStartAdjustmentRule)
@@ -45,7 +46,8 @@ export function AppSettingPage() {
         if (!active) {
           return
         }
-        setErrorMessage('設定の取得に失敗しました。')
+
+        setErrorMessage('General 設定の読み込みに失敗しました。')
       })
       .finally(() => {
         if (active) {
@@ -58,21 +60,48 @@ export function AppSettingPage() {
     }
   }, [])
 
+  async function handleSubmit() {
+    setSaving(true)
+    setStatusMessage('')
+    setErrorMessage('')
+
+    try {
+      const response = await updateAppSetting({
+        monthStartDay: Number(monthStartDay),
+        monthStartAdjustmentRule,
+      })
+
+      setSetting(response)
+      setStatusMessage('General 設定を更新しました。')
+    } catch (error) {
+      if (error instanceof ApiRequestError) {
+        setErrorMessage(error.message)
+      } else {
+        setErrorMessage('General 設定の更新に失敗しました。')
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <main className="app-shell">
       <section className="hero-panel">
-        <p className="eyebrow">flowlet / settings</p>
-        <h1>表示期間の基準を設定する</h1>
+        <p className="eyebrow">flowlet / settings / general</p>
+        <h1>月次集計の基準を整える</h1>
         <p className="lead">
-          月の開始日と、開始日が土日祝に重なったときの補正ルールをアプリ全体で管理します。
+          Dashboard と Ledger が参照する月初日と営業日調整ルールをここで管理します。
         </p>
       </section>
 
       <section className="content-grid">
         <section className="panel">
           <div className="panel-heading">
-            <p className="eyebrow">Month Boundary</p>
-            <h2>月初ルール</h2>
+            <p className="eyebrow">General</p>
+            <h2>月初日ルールを更新する</h2>
+            <p className="lead dashboard-section-lead">
+              月次収支の集計開始日と、休日に当たったときの補正ルールを設定します。
+            </p>
           </div>
           {errorMessage ? <p className="status error">{errorMessage}</p> : null}
           {statusMessage ? <p className="status">{statusMessage}</p> : null}
@@ -80,32 +109,11 @@ export function AppSettingPage() {
             className="account-form"
             onSubmit={(event) => {
               event.preventDefault()
-              setSaving(true)
-              setStatusMessage('')
-              setErrorMessage('')
-
-              void updateAppSetting({
-                monthStartDay: Number(monthStartDay),
-                monthStartAdjustmentRule,
-              })
-                .then((response) => {
-                  setSetting(response)
-                  setStatusMessage('設定を更新しました。')
-                })
-                .catch((error: unknown) => {
-                  if (error instanceof ApiRequestError) {
-                    setErrorMessage(error.message)
-                    return
-                  }
-                  setErrorMessage('設定の更新に失敗しました。')
-                })
-                .finally(() => {
-                  setSaving(false)
-                })
+              void handleSubmit()
             }}
           >
             <label>
-              月の開始日
+              月初日
               <select
                 value={monthStartDay}
                 onChange={(event) => setMonthStartDay(event.target.value)}
@@ -117,9 +125,10 @@ export function AppSettingPage() {
                   </option>
                 ))}
               </select>
+              <small>選択した日を基準に月次収支の開始日を決めます。</small>
             </label>
             <label>
-              土日祝の補正ルール
+              営業日調整ルール
               <select
                 value={monthStartAdjustmentRule}
                 onChange={(event) =>
@@ -135,10 +144,11 @@ export function AppSettingPage() {
                   </option>
                 ))}
               </select>
+              <small>月初日が休日に当たる場合の繰り上げ、繰り下げ方法を決めます。</small>
             </label>
             <div className="button-row">
               <button type="submit" disabled={loading || saving}>
-                {saving ? '保存中...' : '設定を保存'}
+                {saving ? '保存中...' : 'General 設定を保存'}
               </button>
             </div>
           </form>
@@ -148,23 +158,49 @@ export function AppSettingPage() {
           <div className="panel-heading">
             <p className="eyebrow">Current</p>
             <h2>現在の設定</h2>
+            <p className="lead dashboard-section-lead">
+              現在アプリ全体に適用されている月次集計ルールです。
+            </p>
           </div>
           <div className="detail-chip-list">
             <article className="detail-chip-card">
-              <strong>開始日</strong>
+              <strong>月初日</strong>
               <span>{setting.monthStartDay}日</span>
             </article>
             <article className="detail-chip-card">
-              <strong>補正ルール</strong>
-              <span>
-                {paymentDateAdjustmentRuleLabels[setting.monthStartAdjustmentRule]}
-              </span>
+              <strong>営業日調整ルール</strong>
+              <span>{paymentDateAdjustmentRuleLabels[setting.monthStartAdjustmentRule]}</span>
             </article>
             <article className="detail-chip-card">
-              <strong>更新日時</strong>
-              <span>{setting.updatedAt || '未取得'}</span>
+              <strong>最終更新日時</strong>
+              <span>{setting.updatedAt || '未更新'}</span>
             </article>
           </div>
+
+          <section className="nested-panel">
+            <div className="section-heading">
+              <div>
+                <h3>影響範囲</h3>
+                <p className="section-description">
+                  変更後は Dashboard と Ledger の月次表示に使う集計期間が変わります。
+                </p>
+              </div>
+            </div>
+            <div className="detail-list">
+              <article className="detail-list-item">
+                <div>
+                  <h4>Dashboard</h4>
+                  <p>選択月の収入、支出、収支、カテゴリ別収支の対象期間が更新されます。</p>
+                </div>
+              </article>
+              <article className="detail-list-item">
+                <div>
+                  <h4>Ledger</h4>
+                  <p>月ごとの取引確認時に見るべき期間の基準が変わります。</p>
+                </div>
+              </article>
+            </div>
+          </section>
         </section>
       </section>
     </main>

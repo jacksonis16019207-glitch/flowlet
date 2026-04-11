@@ -1,0 +1,77 @@
+name: issue-auto-priority
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+      - reopened
+      - labeled
+      - unlabeled
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  apply-priority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+
+            const configPath = path.join(process.env.GITHUB_WORKSPACE, '.github', 'issue-priority-rules.json')
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+
+            const issue = context.payload.issue
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+            const issueNumber = issue.number
+            const existingLabels = issue.labels.map((label) => label.name)
+
+            if (existingLabels.some((label) => config.existingPriorityLabels.includes(label))) {
+              core.info(`Issue #${issueNumber} already has a priority label.`)
+              return
+            }
+
+            const searchableText = `${issue.title}\n${issue.body || ''}`.toLowerCase()
+
+            function includesAnyKeyword(keywords) {
+              return keywords.some((keyword) => searchableText.includes(keyword.toLowerCase()))
+            }
+
+            let priority = null
+
+            for (const [label, keywords] of Object.entries(config.keywordOverrides)) {
+              if (includesAnyKeyword(keywords)) {
+                priority = label
+                break
+              }
+            }
+
+            if (!priority) {
+              for (const label of existingLabels) {
+                if (config.labelDefaults[label]) {
+                  priority = config.labelDefaults[label]
+                  break
+                }
+              }
+            }
+
+            if (!priority) {
+              priority = config.fallbackPriority
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              labels: [priority],
+            })
+
+            core.info(`Added ${priority} to issue #${issueNumber}.`)

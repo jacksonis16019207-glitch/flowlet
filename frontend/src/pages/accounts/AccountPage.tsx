@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   createAccount,
@@ -6,21 +6,27 @@ import {
   fetchAccounts,
   updateAccount,
 } from '../../features/account/api/accountApi'
-import { fetchGoalBuckets } from '../../features/goalBucket/api/goalBucketApi'
-import type { GoalBucket } from '../../features/goalBucket/types/goalBucket'
 import { AccountForm } from '../../features/account/components/AccountForm'
-import { AccountList } from '../../features/account/components/AccountList'
-import { fetchTransactions } from '../../features/transaction/api/transactionApi'
-import type { Transaction } from '../../features/transaction/types/transaction'
 import type {
   Account,
   CreateAccountInput,
   PaymentDateAdjustmentRule,
 } from '../../features/account/types/account'
+import {
+  createGoalBucket,
+  deleteGoalBucket,
+  fetchGoalBuckets,
+  updateGoalBucket,
+} from '../../features/goalBucket/api/goalBucketApi'
+import { GoalBucketForm } from '../../features/goalBucket/components/GoalBucketForm'
+import type { CreateGoalBucketInput, GoalBucket } from '../../features/goalBucket/types/goalBucket'
+import { fetchTransactions } from '../../features/transaction/api/transactionApi'
+import { fetchGoalBucketAllocations } from '../../features/transaction/api/transactionApi'
+import type { GoalBucketAllocation, Transaction } from '../../features/transaction/types/transaction'
 import { FormModal } from '../../shared/components/FormModal'
 import { ApiRequestError } from '../../shared/lib/api/client'
 
-const initialForm: CreateAccountInput = {
+const initialAccountForm: CreateAccountInput = {
   providerName: '',
   accountName: '',
   accountCategory: 'BANK',
@@ -31,14 +37,25 @@ const initialForm: CreateAccountInput = {
   creditCardProfile: null,
 }
 
+const initialGoalBucketForm: CreateGoalBucketInput = {
+  accountId: 0,
+  bucketName: '',
+  active: true,
+}
+
 type AccountFormField = keyof CreateAccountInput
+type GoalBucketFormField = keyof CreateGoalBucketInput
 type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE'
 type SortOption = 'DISPLAY_ORDER' | 'NAME' | 'BALANCE_DESC'
-type AccountListView = 'ALL' | 'OPERATIONAL' | 'CREDIT_CARD'
+type AccountListView = 'ALL' | 'BANK' | 'CREDIT_CARD'
+type DetailSelection =
+  | { type: 'account'; accountId: number }
+  | { type: 'goalBucket'; goalBucketId: number }
+  | { type: 'creditCard'; accountId: number }
+
 type CreditCardBillingSummary = {
   closingDayLabel: string
   paymentDayLabel: string
-  nextClosingDate: string
   nextPaymentDate: string
   followingPaymentDate: string
   nextPaymentAmount: string
@@ -49,166 +66,281 @@ export function AccountPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [goalBuckets, setGoalBuckets] = useState<GoalBucket[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [form, setForm] = useState<CreateAccountInput>(initialForm)
+  const [allocations, setAllocations] = useState<GoalBucketAllocation[]>([])
+  const [accountForm, setAccountForm] = useState<CreateAccountInput>(initialAccountForm)
+  const [goalBucketForm, setGoalBucketForm] =
+    useState<CreateGoalBucketInput>(initialGoalBucketForm)
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null)
+  const [editingGoalBucketId, setEditingGoalBucketId] = useState<number | null>(null)
   const [deletingAccountId, setDeletingAccountId] = useState<number | null>(null)
-  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
-  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [deletingGoalBucketId, setDeletingGoalBucketId] = useState<number | null>(null)
+  const [detailSelection, setDetailSelection] = useState<DetailSelection | null>(null)
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const [submittingAccount, setSubmittingAccount] = useState(false)
+  const [submittingGoalBucket, setSubmittingGoalBucket] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [submitErrorMessage, setSubmitErrorMessage] = useState('')
+  const [accountSubmitErrorMessage, setAccountSubmitErrorMessage] = useState('')
+  const [goalBucketSubmitErrorMessage, setGoalBucketSubmitErrorMessage] = useState('')
   const [keyword, setKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [sortOption, setSortOption] = useState<SortOption>('DISPLAY_ORDER')
   const [accountListView, setAccountListView] = useState<AccountListView>('ALL')
-  const [mobileDetailVisible, setMobileDetailVisible] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<
+  const [accountFieldErrors, setAccountFieldErrors] = useState<
     Partial<Record<AccountFormField, string>>
   >({})
-  const [modalOpen, setModalOpen] = useState(false)
-  const hasActiveFilters =
-    keyword.trim().length > 0 ||
-    statusFilter !== 'ALL' ||
-    sortOption !== 'DISPLAY_ORDER'
+  const [goalBucketFieldErrors, setGoalBucketFieldErrors] = useState<
+    Partial<Record<GoalBucketFormField, string>>
+  >({})
+  const [accountModalOpen, setAccountModalOpen] = useState(false)
+  const [goalBucketModalOpen, setGoalBucketModalOpen] = useState(false)
+  const [bankMonth, setBankMonth] = useState(getCurrentMonthLabel())
+  const [goalBucketMonth, setGoalBucketMonth] = useState(getCurrentMonthLabel())
 
   useEffect(() => {
     void loadAccounts()
   }, [])
 
-  const filteredAccounts = accounts
-    .filter((account) => matchesKeyword(account, keyword))
-    .filter((account) => matchesStatus(account, statusFilter))
-    .sort((left, right) => compareAccounts(left, right, sortOption))
+  const filteredAccounts = useMemo(
+    () =>
+      accounts
+        .filter((account) => matchesKeyword(account, keyword))
+        .filter((account) => matchesStatus(account, statusFilter))
+        .sort((left, right) => compareAccounts(left, right, sortOption)),
+    [accounts, keyword, sortOption, statusFilter],
+  )
 
-  const operationalAccounts = filteredAccounts.filter(
-    (account) => account.accountCategory !== 'CREDIT_CARD',
+  const bankAccounts = useMemo(
+    () =>
+      filteredAccounts.filter((account) => account.accountCategory !== 'CREDIT_CARD'),
+    [filteredAccounts],
   )
-  const creditCardAccounts = filteredAccounts.filter(
-    (account) => account.accountCategory === 'CREDIT_CARD',
+  const creditCardAccounts = useMemo(
+    () => filteredAccounts.filter((account) => account.accountCategory === 'CREDIT_CARD'),
+    [filteredAccounts],
   )
-  const selectedAccount =
-    accounts.find((account) => account.accountId === selectedAccountId) ?? null
-  const activeCount = accounts.filter((account) => account.active).length
-  const operationalCount = accounts.filter(
+
+  const bankAccountCount = accounts.filter(
     (account) => account.accountCategory !== 'CREDIT_CARD',
   ).length
   const creditCardCount = accounts.filter(
     (account) => account.accountCategory === 'CREDIT_CARD',
   ).length
-  const visibleActiveCount = filteredAccounts.filter((account) => account.active).length
-  const visibleInactiveCount = filteredAccounts.length - visibleActiveCount
-  const selectedListCount =
-    accountListView === 'OPERATIONAL'
-      ? operationalAccounts.length
-      : accountListView === 'CREDIT_CARD'
-        ? creditCardAccounts.length
-        : filteredAccounts.length
-  const selectedGoalBuckets =
-    selectedAccount == null || selectedAccount.accountCategory === 'CREDIT_CARD'
-      ? []
-      : goalBuckets
-          .filter((goalBucket) => goalBucket.accountId === selectedAccount.accountId)
-          .sort(
-            (left, right) =>
-              Number(right.currentBalance) - Number(left.currentBalance) ||
-              left.bucketName.localeCompare(right.bucketName, 'ja'),
-          )
-  const selectedTransactions =
-    selectedAccount == null
-      ? []
-      : transactions
-          .filter((transaction) => transaction.accountId === selectedAccount.accountId)
-          .sort(compareTransactions)
-  const selectedLinkedCreditCards =
-    selectedAccount == null || selectedAccount.accountCategory === 'CREDIT_CARD'
-      ? []
-      : accounts
-          .filter(
-            (account) =>
-              account.accountCategory === 'CREDIT_CARD' &&
-              account.creditCardProfile?.paymentAccountId === selectedAccount.accountId,
-          )
-          .sort((left, right) => left.displayOrder - right.displayOrder)
-  const selectedBillingSummary =
-    selectedAccount?.accountCategory === 'CREDIT_CARD'
-      ? buildCreditCardBillingSummary(selectedAccount, transactions)
+  const totalBalance = accounts.reduce(
+    (sum, account) => sum + Number(account.currentBalance),
+    0,
+  )
+
+  const selectedAccount =
+    detailSelection?.type === 'account'
+      ? accounts.find((account) => account.accountId === detailSelection.accountId) ?? null
+      : null
+  const selectedGoalBucket =
+    detailSelection?.type === 'goalBucket'
+      ? goalBuckets.find((goalBucket) => goalBucket.goalBucketId === detailSelection.goalBucketId) ??
+        null
+      : null
+  const selectedCreditCard =
+    detailSelection?.type === 'creditCard'
+      ? accounts.find((account) => account.accountId === detailSelection.accountId) ?? null
       : null
 
   useEffect(() => {
-    setSelectedAccountId((current) => {
-      if (filteredAccounts.length === 0) {
-        setMobileDetailVisible(false)
-        return null
+    setDetailSelection((current) => {
+      if (current == null) {
+        const firstAccount = filteredAccounts[0]
+        return firstAccount == null ? null : resolveAccountSelection(firstAccount)
       }
 
-      if (
-        current != null &&
-        filteredAccounts.some((account) => account.accountId === current)
-      ) {
-        return current
+      if (current.type === 'account' || current.type === 'creditCard') {
+        const matched = accounts.find((account) => account.accountId === current.accountId)
+        if (matched) {
+          return matched.accountCategory === 'CREDIT_CARD'
+            ? { type: 'creditCard', accountId: matched.accountId }
+            : { type: 'account', accountId: matched.accountId }
+        }
       }
 
-      return filteredAccounts[0].accountId
+      if (current.type === 'goalBucket') {
+        const matched = goalBuckets.find(
+          (goalBucket) => goalBucket.goalBucketId === current.goalBucketId,
+        )
+        if (matched) {
+          return current
+        }
+      }
+
+      const fallbackAccount = filteredAccounts[0]
+      return fallbackAccount == null ? null : resolveAccountSelection(fallbackAccount)
     })
-  }, [filteredAccounts])
+  }, [accounts, filteredAccounts, goalBuckets])
+
+  const selectedBankGoalBuckets = useMemo(
+    () =>
+      selectedAccount == null
+        ? []
+        : goalBuckets
+            .filter((goalBucket) => goalBucket.accountId === selectedAccount.accountId)
+            .sort(compareGoalBuckets),
+    [goalBuckets, selectedAccount],
+  )
+  const selectedLinkedCreditCards = useMemo(
+    () =>
+      selectedAccount == null
+        ? []
+        : accounts
+            .filter(
+              (account) =>
+                account.accountCategory === 'CREDIT_CARD' &&
+                account.creditCardProfile?.paymentAccountId === selectedAccount.accountId,
+            )
+            .sort(compareAccountsByDisplayOrder),
+    [accounts, selectedAccount],
+  )
+  const selectedBankTransactions = useMemo(
+    () =>
+      selectedAccount == null
+        ? []
+        : transactions
+            .filter((transaction) => transaction.accountId === selectedAccount.accountId)
+            .sort(compareTransactions),
+    [selectedAccount, transactions],
+  )
+  const selectedGoalBucketAccount =
+    selectedGoalBucket == null
+      ? null
+      : accounts.find((account) => account.accountId === selectedGoalBucket.accountId) ?? null
+  const selectedGoalBucketTransactions = useMemo(
+    () =>
+      selectedGoalBucket == null
+        ? []
+        : transactions
+            .filter((transaction) => transaction.goalBucketId === selectedGoalBucket.goalBucketId)
+            .sort(compareTransactions)
+            .slice(0, 5),
+    [selectedGoalBucket, transactions],
+  )
+  const selectedGoalBucketAllocations = useMemo(
+    () =>
+      selectedGoalBucket == null
+        ? []
+        : allocations
+            .filter(
+              (allocation) =>
+                allocation.fromGoalBucketId === selectedGoalBucket.goalBucketId ||
+                allocation.toGoalBucketId === selectedGoalBucket.goalBucketId,
+            )
+            .sort(compareAllocations),
+    [allocations, selectedGoalBucket],
+  )
+  const selectedCreditCardTransactions = useMemo(
+    () =>
+      selectedCreditCard == null
+        ? []
+        : transactions
+            .filter((transaction) => transaction.accountId === selectedCreditCard.accountId)
+            .sort(compareTransactions)
+            .slice(0, 5),
+    [selectedCreditCard, transactions],
+  )
+  const selectedCreditCardPaymentAccount =
+    selectedCreditCard == null
+      ? null
+      : accounts.find(
+          (account) =>
+            account.accountId === selectedCreditCard.creditCardProfile?.paymentAccountId,
+        ) ?? null
+  const selectedBillingSummary =
+    selectedCreditCard == null
+      ? null
+      : buildCreditCardBillingSummary(selectedCreditCard, transactions)
+
+  const selectedBankMonthlyTransactions = useMemo(() => {
+    if (selectedAccount == null) {
+      return []
+    }
+
+    const { periodStartDate, periodEndDate } = resolveMonthPeriod(bankMonth)
+    return selectedBankTransactions.filter(
+      (transaction) =>
+        transaction.transactionDate >= periodStartDate &&
+        transaction.transactionDate <= periodEndDate,
+    )
+  }, [bankMonth, selectedAccount, selectedBankTransactions])
+
+  const selectedBankIncome = selectedBankMonthlyTransactions
+    .filter((transaction) => transaction.transactionType === 'INCOME')
+    .reduce((sum, transaction) => sum + Number(transaction.amount), 0)
+  const selectedBankExpense = selectedBankMonthlyTransactions
+    .filter(
+      (transaction) =>
+        transaction.transactionType === 'EXPENSE' ||
+        transaction.transactionType === 'TRANSFER_OUT',
+    )
+    .reduce((sum, transaction) => sum + Number(transaction.amount), 0)
+  const selectedBankNet = selectedBankIncome - selectedBankExpense
+  const selectedGoalBucketMonthlyAllocations = useMemo(() => {
+    if (selectedGoalBucket == null) {
+      return []
+    }
+
+    const { periodStartDate, periodEndDate } = resolveMonthPeriod(goalBucketMonth)
+    return selectedGoalBucketAllocations.filter(
+      (allocation) =>
+        allocation.allocationDate >= periodStartDate &&
+        allocation.allocationDate <= periodEndDate,
+    )
+  }, [goalBucketMonth, selectedGoalBucket, selectedGoalBucketAllocations])
+  const selectedGoalBucketIncoming = selectedGoalBucketMonthlyAllocations
+    .filter((allocation) => allocation.toGoalBucketId === selectedGoalBucket?.goalBucketId)
+    .reduce((sum, allocation) => sum + Number(allocation.amount), 0)
+  const selectedGoalBucketOutgoing = selectedGoalBucketMonthlyAllocations
+    .filter((allocation) => allocation.fromGoalBucketId === selectedGoalBucket?.goalBucketId)
+    .reduce((sum, allocation) => sum + Number(allocation.amount), 0)
+  const selectedGoalBucketNet = selectedGoalBucketIncoming - selectedGoalBucketOutgoing
 
   async function loadAccounts() {
     setLoading(true)
     setErrorMessage('')
 
     try {
-      const [accountData, goalBucketData, transactionData] = await Promise.all([
+      const [accountData, goalBucketData, transactionData, allocationData] = await Promise.all([
         fetchAccounts(),
         fetchGoalBuckets(),
         fetchTransactions(),
+        fetchGoalBucketAllocations(),
       ])
+
       setAccounts(accountData)
       setGoalBuckets(goalBucketData)
       setTransactions(transactionData)
-      setSelectedAccountId((current) => {
-        if (accountData.length === 0) {
-          return null
-        }
-
-        if (
-          current != null &&
-          accountData.some((account) => account.accountId === current)
-        ) {
-          return current
-        }
-
-        return accountData[0].accountId
-      })
+      setAllocations(allocationData)
     } catch {
-      setErrorMessage(
-        '口座詳細に必要なデータの取得に失敗しました。バックエンドの状態を確認してください。',
-      )
+      setErrorMessage('口座情報の読み込みに失敗しました。')
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleAccountSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setSubmitting(true)
-    setSubmitErrorMessage('')
-    setFieldErrors({})
+    setSubmittingAccount(true)
+    setAccountSubmitErrorMessage('')
+    setAccountFieldErrors({})
 
     try {
       if (editingAccountId == null) {
-        await createAccount(form)
+        await createAccount(accountForm)
       } else {
-        await updateAccount(editingAccountId, form)
+        await updateAccount(editingAccountId, accountForm)
       }
 
       await loadAccounts()
-      closeModal()
+      closeAccountModal()
     } catch (error) {
       if (error instanceof ApiRequestError) {
         if (error.code === 'VALIDATION_ERROR') {
-          setSubmitErrorMessage(error.message)
-          setFieldErrors(
+          setAccountSubmitErrorMessage(error.message)
+          setAccountFieldErrors(
             error.fieldErrors.reduce<Partial<Record<AccountFormField, string>>>(
               (accumulator, fieldError) => {
                 if (isAccountFormField(fieldError.field)) {
@@ -220,37 +352,76 @@ export function AccountPage() {
               {},
             ),
           )
-          setModalOpen(true)
           return
         }
 
-        setSubmitErrorMessage(error.message)
-        setModalOpen(true)
+        setAccountSubmitErrorMessage(error.message)
         return
       }
 
-      setSubmitErrorMessage(
-        '口座の保存に失敗しました。入力内容とバックエンドの状態を確認してください。',
-      )
-      setModalOpen(true)
+      setAccountSubmitErrorMessage('口座の保存に失敗しました。')
     } finally {
-      setSubmitting(false)
+      setSubmittingAccount(false)
     }
   }
 
-  function handleOpenCreateModal() {
-    setEditingAccountId(null)
-    setForm(initialForm)
-    setSubmitErrorMessage('')
-    setFieldErrors({})
-    setModalOpen(true)
+  async function handleGoalBucketSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmittingGoalBucket(true)
+    setGoalBucketSubmitErrorMessage('')
+    setGoalBucketFieldErrors({})
+
+    try {
+      let savedGoalBucket: GoalBucket
+      if (editingGoalBucketId == null) {
+        savedGoalBucket = await createGoalBucket(goalBucketForm)
+      } else {
+        savedGoalBucket = await updateGoalBucket(editingGoalBucketId, goalBucketForm)
+      }
+
+      await loadAccounts()
+      setDetailSelection({ type: 'goalBucket', goalBucketId: savedGoalBucket.goalBucketId })
+      closeGoalBucketModal()
+    } catch (error) {
+      if (error instanceof ApiRequestError) {
+        if (error.code === 'VALIDATION_ERROR') {
+          setGoalBucketSubmitErrorMessage(error.message)
+          setGoalBucketFieldErrors(
+            error.fieldErrors.reduce<Partial<Record<GoalBucketFormField, string>>>(
+              (accumulator, fieldError) => {
+                if (isGoalBucketFormField(fieldError.field)) {
+                  accumulator[fieldError.field] = fieldError.message
+                }
+
+                return accumulator
+              },
+              {},
+            ),
+          )
+          return
+        }
+
+        setGoalBucketSubmitErrorMessage(error.message)
+        return
+      }
+
+      setGoalBucketSubmitErrorMessage('目的別口座の保存に失敗しました。')
+    } finally {
+      setSubmittingGoalBucket(false)
+    }
   }
 
-  function handleEdit(account: Account) {
+  function openCreateAccountModal() {
+    setEditingAccountId(null)
+    setAccountForm(initialAccountForm)
+    setAccountSubmitErrorMessage('')
+    setAccountFieldErrors({})
+    setAccountModalOpen(true)
+  }
+
+  function openEditAccountModal(account: Account) {
     setEditingAccountId(account.accountId)
-    setSubmitErrorMessage('')
-    setFieldErrors({})
-    setForm({
+    setAccountForm({
       providerName: account.providerName,
       accountName: account.accountName,
       accountCategory: account.accountCategory,
@@ -268,14 +439,53 @@ export function AccountPage() {
           }
         : null,
     })
-    setModalOpen(true)
+    setAccountSubmitErrorMessage('')
+    setAccountFieldErrors({})
+    setAccountModalOpen(true)
   }
 
-  async function handleDelete(account: Account) {
-    const confirmed = window.confirm(
-      `「${account.accountName}」を削除しますか。通常は元に戻せません。`,
-    )
+  function closeAccountModal() {
+    setEditingAccountId(null)
+    setAccountForm(initialAccountForm)
+    setAccountSubmitErrorMessage('')
+    setAccountFieldErrors({})
+    setAccountModalOpen(false)
+  }
 
+  function openCreateGoalBucketModal(accountId?: number) {
+    setEditingGoalBucketId(null)
+    setGoalBucketForm({
+      accountId: accountId ?? selectedAccount?.accountId ?? getPrimaryBankAccountId(accounts),
+      bucketName: '',
+      active: true,
+    })
+    setGoalBucketSubmitErrorMessage('')
+    setGoalBucketFieldErrors({})
+    setGoalBucketModalOpen(true)
+  }
+
+  function openEditGoalBucketModal(goalBucket: GoalBucket) {
+    setEditingGoalBucketId(goalBucket.goalBucketId)
+    setGoalBucketForm({
+      accountId: goalBucket.accountId,
+      bucketName: goalBucket.bucketName,
+      active: goalBucket.active,
+    })
+    setGoalBucketSubmitErrorMessage('')
+    setGoalBucketFieldErrors({})
+    setGoalBucketModalOpen(true)
+  }
+
+  function closeGoalBucketModal() {
+    setEditingGoalBucketId(null)
+    setGoalBucketForm(initialGoalBucketForm)
+    setGoalBucketSubmitErrorMessage('')
+    setGoalBucketFieldErrors({})
+    setGoalBucketModalOpen(false)
+  }
+
+  async function handleDeleteAccount(account: Account) {
+    const confirmed = window.confirm(`${account.accountName} を削除しますか。`)
     if (!confirmed) {
       return
     }
@@ -286,10 +496,6 @@ export function AccountPage() {
     try {
       await deleteAccount(account.accountId)
       await loadAccounts()
-
-      if (editingAccountId === account.accountId) {
-        closeModal()
-      }
     } catch (error) {
       if (error instanceof ApiRequestError) {
         setErrorMessage(error.message)
@@ -301,734 +507,872 @@ export function AccountPage() {
     }
   }
 
-  function closeModal() {
-    setEditingAccountId(null)
-    setForm(initialForm)
-    setSubmitErrorMessage('')
-    setFieldErrors({})
-    setModalOpen(false)
-  }
+  async function handleDeleteGoalBucket(goalBucket: GoalBucket) {
+    const confirmed = window.confirm(`${goalBucket.bucketName} を削除しますか。`)
+    if (!confirmed) {
+      return
+    }
 
-  function resetFilters() {
-    setKeyword('')
-    setStatusFilter('ALL')
-    setSortOption('DISPLAY_ORDER')
-  }
+    setDeletingGoalBucketId(goalBucket.goalBucketId)
+    setErrorMessage('')
 
-  function handleSelectAccount(account: Account) {
-    setSelectedAccountId(account.accountId)
-    setDetailModalOpen(true)
-  }
-
-  function handleReturnToAccountList() {
-    setMobileDetailVisible(false)
-
-    window.requestAnimationFrame(() => {
-      document
-        .getElementById('account-list-panel')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
+    try {
+      await deleteGoalBucket(goalBucket.goalBucketId)
+      await loadAccounts()
+    } catch (error) {
+      if (error instanceof ApiRequestError) {
+        setErrorMessage(error.message)
+      } else {
+        setErrorMessage('目的別口座の削除に失敗しました。')
+      }
+    } finally {
+      setDeletingGoalBucketId(null)
+    }
   }
 
   return (
     <main className="app-shell">
       <section className="hero-panel">
         <p className="eyebrow">flowlet / accounts</p>
-        <h1>口座一覧を毎日確認しやすくする</h1>
+        <h1>銀行口座とクレジットカードの関係を整理して確認する</h1>
         <p className="lead">
-          銀行口座とクレジットカードを分けて並べ、残高確認と次回支払い確認を一覧の時点で済ませやすくしています。
+          銀行口座ごとの収支、目的別口座、紐づくクレジットカードを一つの流れで見られるようにします。
         </p>
         <div className="hero-stats account-hero-stats">
           <article>
-            <span>稼働中口座</span>
-            <strong>{activeCount}</strong>
-            <small>日常的に確認する対象を先に把握できます。</small>
+            <span>銀行口座数</span>
+            <strong>{bankAccountCount}</strong>
+            <small>銀行、現金、電子マネーなどの資産口座を含みます。</small>
           </article>
           <article>
-            <span>預金・現金など</span>
-            <strong>{operationalCount}</strong>
-            <small>残高と未配分を一覧で比較できます。</small>
-          </article>
-          <article>
-            <span>クレジットカード</span>
+            <span>クレジットカード数</span>
             <strong>{creditCardCount}</strong>
-            <small>請求額と引き落とし先をまとめて確認できます。</small>
+            <small>支払口座と請求見込みを追うカード数です。</small>
+          </article>
+          <article>
+            <span>総口座残高</span>
+            <strong>{formatMoney(totalBalance)}</strong>
+            <small>現在登録されている全口座の現在残高の合計です。</small>
           </article>
         </div>
       </section>
 
       <section className="content-grid account-overview-grid">
-
-        <section
-          id="selected-account-detail"
-          className={`panel account-detail-panel ${mobileDetailVisible ? 'mobile-detail-visible' : 'mobile-detail-hidden'}`}
-          hidden
-        >
+        <section className="panel account-list-panel" id="account-list-panel">
           <div className="panel-heading">
-            <p className="eyebrow">Selected Account</p>
-            <h2>選択中の口座詳細</h2>
+            <p className="eyebrow">Account Directory</p>
+            <h2>一覧から詳細対象を切り替える</h2>
             <p className="lead dashboard-section-lead">
-              一覧から選んだ口座に対して、関連する目的別口座、引き落とし情報、最近の取引をまとめて確認できます。
+              銀行口座とクレジットカードを切り替えながら、詳細パネルの内容を切り替えます。
             </p>
           </div>
 
-          <div className="mobile-detail-toolbar">
-            <button
-              type="button"
-              className="secondary"
-              onClick={handleReturnToAccountList}
-            >
-              一覧に戻る
+          <div className="button-row">
+            <button type="button" onClick={openCreateAccountModal}>
+              口座を追加
             </button>
-            <p>同じページのまま一覧位置へ戻せます。</p>
           </div>
 
-          {selectedAccount == null ? (
-            <p className="status">表示できる口座がまだありません。</p>
-          ) : (
-            <article className="account-detail-card">
-              <div className="account-card-header">
-                <span className={`badge ${selectedAccount.active ? 'active' : 'inactive'}`}>
-                  {selectedAccount.active ? '有効' : '停止'}
-                </span>
-                <span className="type-chip">
-                  {selectedAccount.accountCategory === 'CREDIT_CARD'
-                    ? 'クレジットカード'
-                    : '預金・現金など'}
-                </span>
-              </div>
-              <h3>
-                {selectedAccount.accountCategory === 'CREDIT_CARD'
-                  ? selectedAccount.accountName
-                  : `${selectedAccount.providerName} / ${selectedAccount.accountName}`}
-              </h3>
-              <p className="account-detail-provider">{selectedAccount.providerName}</p>
-              <dl className="balance-pairs">
-                {selectedAccount.accountCategory === 'CREDIT_CARD' ? (
-                  <>
-                    <div>
-                      <dt>請求額</dt>
-                      <dd>{formatMoney(selectedAccount.currentBalance, true)}</dd>
-                    </div>
-                    <div>
-                      <dt>次の支払日</dt>
-                      <dd>{formatNextPaymentDate(selectedAccount)}</dd>
-                    </div>
-                    <div>
-                      <dt>引き落とし口座</dt>
-                      <dd>
-                        {formatPaymentAccountName(
-                          accounts,
-                          selectedAccount.creditCardProfile?.paymentAccountId,
-                        )}
-                      </dd>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <dt>現在残高</dt>
-                      <dd>{formatMoney(selectedAccount.currentBalance)}</dd>
-                    </div>
-                    <div>
-                      <dt>未配分</dt>
-                      <dd>{formatMoney(selectedAccount.unallocatedBalance)}</dd>
-                    </div>
-                    <div>
-                      <dt>初期残高</dt>
-                      <dd>{formatMoney(selectedAccount.initialBalance)}</dd>
-                    </div>
-                  </>
-                )}
-              </dl>
-              <div className="category-actions">
-                <button
-                  type="button"
-                  className="action-button mobile-back-button"
-                  onClick={handleReturnToAccountList}
-                >
-                  一覧に戻る
-                </button>
-                <button
-                  type="button"
-                  className="action-button"
-                  onClick={() => handleEdit(selectedAccount)}
-                >
-                  この口座を編集
-                </button>
-              </div>
-
-              {selectedAccount.accountCategory === 'CREDIT_CARD' &&
-              selectedBillingSummary != null ? (
-                <>
-                  <section className="account-detail-section">
-                    <div className="section-heading">
-                      <div>
-                        <h3>支払サイクル</h3>
-                        <p className="section-description">
-                          締め日と支払日を基準に、次回以降の予定を確認できます。
-                        </p>
-                      </div>
-                    </div>
-                    <dl className="balance-pairs compact">
-                      <div>
-                        <dt>締め日</dt>
-                        <dd>{selectedBillingSummary.closingDayLabel}</dd>
-                      </div>
-                      <div>
-                        <dt>支払日</dt>
-                        <dd>{selectedBillingSummary.paymentDayLabel}</dd>
-                      </div>
-                      <div>
-                        <dt>次の締め日</dt>
-                        <dd>{selectedBillingSummary.nextClosingDate}</dd>
-                      </div>
-                      <div>
-                        <dt>次の支払日</dt>
-                        <dd>{selectedBillingSummary.nextPaymentDate}</dd>
-                      </div>
-                      <div>
-                        <dt>次々回支払日</dt>
-                        <dd>{selectedBillingSummary.followingPaymentDate}</dd>
-                      </div>
-                      <div>
-                        <dt>次回支払額</dt>
-                        <dd>{selectedBillingSummary.nextPaymentAmount}</dd>
-                      </div>
-                      <div>
-                        <dt>次々回支払額</dt>
-                        <dd>{selectedBillingSummary.followingPaymentAmount}</dd>
-                      </div>
-                    </dl>
-                    <p className="account-meta-note">
-                      支払額は登録済みのカード利用履歴から見た見込みです。振替による返済額は含めていません。
-                    </p>
-                  </section>
-                  <section className="account-detail-section">
-                    <div className="section-heading">
-                      <div>
-                        <h3>関連取引</h3>
-                        <p className="section-description">
-                          直近のカード利用を時系列で確認できます。
-                        </p>
-                      </div>
-                    </div>
-                    <TransactionSummaryList transactions={selectedTransactions} />
-                  </section>
-                </>
-              ) : null}
-
-              {selectedAccount.accountCategory !== 'CREDIT_CARD' ? (
-                <>
-                  <section className="account-detail-section">
-                    <div className="section-heading">
-                      <div>
-                        <h3>紐づく目的別口座</h3>
-                        <p className="section-description">
-                          この口座配下で管理している残高のまとまりです。
-                        </p>
-                      </div>
-                    </div>
-                    {selectedGoalBuckets.length === 0 ? (
-                      <p className="status">紐づく目的別口座はまだありません。</p>
-                    ) : (
-                      <div className="detail-chip-list">
-                        {selectedGoalBuckets.map((goalBucket) => (
-                          <article key={goalBucket.goalBucketId} className="detail-chip-card">
-                            <strong>{goalBucket.bucketName}</strong>
-                            <span>{formatMoney(goalBucket.currentBalance)}</span>
-                          </article>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-
-                  <section className="account-detail-section">
-                    <div className="section-heading">
-                      <div>
-                        <h3>引き落とし対象カード</h3>
-                        <p className="section-description">
-                          この口座から支払う設定のクレジットカードと、次回引き落とし予定を確認できます。
-                        </p>
-                      </div>
-                    </div>
-                    {selectedLinkedCreditCards.length === 0 ? (
-                      <p className="status">この口座を引き落とし元にしているカードはありません。</p>
-                    ) : (
-                      <div className="detail-list">
-                        {selectedLinkedCreditCards.map((creditCard) => (
-                          <article key={creditCard.accountId} className="detail-list-item">
-                            <div>
-                              <h4>{creditCard.accountName}</h4>
-                              <p>{creditCard.providerName}</p>
-                            </div>
-                            <dl className="detail-inline-stats">
-                              <div>
-                                <dt>次回支払日</dt>
-                                <dd>{formatNextPaymentDate(creditCard)}</dd>
-                              </div>
-                              <div>
-                                <dt>次回引き落とし見込み</dt>
-                                <dd>{formatMoney(creditCard.currentBalance, true)}</dd>
-                              </div>
-                            </dl>
-                            <div className="detail-item-actions">
-                              <button
-                                type="button"
-                                className="action-button secondary"
-                                onClick={() => handleSelectAccount(creditCard)}
-                              >
-                                詳細を見る
-                              </button>
-                              <button
-                                type="button"
-                                className="action-button"
-                                onClick={() => handleEdit(creditCard)}
-                              >
-                                このカードを編集
-                              </button>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-
-                  <section className="account-detail-section">
-                    <div className="section-heading">
-                      <div>
-                        <h3>関連取引</h3>
-                        <p className="section-description">
-                          最近の入出金や振替を確認できます。
-                        </p>
-                      </div>
-                    </div>
-                    <TransactionSummaryList transactions={selectedTransactions} />
-                  </section>
-                </>
-              ) : null}
-            </article>
-          )}
-        </section>
-
-        <section
-          id="account-list-panel"
-          className={`panel account-list-panel ${mobileDetailVisible ? 'mobile-list-hidden' : 'mobile-list-visible'}`}
-        >
-          <div className="panel-heading">
-            <p className="eyebrow">口座一覧</p>
-            <h2>登録済み口座</h2>
-            <p className="lead dashboard-section-lead">
-              一覧を口座区分ごとに分け、探したい条件で絞り込みながら詳細確認へつなげます。
-            </p>
-          </div>
-          <div className="button-row account-filter-row">
+          <div className="account-filter-row account-page-filter-row">
             <label className="filter-field">
               <span>検索</span>
-              <input
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-                placeholder="銀行名、口座名、カード名で検索"
-              />
+              <input value={keyword} onChange={(event) => setKeyword(event.target.value)} />
             </label>
             <label className="filter-field">
               <span>状態</span>
               <select
                 value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value as StatusFilter)
-                }
+                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
               >
                 <option value="ALL">すべて</option>
-                <option value="ACTIVE">有効のみ</option>
-                <option value="INACTIVE">停止のみ</option>
+                <option value="ACTIVE">有効</option>
+                <option value="INACTIVE">無効</option>
               </select>
             </label>
             <label className="filter-field">
-              <span>並び替え</span>
+              <span>表示対象</span>
+              <select
+                value={accountListView}
+                onChange={(event) =>
+                  setAccountListView(event.target.value as AccountListView)
+                }
+              >
+                <option value="ALL">すべて</option>
+                <option value="BANK">銀行口座</option>
+                <option value="CREDIT_CARD">クレジットカード</option>
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>並び順</span>
               <select
                 value={sortOption}
-                onChange={(event) =>
-                  setSortOption(event.target.value as SortOption)
-                }
+                onChange={(event) => setSortOption(event.target.value as SortOption)}
               >
                 <option value="DISPLAY_ORDER">表示順</option>
                 <option value="NAME">名称</option>
-                <option value="BALANCE_DESC">残高が大きい順</option>
+                <option value="BALANCE_DESC">残高順</option>
               </select>
             </label>
-            <button type="button" onClick={handleOpenCreateModal}>
-              新規口座を追加
-            </button>
-            {hasActiveFilters ? (
-              <button type="button" className="secondary" onClick={resetFilters}>
-                条件をクリア
-              </button>
-            ) : null}
           </div>
 
-          <div className="account-filter-summary" aria-live="polite">
-            <span>表示中 {filteredAccounts.length} 件</span>
-            <span>有効 {visibleActiveCount} 件</span>
-            <span>停止 {visibleInactiveCount} 件</span>
-            <span>預金・現金など {operationalAccounts.length} 件</span>
-            <span>クレジットカード {creditCardAccounts.length} 件</span>
-          </div>
+          {loading ? <p className="status">口座一覧を読み込み中です...</p> : null}
+          {errorMessage ? <p className="status error">{errorMessage}</p> : null}
 
-          <div
-            className="inline-tabs account-list-tabs"
-            role="tablist"
-            aria-label="口座一覧の表示切り替え"
-          >
-            <button
-              type="button"
-              className={accountListView === 'ALL' ? 'active' : ''}
-              onClick={() => setAccountListView('ALL')}
-            >
-              すべて
-              <span>{filteredAccounts.length}</span>
-            </button>
-            <button
-              type="button"
-              className={accountListView === 'OPERATIONAL' ? 'active' : ''}
-              onClick={() => setAccountListView('OPERATIONAL')}
-            >
-              銀行口座
-              <span>{operationalAccounts.length}</span>
-            </button>
-            <button
-              type="button"
-              className={accountListView === 'CREDIT_CARD' ? 'active' : ''}
-              onClick={() => setAccountListView('CREDIT_CARD')}
-            >
-              クレジットカード
-              <span>{creditCardAccounts.length}</span>
-            </button>
-          </div>
-
-          {selectedAccount != null ? (
-            <div className="selected-account-jump">
-              <p>
-                選択中: <strong>{selectedAccount.accountName}</strong>
-              </p>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => setDetailModalOpen(true)}
-              >
-                詳細へ移動
-              </button>
-            </div>
+          {accountListView !== 'CREDIT_CARD' ? (
+            <section className="account-section-stack">
+              <div className="section-heading">
+                <div>
+                  <h3>銀行口座</h3>
+                  <p className="section-description">
+                    銀行口座を選ぶと、目的別口座と紐づくカードを同じ詳細パネルで見られます。
+                  </p>
+                </div>
+                <span>{bankAccounts.length} 件</span>
+              </div>
+              {bankAccounts.length === 0 ? (
+                <p className="status">表示できる銀行口座はありません。</p>
+              ) : (
+                <div className="account-list">
+                  {bankAccounts.map((account) => (
+                    <button
+                      key={account.accountId}
+                      type="button"
+                      className={`account-card account-card-button ${
+                        detailSelection?.type === 'account' &&
+                        detailSelection.accountId === account.accountId
+                          ? 'selected'
+                          : ''
+                      }`}
+                      onClick={() => setDetailSelection({ type: 'account', accountId: account.accountId })}
+                    >
+                      <div className="account-card-header">
+                        <span className={`badge ${account.active ? 'active' : 'inactive'}`}>
+                          {account.active ? '有効' : '無効'}
+                        </span>
+                        <span className="type-chip">{formatBankAccountLabel(account)}</span>
+                      </div>
+                      <h3>{`${account.providerName} / ${account.accountName}`}</h3>
+                      <dl className="balance-pairs compact">
+                        <div>
+                          <dt>現在残高</dt>
+                          <dd>{formatMoney(account.currentBalance)}</dd>
+                        </div>
+                        <div>
+                          <dt>未配分残高</dt>
+                          <dd>{formatMoney(account.unallocatedBalance)}</dd>
+                        </div>
+                      </dl>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
           ) : null}
 
-          {errorMessage ? <p className="status error">{errorMessage}</p> : null}
-          {loading ? <p className="status">読み込み中...</p> : null}
-
-          {!loading && !errorMessage ? (
-            <div className="account-section-stack">
-              <div className="account-section-summary">
-                <p>現在の表示: {selectedListCount} 件</p>
-                <p>
-                  一覧から口座を選ぶと、固定表示している詳細カードの内容が切り替わります。
-                </p>
+          {accountListView !== 'BANK' ? (
+            <section className="account-section-stack">
+              <div className="section-heading">
+                <div>
+                  <h3>クレジットカード</h3>
+                  <p className="section-description">
+                    カード利用残高と次回支払見込みをまとめて見られます。
+                  </p>
+                </div>
+                <span>{creditCardAccounts.length} 件</span>
               </div>
-              <AccountList
-                title="預金・現金など"
-                description="銀行口座、現金、電子マネーなどをまとめて確認します。"
-                variant="operational"
-                accounts={
-                  accountListView === 'CREDIT_CARD' ? [] : operationalAccounts
-                }
-                allAccounts={accounts}
-                emptyMessage="条件に合う預金・現金系の口座はありません。"
-                deletingAccountId={deletingAccountId}
-                selectedAccountId={selectedAccountId}
-                onSelectDetail={handleSelectAccount}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-              <AccountList
-                title="クレジットカード"
-                description="請求額、次回支払日、引き落とし口座を先に見られるようにしています。"
-                variant="creditCard"
-                accounts={
-                  accountListView === 'OPERATIONAL' ? [] : creditCardAccounts
-                }
-                allAccounts={accounts}
-                emptyMessage="条件に合うクレジットカードはありません。"
-                deletingAccountId={deletingAccountId}
-                selectedAccountId={selectedAccountId}
-                onSelectDetail={handleSelectAccount}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
+              {creditCardAccounts.length === 0 ? (
+                <p className="status">表示できるクレジットカードはありません。</p>
+              ) : (
+                <div className="account-list">
+                  {creditCardAccounts.map((account) => (
+                    <button
+                      key={account.accountId}
+                      type="button"
+                      className={`account-card account-card-button ${
+                        detailSelection?.type === 'creditCard' &&
+                        detailSelection.accountId === account.accountId
+                          ? 'selected'
+                          : ''
+                      }`}
+                      onClick={() =>
+                        setDetailSelection({ type: 'creditCard', accountId: account.accountId })
+                      }
+                    >
+                      <div className="account-card-header">
+                        <span className={`badge ${account.active ? 'active' : 'inactive'}`}>
+                          {account.active ? '有効' : '無効'}
+                        </span>
+                        <span className="type-chip">クレジットカード</span>
+                      </div>
+                      <h3>{account.accountName}</h3>
+                      <p>{account.providerName}</p>
+                      <dl className="balance-pairs compact">
+                        <div>
+                          <dt>利用残高</dt>
+                          <dd>{formatMoney(account.currentBalance, true)}</dd>
+                        </div>
+                        <div>
+                          <dt>次回支払日</dt>
+                          <dd>{formatNextPaymentDate(account)}</dd>
+                        </div>
+                      </dl>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : null}
+        </section>
+
+        <section className="panel account-detail-panel">
+          {selectedAccount ? (
+            <BankAccountDetail
+              account={selectedAccount}
+              goalBuckets={selectedBankGoalBuckets}
+              linkedCreditCards={selectedLinkedCreditCards}
+              monthlyIncome={selectedBankIncome}
+              monthlyExpense={selectedBankExpense}
+              monthlyNet={selectedBankNet}
+              bankMonth={bankMonth}
+              recentTransactions={selectedBankTransactions.slice(0, 5)}
+              onBankMonthChange={setBankMonth}
+              onEditAccount={openEditAccountModal}
+              onDeleteAccount={handleDeleteAccount}
+              onOpenCreateGoalBucket={openCreateGoalBucketModal}
+              onSelectGoalBucket={(goalBucket) =>
+                setDetailSelection({ type: 'goalBucket', goalBucketId: goalBucket.goalBucketId })
+              }
+              onSelectCreditCard={(account) =>
+                setDetailSelection({ type: 'creditCard', accountId: account.accountId })
+              }
+              deletingAccountId={deletingAccountId}
+            />
+          ) : null}
+
+          {selectedGoalBucket ? (
+            <GoalBucketDetail
+              goalBucket={selectedGoalBucket}
+              account={selectedGoalBucketAccount}
+              movementMonth={goalBucketMonth}
+              monthlyIncoming={selectedGoalBucketIncoming}
+              monthlyOutgoing={selectedGoalBucketOutgoing}
+              monthlyNet={selectedGoalBucketNet}
+              recentTransactions={selectedGoalBucketTransactions}
+              onMovementMonthChange={setGoalBucketMonth}
+              onBackToAccount={() =>
+                selectedGoalBucketAccount &&
+                setDetailSelection({
+                  type: 'account',
+                  accountId: selectedGoalBucketAccount.accountId,
+                })
+              }
+              onEditGoalBucket={openEditGoalBucketModal}
+              onDeleteGoalBucket={handleDeleteGoalBucket}
+              deletingGoalBucketId={deletingGoalBucketId}
+            />
+          ) : null}
+
+          {selectedCreditCard ? (
+            <CreditCardDetail
+              account={selectedCreditCard}
+              paymentAccount={selectedCreditCardPaymentAccount}
+              billingSummary={selectedBillingSummary}
+              recentTransactions={selectedCreditCardTransactions}
+              onBackToAccount={() =>
+                selectedCreditCardPaymentAccount &&
+                setDetailSelection({
+                  type: 'account',
+                  accountId: selectedCreditCardPaymentAccount.accountId,
+                })
+              }
+              onEditAccount={openEditAccountModal}
+              onDeleteAccount={handleDeleteAccount}
+              deletingAccountId={deletingAccountId}
+            />
+          ) : null}
+
+          {detailSelection == null ? (
+            <p className="status">一覧から詳細を表示する対象を選んでください。</p>
           ) : null}
         </section>
       </section>
 
       <FormModal
-        open={modalOpen}
+        open={accountModalOpen}
         title={editingAccountId == null ? '口座を追加' : '口座を編集'}
         description={
           editingAccountId == null
-            ? '口座属性を入力して保存します。'
-            : '既存口座の内容を更新します。'
+            ? '銀行口座またはクレジットカードを登録します。'
+            : '既存口座の設定を更新します。'
         }
-        onClose={closeModal}
+        onClose={closeAccountModal}
+        panelClassName="modal-panel-xwide account-form-modal"
       >
         <AccountForm
-          accounts={accounts}
-          value={form}
+          accounts={accounts.filter((account) => account.accountCategory !== 'CREDIT_CARD')}
+          value={accountForm}
           isEditing={editingAccountId != null}
-          submitting={submitting}
-          submitErrorMessage={submitErrorMessage}
-          fieldErrors={fieldErrors}
-          onChange={setForm}
-          onSubmit={handleSubmit}
+          submitting={submittingAccount}
+          submitErrorMessage={accountSubmitErrorMessage}
+          fieldErrors={accountFieldErrors}
+          onChange={setAccountForm}
+          onSubmit={handleAccountSubmit}
         />
       </FormModal>
 
       <FormModal
-        open={detailModalOpen && selectedAccount != null}
-        title={selectedAccount?.accountName ?? '口座詳細'}
-        description="口座残高、支払予定、関連するGoalBucketや取引を確認できます。"
-        eyebrow="Account Detail"
-        panelClassName="modal-panel-xwide"
-        onClose={() => setDetailModalOpen(false)}
+        open={goalBucketModalOpen}
+        title={editingGoalBucketId == null ? '目的別口座を追加' : '目的別口座を編集'}
+        description={
+          editingGoalBucketId == null
+            ? '選択した銀行口座に目的別口座を追加します。'
+            : '既存の目的別口座設定を更新します。'
+        }
+        onClose={closeGoalBucketModal}
       >
-        {selectedAccount == null ? null : (
-          <article className="account-detail-card">
-            <div className="account-card-header">
-              <span className={`badge ${selectedAccount.active ? 'active' : 'inactive'}`}>
-                {selectedAccount.active ? '有効' : '無効'}
-              </span>
-              <span className="type-chip">
-                {selectedAccount.accountCategory === 'CREDIT_CARD'
-                  ? 'クレジットカード'
-                  : '銀行口座・現金など'}
-              </span>
-            </div>
-            <h3>
-              {selectedAccount.accountCategory === 'CREDIT_CARD'
-                ? selectedAccount.accountName
-                : `${selectedAccount.providerName} / ${selectedAccount.accountName}`}
-            </h3>
-            <p className="account-detail-provider">{selectedAccount.providerName}</p>
-            <dl className="balance-pairs">
-              {selectedAccount.accountCategory === 'CREDIT_CARD' ? (
-                <>
-                  <div>
-                    <dt>利用残高</dt>
-                    <dd>{formatMoney(selectedAccount.currentBalance, true)}</dd>
-                  </div>
-                  <div>
-                    <dt>次の支払日</dt>
-                    <dd>{formatNextPaymentDate(selectedAccount)}</dd>
-                  </div>
-                  <div>
-                    <dt>引き落とし口座</dt>
-                    <dd>
-                      {formatPaymentAccountName(
-                        accounts,
-                        selectedAccount.creditCardProfile?.paymentAccountId,
-                      )}
-                    </dd>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <dt>現在残高</dt>
-                    <dd>{formatMoney(selectedAccount.currentBalance)}</dd>
-                  </div>
-                  <div>
-                    <dt>未配分</dt>
-                    <dd>{formatMoney(selectedAccount.unallocatedBalance)}</dd>
-                  </div>
-                  <div>
-                    <dt>初期残高</dt>
-                    <dd>{formatMoney(selectedAccount.initialBalance)}</dd>
-                  </div>
-                </>
-              )}
-            </dl>
-            <div className="category-actions">
-              <button
-                type="button"
-                className="action-button"
-                onClick={() => handleEdit(selectedAccount)}
-              >
-                この口座を編集
-              </button>
-            </div>
-
-            {selectedAccount.accountCategory === 'CREDIT_CARD' &&
-            selectedBillingSummary != null ? (
-              <>
-                <section className="account-detail-section">
-                  <div className="section-heading">
-                    <div>
-                      <h3>支払いサイクル</h3>
-                      <p className="section-description">
-                        締め日と支払日、次回以降の請求予定を確認できます。
-                      </p>
-                    </div>
-                  </div>
-                  <dl className="balance-pairs compact">
-                    <div>
-                      <dt>締め日</dt>
-                      <dd>{selectedBillingSummary.closingDayLabel}</dd>
-                    </div>
-                    <div>
-                      <dt>支払日</dt>
-                      <dd>{selectedBillingSummary.paymentDayLabel}</dd>
-                    </div>
-                    <div>
-                      <dt>次の締め日</dt>
-                      <dd>{selectedBillingSummary.nextClosingDate}</dd>
-                    </div>
-                    <div>
-                      <dt>次の支払日</dt>
-                      <dd>{selectedBillingSummary.nextPaymentDate}</dd>
-                    </div>
-                    <div>
-                      <dt>次々回支払日</dt>
-                      <dd>{selectedBillingSummary.followingPaymentDate}</dd>
-                    </div>
-                    <div>
-                      <dt>次回請求額</dt>
-                      <dd>{selectedBillingSummary.nextPaymentAmount}</dd>
-                    </div>
-                    <div>
-                      <dt>次々回請求額</dt>
-                      <dd>{selectedBillingSummary.followingPaymentAmount}</dd>
-                    </div>
-                  </dl>
-                  <p className="account-meta-note">
-                    請求額は関連するカード利用取引からの見込み値です。運用上の確認用として使えます。
-                  </p>
-                </section>
-                <section className="account-detail-section">
-                  <div className="section-heading">
-                    <div>
-                      <h3>関連取引</h3>
-                      <p className="section-description">
-                        この口座に紐づく最近の取引を確認できます。
-                      </p>
-                    </div>
-                  </div>
-                  <TransactionSummaryList transactions={selectedTransactions} />
-                </section>
-              </>
-            ) : null}
-
-            {selectedAccount.accountCategory !== 'CREDIT_CARD' ? (
-              <>
-                <section className="account-detail-section">
-                  <div className="section-heading">
-                    <div>
-                      <h3>紐づくGoalBucket</h3>
-                      <p className="section-description">
-                        この口座の中で管理している目的別口座の残高を確認できます。
-                      </p>
-                    </div>
-                  </div>
-                  {selectedGoalBuckets.length === 0 ? (
-                    <p className="status">紐づくGoalBucketはありません。</p>
-                  ) : (
-                    <div className="detail-chip-list">
-                      {selectedGoalBuckets.map((goalBucket) => (
-                        <article key={goalBucket.goalBucketId} className="detail-chip-card">
-                          <strong>{goalBucket.bucketName}</strong>
-                          <span>{formatMoney(goalBucket.currentBalance)}</span>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="account-detail-section">
-                  <div className="section-heading">
-                    <div>
-                      <h3>関連クレジットカード</h3>
-                      <p className="section-description">
-                        この口座を引き落とし先にしているカードの次回支払予定を確認できます。
-                      </p>
-                    </div>
-                  </div>
-                  {selectedLinkedCreditCards.length === 0 ? (
-                    <p className="status">関連するクレジットカードはありません。</p>
-                  ) : (
-                    <div className="detail-list">
-                      {selectedLinkedCreditCards.map((creditCard) => (
-                        <article key={creditCard.accountId} className="detail-list-item">
-                          <div>
-                            <h4>{creditCard.accountName}</h4>
-                            <p>{creditCard.providerName}</p>
-                          </div>
-                          <dl className="detail-inline-stats">
-                            <div>
-                              <dt>次回支払日</dt>
-                              <dd>{formatNextPaymentDate(creditCard)}</dd>
-                            </div>
-                            <div>
-                              <dt>次回請求見込み</dt>
-                              <dd>{formatMoney(creditCard.currentBalance, true)}</dd>
-                            </div>
-                          </dl>
-                          <div className="detail-item-actions">
-                            <button
-                              type="button"
-                              className="action-button secondary"
-                              onClick={() => handleSelectAccount(creditCard)}
-                            >
-                              詳細を見る
-                            </button>
-                            <button
-                              type="button"
-                              className="action-button"
-                              onClick={() => handleEdit(creditCard)}
-                            >
-                              このカードを編集
-                            </button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="account-detail-section">
-                  <div className="section-heading">
-                    <div>
-                      <h3>関連取引</h3>
-                      <p className="section-description">
-                        最近の入出金や振替を確認できます。
-                      </p>
-                    </div>
-                  </div>
-                  <TransactionSummaryList transactions={selectedTransactions} />
-                </section>
-              </>
-            ) : null}
-          </article>
-        )}
+        <GoalBucketForm
+          accounts={accounts.filter((account) => account.accountCategory !== 'CREDIT_CARD')}
+          value={goalBucketForm}
+          submitting={submittingGoalBucket}
+          submitErrorMessage={goalBucketSubmitErrorMessage}
+          fieldErrors={goalBucketFieldErrors}
+          onChange={setGoalBucketForm}
+          onSubmit={handleGoalBucketSubmit}
+        />
       </FormModal>
     </main>
   )
 }
 
+function BankAccountDetail(props: {
+  account: Account
+  goalBuckets: GoalBucket[]
+  linkedCreditCards: Account[]
+  monthlyIncome: number
+  monthlyExpense: number
+  monthlyNet: number
+  bankMonth: string
+  recentTransactions: Transaction[]
+  onBankMonthChange: (month: string) => void
+  onEditAccount: (account: Account) => void
+  onDeleteAccount: (account: Account) => void
+  onOpenCreateGoalBucket: (accountId: number) => void
+  onSelectGoalBucket: (goalBucket: GoalBucket) => void
+  onSelectCreditCard: (account: Account) => void
+  deletingAccountId: number | null
+}) {
+  const {
+    account,
+    goalBuckets,
+    linkedCreditCards,
+    monthlyIncome,
+    monthlyExpense,
+    monthlyNet,
+    bankMonth,
+    recentTransactions,
+    onBankMonthChange,
+    onDeleteAccount,
+    onEditAccount,
+    onOpenCreateGoalBucket,
+    onSelectGoalBucket,
+    onSelectCreditCard,
+    deletingAccountId,
+  } = props
+
+  return (
+    <article className="account-detail-card">
+      <div className="account-card-header">
+        <span className={`badge ${account.active ? 'active' : 'inactive'}`}>
+          {account.active ? '有効' : '無効'}
+        </span>
+        <span className="type-chip">{formatBankAccountLabel(account)}</span>
+      </div>
+      <h3>{`${account.providerName} / ${account.accountName}`}</h3>
+      <p className="account-detail-provider">銀行口座の概要、収支、紐づく情報をまとめて確認します。</p>
+      <dl className="balance-pairs">
+        <div>
+          <dt>現在残高</dt>
+          <dd>{formatMoney(account.currentBalance)}</dd>
+        </div>
+        <div>
+          <dt>未配分残高</dt>
+          <dd>{formatMoney(account.unallocatedBalance)}</dd>
+        </div>
+        <div>
+          <dt>初期残高</dt>
+          <dd>{formatMoney(account.initialBalance)}</dd>
+        </div>
+      </dl>
+      <div className="category-actions">
+        <button type="button" className="action-button" onClick={() => onEditAccount(account)}>
+          口座を編集
+        </button>
+        <button
+          type="button"
+          className="action-button danger"
+          disabled={deletingAccountId === account.accountId}
+          onClick={() => onDeleteAccount(account)}
+        >
+          {deletingAccountId === account.accountId ? '削除中...' : '口座を削除'}
+        </button>
+      </div>
+
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>口座ごとの月次収支</h3>
+            <p className="section-description">選択月の収入、支出、収支を口座単位で確認します。</p>
+          </div>
+        </div>
+        <div className="account-month-switcher">
+          <button
+            type="button"
+            className="action-button"
+            onClick={() => onBankMonthChange(shiftMonthLabel(bankMonth, -1))}
+          >
+            前月
+          </button>
+          <strong>{formatMonthLabel(bankMonth)}</strong>
+          <button
+            type="button"
+            className="action-button"
+            onClick={() => onBankMonthChange(shiftMonthLabel(bankMonth, 1))}
+          >
+            翌月
+          </button>
+        </div>
+        <div className="detail-chip-list">
+          <article className="detail-chip-card">
+            <strong>収入</strong>
+            <span>{formatMoney(monthlyIncome)}</span>
+          </article>
+          <article className="detail-chip-card">
+            <strong>支出</strong>
+            <span>{formatMoney(monthlyExpense)}</span>
+          </article>
+          <article className="detail-chip-card">
+            <strong>収支</strong>
+            <span>{formatMoney(monthlyNet)}</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>目的別口座一覧</h3>
+            <p className="section-description">この銀行口座に属する目的別口座を選ぶと、詳細へ移動します。</p>
+          </div>
+          <button
+            type="button"
+            className="action-button"
+            onClick={() => onOpenCreateGoalBucket(account.accountId)}
+          >
+            目的別口座を追加
+          </button>
+        </div>
+        {goalBuckets.length === 0 ? (
+          <p className="status">この銀行口座に紐づく目的別口座はまだありません。</p>
+        ) : (
+          <div className="detail-list">
+            {goalBuckets.map((goalBucket) => (
+              <button
+                key={goalBucket.goalBucketId}
+                type="button"
+                className="detail-list-item detail-list-button"
+                onClick={() => onSelectGoalBucket(goalBucket)}
+              >
+                <div>
+                  <h4>{goalBucket.bucketName}</h4>
+                  <p>{goalBucket.active ? '有効' : '無効'}</p>
+                </div>
+                <dl className="detail-inline-stats">
+                  <div>
+                    <dt>現在残高</dt>
+                    <dd>{formatMoney(goalBucket.currentBalance)}</dd>
+                  </div>
+                </dl>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>紐づくクレジットカード一覧</h3>
+            <p className="section-description">支払口座として設定されているクレジットカードを選ぶと、カード詳細へ移動します。</p>
+          </div>
+        </div>
+        {linkedCreditCards.length === 0 ? (
+          <p className="status">この銀行口座に紐づくクレジットカードはありません。</p>
+        ) : (
+          <div className="detail-list">
+            {linkedCreditCards.map((creditCard) => (
+              <button
+                key={creditCard.accountId}
+                type="button"
+                className="detail-list-item detail-list-button"
+                onClick={() => onSelectCreditCard(creditCard)}
+              >
+                <div>
+                  <h4>{creditCard.accountName}</h4>
+                  <p>{creditCard.providerName}</p>
+                </div>
+                <dl className="detail-inline-stats">
+                  <div>
+                    <dt>利用残高</dt>
+                    <dd>{formatMoney(creditCard.currentBalance, true)}</dd>
+                  </div>
+                  <div>
+                    <dt>次回支払日</dt>
+                    <dd>{formatNextPaymentDate(creditCard)}</dd>
+                  </div>
+                </dl>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>最近の取引</h3>
+            <p className="section-description">この口座に紐づく直近の取引を 5 件まで表示します。</p>
+          </div>
+        </div>
+        <TransactionSummaryList transactions={recentTransactions} />
+      </section>
+    </article>
+  )
+}
+
+function GoalBucketDetail(props: {
+  goalBucket: GoalBucket
+  account: Account | null
+  movementMonth: string
+  monthlyIncoming: number
+  monthlyOutgoing: number
+  monthlyNet: number
+  recentTransactions: Transaction[]
+  onMovementMonthChange: (monthLabel: string) => void
+  onBackToAccount: () => void
+  onEditGoalBucket: (goalBucket: GoalBucket) => void
+  onDeleteGoalBucket: (goalBucket: GoalBucket) => void
+  deletingGoalBucketId: number | null
+}) {
+  const {
+    account,
+    goalBucket,
+    movementMonth,
+    monthlyIncoming,
+    monthlyOutgoing,
+    monthlyNet,
+    recentTransactions,
+    onMovementMonthChange,
+    onBackToAccount,
+    onDeleteGoalBucket,
+    onEditGoalBucket,
+    deletingGoalBucketId,
+  } = props
+
+  return (
+    <article className="account-detail-card">
+      <div className="account-card-header">
+        <span className={`badge ${goalBucket.active ? 'active' : 'inactive'}`}>
+          {goalBucket.active ? '有効' : '無効'}
+        </span>
+        <span className="type-chip">Goal Bucket Detail</span>
+      </div>
+      <h3>{goalBucket.bucketName}</h3>
+      <p className="account-detail-provider">親の銀行口座との関係と直近の動きを確認します。</p>
+      <dl className="balance-pairs">
+        <div>
+          <dt>現在残高</dt>
+          <dd>{formatMoney(goalBucket.currentBalance)}</dd>
+        </div>
+        <div>
+          <dt>所属銀行口座</dt>
+          <dd>{account ? `${account.providerName} / ${account.accountName}` : `口座ID #${goalBucket.accountId}`}</dd>
+        </div>
+        <div>
+          <dt>状態</dt>
+          <dd>{goalBucket.active ? '有効' : '無効'}</dd>
+        </div>
+      </dl>
+      <div className="category-actions">
+        <button type="button" className="action-button" onClick={onBackToAccount}>
+          親の銀行口座へ戻る
+        </button>
+        <button
+          type="button"
+          className="action-button"
+          onClick={() => onEditGoalBucket(goalBucket)}
+        >
+          目的別口座を編集
+        </button>
+        <button
+          type="button"
+          className="action-button danger"
+          disabled={deletingGoalBucketId === goalBucket.goalBucketId}
+          onClick={() => onDeleteGoalBucket(goalBucket)}
+        >
+          {deletingGoalBucketId === goalBucket.goalBucketId ? '削除中...' : '目的別口座を削除'}
+        </button>
+      </div>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>Goal Bucket の動き</h3>
+            <p className="section-description">選択月の配分額、取崩額、純増減を確認します。</p>
+          </div>
+        </div>
+        <div className="account-month-switcher">
+          <button
+            type="button"
+            className="action-button"
+            onClick={() => onMovementMonthChange(shiftMonthLabel(movementMonth, -1))}
+          >
+            前月
+          </button>
+          <strong>{formatMonthLabel(movementMonth)}</strong>
+          <button
+            type="button"
+            className="action-button"
+            onClick={() => onMovementMonthChange(shiftMonthLabel(movementMonth, 1))}
+          >
+            次月
+          </button>
+        </div>
+        <div className="detail-chip-list">
+          <article className="detail-chip-card">
+            <strong>当月配分額</strong>
+            <span>{formatMoney(monthlyIncoming)}</span>
+          </article>
+          <article className="detail-chip-card">
+            <strong>当月取崩額</strong>
+            <span>{formatMoney(monthlyOutgoing)}</span>
+          </article>
+          <article className="detail-chip-card">
+            <strong>当月純増減</strong>
+            <span>{formatMoney(monthlyNet)}</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>所属銀行口座</h3>
+            <p className="section-description">この目的別口座が紐づく銀行口座に戻れます。</p>
+          </div>
+        </div>
+        {account == null ? (
+          <p className="status">親の銀行口座情報を取得できませんでした。</p>
+        ) : (
+          <button type="button" className="detail-list-item detail-list-button" onClick={onBackToAccount}>
+            <div>
+              <h4>{`${account.providerName} / ${account.accountName}`}</h4>
+              <p>未配分残高 {formatMoney(account.unallocatedBalance)}</p>
+            </div>
+            <dl className="detail-inline-stats">
+              <div>
+                <dt>現在残高</dt>
+                <dd>{formatMoney(account.currentBalance)}</dd>
+              </div>
+            </dl>
+          </button>
+        )}
+      </section>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>最近の取引</h3>
+            <p className="section-description">Goal Bucket に紐づく直近の取引を表示します。</p>
+          </div>
+        </div>
+        <TransactionSummaryList transactions={recentTransactions} />
+      </section>
+    </article>
+  )
+}
+
+function CreditCardDetail(props: {
+  account: Account
+  paymentAccount: Account | null
+  billingSummary: CreditCardBillingSummary | null
+  recentTransactions: Transaction[]
+  onBackToAccount: () => void
+  onEditAccount: (account: Account) => void
+  onDeleteAccount: (account: Account) => void
+  deletingAccountId: number | null
+}) {
+  const {
+    account,
+    paymentAccount,
+    billingSummary,
+    recentTransactions,
+    onBackToAccount,
+    onDeleteAccount,
+    onEditAccount,
+    deletingAccountId,
+  } = props
+
+  return (
+    <article className="account-detail-card">
+      <div className="account-card-header">
+        <span className={`badge ${account.active ? 'active' : 'inactive'}`}>
+          {account.active ? '有効' : '無効'}
+        </span>
+        <span className="type-chip">Credit Card Detail</span>
+      </div>
+      <h3>{account.accountName}</h3>
+      <p className="account-detail-provider">{account.providerName}</p>
+      <dl className="balance-pairs">
+        <div>
+          <dt>利用残高</dt>
+          <dd>{formatMoney(account.currentBalance, true)}</dd>
+        </div>
+        <div>
+          <dt>支払口座</dt>
+          <dd>
+            {paymentAccount
+              ? `${paymentAccount.providerName} / ${paymentAccount.accountName}`
+              : '未設定'}
+          </dd>
+        </div>
+      </dl>
+      <div className="category-actions">
+        {paymentAccount ? (
+          <button type="button" className="action-button" onClick={onBackToAccount}>
+            支払口座へ移動
+          </button>
+        ) : null}
+        <button type="button" className="action-button" onClick={() => onEditAccount(account)}>
+          カードを編集
+        </button>
+        <button
+          type="button"
+          className="action-button danger"
+          disabled={deletingAccountId === account.accountId}
+          onClick={() => onDeleteAccount(account)}
+        >
+          {deletingAccountId === account.accountId ? '削除中...' : 'カードを削除'}
+        </button>
+      </div>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>支払見込み</h3>
+            <p className="section-description">次回、次々回の支払日と支払額を確認します。</p>
+          </div>
+        </div>
+        {billingSummary == null ? (
+          <p className="status">支払見込みを計算できませんでした。</p>
+        ) : (
+          <div className="detail-chip-list">
+            <article className="detail-chip-card">
+              <strong>次回支払日</strong>
+              <span>{billingSummary.nextPaymentDate}</span>
+            </article>
+            <article className="detail-chip-card">
+              <strong>次回支払額</strong>
+              <span>{billingSummary.nextPaymentAmount}</span>
+            </article>
+            <article className="detail-chip-card">
+              <strong>次々回支払日</strong>
+              <span>{billingSummary.followingPaymentDate}</span>
+            </article>
+            <article className="detail-chip-card">
+              <strong>次々回支払額</strong>
+              <span>{billingSummary.followingPaymentAmount}</span>
+            </article>
+          </div>
+        )}
+      </section>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>支払情報</h3>
+            <p className="section-description">締め日と支払日ルールを確認します。</p>
+          </div>
+        </div>
+        {billingSummary == null ? (
+          <p className="status">支払情報を表示できません。</p>
+        ) : (
+          <div className="detail-chip-list">
+            <article className="detail-chip-card">
+              <strong>締め日</strong>
+              <span>{billingSummary.closingDayLabel}</span>
+            </article>
+            <article className="detail-chip-card">
+              <strong>支払日</strong>
+              <span>{billingSummary.paymentDayLabel}</span>
+            </article>
+          </div>
+        )}
+      </section>
+
+      <section className="account-detail-section">
+        <div className="section-heading">
+          <div>
+            <h3>最近の利用明細</h3>
+            <p className="section-description">カードに紐づく直近の利用を表示します。</p>
+          </div>
+        </div>
+        <TransactionSummaryList transactions={recentTransactions} />
+      </section>
+    </article>
+  )
+}
+
+function TransactionSummaryList({ transactions }: { transactions: Transaction[] }) {
+  if (transactions.length === 0) {
+    return <p className="status">表示できる取引はありません。</p>
+  }
+
+  return (
+    <div className="detail-list">
+      {transactions.map((transaction) => (
+        <article key={transaction.transactionId} className="detail-list-item">
+          <div>
+            <h4>{transaction.description}</h4>
+            <p>
+              {formatDateLabel(transaction.transactionDate)}
+              {transaction.categoryName ? ` / ${transaction.categoryName}` : ''}
+              {transaction.goalBucketName ? ` / ${transaction.goalBucketName}` : ''}
+            </p>
+          </div>
+          <dl className="detail-inline-stats">
+            <div>
+              <dt>種別</dt>
+              <dd>{formatTransactionType(transaction.transactionType)}</dd>
+            </div>
+            <div>
+              <dt>金額</dt>
+              <dd>{formatTransactionMoney(transaction)}</dd>
+            </div>
+          </dl>
+        </article>
+      ))}
+    </div>
+  )
+}
+
 function matchesKeyword(account: Account, keyword: string) {
   const normalizedKeyword = keyword.trim().toLocaleLowerCase()
-
   if (normalizedKeyword.length === 0) {
     return true
   }
 
-  return buildKeywordText(account)
-    .toLocaleLowerCase()
-    .includes(normalizedKeyword)
+  return buildKeywordText(account).toLocaleLowerCase().includes(normalizedKeyword)
 }
 
 function matchesStatus(account: Account, statusFilter: StatusFilter) {
@@ -1043,11 +1387,7 @@ function matchesStatus(account: Account, statusFilter: StatusFilter) {
   return true
 }
 
-function compareAccounts(
-  left: Account,
-  right: Account,
-  sortOption: SortOption,
-) {
+function compareAccounts(left: Account, right: Account, sortOption: SortOption) {
   if (sortOption === 'NAME') {
     return getSortLabel(left).localeCompare(getSortLabel(right), 'ja')
   }
@@ -1067,6 +1407,33 @@ function compareAccounts(
   )
 }
 
+function compareAccountsByDisplayOrder(left: Account, right: Account) {
+  return left.displayOrder - right.displayOrder
+}
+
+function compareGoalBuckets(left: GoalBucket, right: GoalBucket) {
+  return (
+    Number(right.currentBalance) - Number(left.currentBalance) ||
+    left.bucketName.localeCompare(right.bucketName, 'ja')
+  )
+}
+
+function compareTransactions(left: Transaction, right: Transaction) {
+  if (left.transactionDate !== right.transactionDate) {
+    return right.transactionDate.localeCompare(left.transactionDate)
+  }
+
+  return right.transactionId - left.transactionId
+}
+
+function compareAllocations(left: GoalBucketAllocation, right: GoalBucketAllocation) {
+  if (left.allocationDate !== right.allocationDate) {
+    return right.allocationDate.localeCompare(left.allocationDate)
+  }
+
+  return right.allocationId - left.allocationId
+}
+
 function getSortLabel(account: Account) {
   return `${account.providerName} ${account.accountName}`
 }
@@ -1075,7 +1442,7 @@ function buildKeywordText(account: Account) {
   return [
     account.providerName,
     account.accountName,
-    account.accountCategory === 'CREDIT_CARD' ? 'クレジットカード' : '預金 現金 電子マネー',
+    account.accountCategory === 'CREDIT_CARD' ? 'credit-card' : 'bank-account',
     account.creditCardProfile?.paymentAccountId != null
       ? `payment-account-${account.creditCardProfile.paymentAccountId}`
       : '',
@@ -1084,41 +1451,100 @@ function buildKeywordText(account: Account) {
     .trim()
 }
 
-function TransactionSummaryList({
-  transactions,
-}: {
-  transactions: Transaction[]
-}) {
-  if (transactions.length === 0) {
-    return <p className="status">紐づく取引はまだありません。</p>
-  }
+function resolveAccountSelection(account: Account): DetailSelection {
+  return account.accountCategory === 'CREDIT_CARD'
+    ? { type: 'creditCard', accountId: account.accountId }
+    : { type: 'account', accountId: account.accountId }
+}
 
-  return (
-    <div className="detail-list">
-      {transactions.slice(0, 5).map((transaction) => (
-        <article key={transaction.transactionId} className="detail-list-item">
-          <div>
-            <h4>{transaction.description}</h4>
-            <p>
-              {transaction.categoryName}
-              {transaction.subcategoryName ? ` / ${transaction.subcategoryName}` : ''}
-              {transaction.goalBucketName ? ` / ${transaction.goalBucketName}` : ''}
-            </p>
-          </div>
-          <dl className="detail-inline-stats">
-            <div>
-              <dt>取引日</dt>
-              <dd>{formatDateLabel(transaction.transactionDate)}</dd>
-            </div>
-            <div>
-              <dt>金額</dt>
-              <dd>{formatMoneyByTransactionType(transaction)}</dd>
-            </div>
-          </dl>
-        </article>
-      ))}
-    </div>
-  )
+function getPrimaryBankAccountId(accounts: Account[]) {
+  return accounts.find((account) => account.accountCategory !== 'CREDIT_CARD')?.accountId ?? 0
+}
+
+function getCurrentMonthLabel() {
+  const today = new Date()
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+}
+
+function shiftMonthLabel(monthLabel: string, diff: number) {
+  const [year, month] = monthLabel.split('-').map(Number)
+  const date = new Date(year, month - 1 + diff, 1)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function resolveMonthPeriod(monthLabel: string) {
+  const [year, month] = monthLabel.split('-').map(Number)
+  const periodStartDate = `${year}-${String(month).padStart(2, '0')}-01`
+  const endDate = new Date(year, month, 0)
+  const periodEndDate = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(
+    2,
+    '0',
+  )}-${String(endDate.getDate()).padStart(2, '0')}`
+
+  return { periodStartDate, periodEndDate }
+}
+
+function formatMonthLabel(monthLabel: string) {
+  const [year, month] = monthLabel.split('-').map(Number)
+  return `${year}年${month}月`
+}
+
+function formatDateLabel(value: string | Date) {
+  const date = typeof value === 'string' ? new Date(`${value}T00:00:00`) : value
+  return date.toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    weekday: 'short',
+  })
+}
+
+function formatMoney(value: string | number, absolute = false) {
+  const numericValue = Number(value)
+
+  return new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
+    maximumFractionDigits: 0,
+  }).format(absolute ? Math.abs(numericValue) : numericValue)
+}
+
+function formatTransactionType(transactionType: Transaction['transactionType']) {
+  switch (transactionType) {
+    case 'INCOME':
+      return '収入'
+    case 'EXPENSE':
+      return '支出'
+    case 'TRANSFER_OUT':
+      return '振替出金'
+    case 'TRANSFER_IN':
+      return '振替入金'
+    default:
+      return transactionType
+  }
+}
+
+function formatTransactionMoney(transaction: Transaction) {
+  const sign =
+    transaction.transactionType === 'INCOME' ||
+    transaction.transactionType === 'TRANSFER_IN'
+      ? '+'
+      : '-'
+
+  return `${sign}${formatMoney(transaction.amount, true)}`
+}
+
+function formatBankAccountLabel(account: Account) {
+  switch (account.accountCategory) {
+    case 'BANK':
+      return '銀行口座'
+    case 'CASH':
+      return '現金'
+    case 'EWALLET':
+      return '電子マネー'
+    default:
+      return 'その他口座'
+  }
 }
 
 function buildCreditCardBillingSummary(
@@ -1157,8 +1583,9 @@ function buildCreditCardBillingSummary(
 
   return {
     closingDayLabel: `${account.creditCardProfile.closingDay}日`,
-    paymentDayLabel: `${account.creditCardProfile.paymentDay}日 / ${describeAdjustmentRule(account.creditCardProfile.paymentDateAdjustmentRule)}`,
-    nextClosingDate: formatDateLabel(nextClosingDate),
+    paymentDayLabel: `${account.creditCardProfile.paymentDay}日 / ${describeAdjustmentRule(
+      account.creditCardProfile.paymentDateAdjustmentRule,
+    )}`,
     nextPaymentDate: formatDateLabel(nextPaymentDate),
     followingPaymentDate: formatDateLabel(followingPaymentDate),
     nextPaymentAmount: formatMoney(
@@ -1179,7 +1606,6 @@ function sumCreditCardCharges(
 ) {
   return transactions.reduce((total, transaction) => {
     const transactionDate = new Date(`${transaction.transactionDate}T00:00:00`)
-
     if (transactionDate <= fromExclusive || transactionDate > toInclusive) {
       return total
     }
@@ -1196,39 +1622,17 @@ function sumCreditCardCharges(
   }, 0)
 }
 
-function formatPaymentAccountName(
-  allAccounts: Account[],
-  paymentAccountId?: number,
-) {
-  if (paymentAccountId == null) {
-    return '未設定'
-  }
-
-  const paymentAccount = allAccounts.find(
-    (account) => account.accountId === paymentAccountId,
-  )
-
-  return paymentAccount == null
-    ? `口座ID #${paymentAccountId}`
-    : `${paymentAccount.providerName} / ${paymentAccount.accountName}`
-}
-
 function formatNextPaymentDate(account: Account) {
   if (account.creditCardProfile == null) {
     return '未設定'
   }
 
-  const nextPaymentDate = getNextPaymentDate(
-    account.creditCardProfile.paymentDay,
-    account.creditCardProfile.paymentDateAdjustmentRule,
+  return formatDateLabel(
+    getNextPaymentDate(
+      account.creditCardProfile.paymentDay,
+      account.creditCardProfile.paymentDateAdjustmentRule,
+    ),
   )
-
-  return nextPaymentDate.toLocaleDateString('ja-JP', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    weekday: 'short',
-  })
 }
 
 function getPaymentDateForMonthOffset(
@@ -1240,34 +1644,10 @@ function getPaymentDateForMonthOffset(
   const candidate = new Date(
     today.getFullYear(),
     today.getMonth() + monthOffset,
-    clampToMonthEnd(
-      today.getFullYear(),
-      today.getMonth() + monthOffset,
-      paymentDay,
-    ),
+    clampToMonthEnd(today.getFullYear(), today.getMonth() + monthOffset, paymentDay),
   )
 
   return adjustBusinessDate(candidate, adjustmentRule)
-}
-
-function formatDateLabel(value: string | Date) {
-  const date = typeof value === 'string' ? new Date(`${value}T00:00:00`) : value
-
-  return date.toLocaleDateString('ja-JP', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    weekday: 'short',
-  })
-}
-
-function formatMoneyByTransactionType(transaction: Transaction) {
-  const sign =
-    transaction.transactionType === 'INCOME' || transaction.transactionType === 'TRANSFER_IN'
-      ? '+'
-      : '-'
-
-  return `${sign}${formatMoney(transaction.amount, true)}`
 }
 
 function getNextPaymentDate(
@@ -1333,20 +1713,15 @@ function clampToMonthEnd(year: number, month: number, day: number) {
   return Math.min(day, new Date(year, month + 1, 0).getDate())
 }
 
-function adjustBusinessDate(
-  date: Date,
-  adjustmentRule: PaymentDateAdjustmentRule,
-) {
+function adjustBusinessDate(date: Date, adjustmentRule: PaymentDateAdjustmentRule) {
   const adjusted = new Date(date)
-
   if (adjustmentRule === 'NONE') {
     return adjusted
   }
 
   while (adjusted.getDay() === 0 || adjusted.getDay() === 6) {
     adjusted.setDate(
-      adjusted.getDate() +
-        (adjustmentRule === 'NEXT_BUSINESS_DAY' ? 1 : -1),
+      adjusted.getDate() + (adjustmentRule === 'NEXT_BUSINESS_DAY' ? 1 : -1),
     )
   }
 
@@ -1357,34 +1732,16 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
-function compareTransactions(left: Transaction, right: Transaction) {
-  if (left.transactionDate !== right.transactionDate) {
-    return right.transactionDate.localeCompare(left.transactionDate)
-  }
-
-  return right.transactionId - left.transactionId
-}
-
-function formatMoney(value: string | number, absolute = false) {
-  const numericValue = Number(value)
-
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(absolute ? Math.abs(numericValue) : numericValue)
-}
-
 function describeAdjustmentRule(rule: PaymentDateAdjustmentRule) {
   if (rule === 'NEXT_BUSINESS_DAY') {
-    return '翌営業日補正'
+    return '翌営業日'
   }
 
   if (rule === 'PREVIOUS_BUSINESS_DAY') {
-    return '前営業日補正'
+    return '前営業日'
   }
 
-  return '補正なし'
+  return '調整なし'
 }
 
 function isAccountFormField(value: string): value is AccountFormField {
@@ -1398,4 +1755,8 @@ function isAccountFormField(value: string): value is AccountFormField {
     value === 'displayOrder' ||
     value === 'creditCardProfile'
   )
+}
+
+function isGoalBucketFormField(value: string): value is GoalBucketFormField {
+  return value === 'accountId' || value === 'bucketName' || value === 'active'
 }

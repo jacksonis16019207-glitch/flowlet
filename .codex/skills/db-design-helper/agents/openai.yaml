@@ -1,4 +1,0 @@
-interface:
-  display_name: "DB Design Helper"
-  short_description: "flowlet 用のテーブル論理設計を整理する"
-  default_prompt: "flowlet のテーブル論理設計を、Java エンティティ化しやすい形で整理してください。"

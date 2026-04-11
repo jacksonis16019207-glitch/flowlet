@@ -34,6 +34,8 @@ npm.cmd install
 npm.cmd run dev
 ```
 
+`frontend` では Tailwind CSS v4 と `shadcn/ui` を使うため、共通 UI 部品を追加するときは `src/shared/components/ui/` を優先します。クラス結合ユーティリティは `src/shared/lib/utils.ts` の `cn` を使います。
+
 ### backend 起動
 
 ```powershell

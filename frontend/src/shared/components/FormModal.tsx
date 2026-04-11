@@ -1,4 +1,12 @@
 import type { ReactNode } from 'react'
+import { X } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog'
 
 type FormModalProps = {
   open: boolean
@@ -19,27 +27,16 @@ export function FormModal({
   panelClassName,
   children,
 }: FormModalProps) {
-  if (!open) {
-    return null
-  }
-
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
-      <section
-        className={panelClassName ? `modal-panel ${panelClassName}` : 'modal-panel'}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="form-modal-title"
-        aria-describedby="form-modal-description"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="modal-header">
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className={panelClassName} showCloseButton={false}>
+        <DialogHeader className="modal-header">
           <div>
             <p className="eyebrow">{eyebrow}</p>
-            <h2 id="form-modal-title">{title}</h2>
-            <p id="form-modal-description" className="modal-description">
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription className="modal-description">
               {description}
-            </p>
+            </DialogDescription>
           </div>
           <button
             type="button"
@@ -47,11 +44,11 @@ export function FormModal({
             aria-label="Close"
             onClick={onClose}
           >
-            閉じる
+            <X size={18} aria-hidden="true" />
           </button>
-        </div>
+        </DialogHeader>
         <div className="modal-body">{children}</div>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

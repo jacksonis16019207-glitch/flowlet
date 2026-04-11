@@ -1,4 +1,0 @@
-interface:
-  display_name: "Java Spring Helper"
-  short_description: "flowlet 用の Spring Boot 実装方針を整理する"
-  default_prompt: "flowlet の Spring Boot 実装を、DDD を意識しつつ現実的な構成で整理してください。"
