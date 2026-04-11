@@ -1803,6 +1803,7 @@ export function TransactionPage() {
       )}
 
       {activeTab !== 'allocation' ? null : (
+      <section className="content-grid transaction-workbench-grid transaction-allocation-grid">
       <section className="panel transaction-allocation-panel">
         <div className="panel-heading">
           <h2>直近の配分</h2>
@@ -1813,7 +1814,12 @@ export function TransactionPage() {
             <p className="status">配分はまだありません。</p>
           ) : (
             filteredAllocations.map((allocation) => (
-              <article key={allocation.allocationId} className="account-card">
+              <article
+                key={allocation.allocationId}
+                className={`account-card${
+                  selectedAllocation?.allocationId === allocation.allocationId ? ' selected' : ''
+                }`}
+              >
                 <div className="account-card-header">
                   <span className="type-chip">{formatMoney(allocation.amount)}</span>
                   <span className="badge active">
@@ -1834,7 +1840,9 @@ export function TransactionPage() {
                     className="action-button secondary"
                     onClick={() => {
                       setSelectedAllocationId(allocation.allocationId)
-                      setAllocationDetailOpen(true)
+                      if (isMobileLayout) {
+                        setAllocationDetailOpen(true)
+                      }
                     }}
                   >
                     詳細
@@ -1861,6 +1869,77 @@ export function TransactionPage() {
             ))
           )}
         </div>
+      </section>
+      <section className="panel transaction-detail-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Allocation detail</p>
+            <h2>Allocation summary</h2>
+          </div>
+        </div>
+        {selectedAllocation ? (
+          <div className="transaction-detail-stack">
+            <div className="transaction-detail-hero">
+              <p className="eyebrow">Allocation summary</p>
+              <h3>{selectedAllocation.description || 'No description'}</h3>
+              <p>{formatMoney(selectedAllocation.amount)}</p>
+            </div>
+            <dl className="detail-list">
+              <div className="detail-list-item">
+                <dt>Allocation date</dt>
+                <dd>{formatDateLabel(selectedAllocation.allocationDate)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>From GoalBucket</dt>
+                <dd>{selectedAllocation.fromGoalBucketName ?? 'Unassigned'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>To GoalBucket</dt>
+                <dd>{selectedAllocation.toGoalBucketName ?? 'Unassigned'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>Note</dt>
+                <dd>{selectedAllocation.note?.trim() || 'None'}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>Created at</dt>
+                <dd>{formatDateTimeLabel(selectedAllocation.createdAt)}</dd>
+              </div>
+              <div className="detail-list-item">
+                <dt>Updated at</dt>
+                <dd>{formatDateTimeLabel(selectedAllocation.updatedAt)}</dd>
+              </div>
+              {selectedAllocation.linkedTransferGroupId ? (
+                <div className="detail-list-item">
+                  <dt>Linked transfer group</dt>
+                  <dd>{selectedAllocation.linkedTransferGroupId}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <div className="category-actions">
+              <button
+                type="button"
+                className="action-button"
+                onClick={() => handleEditAllocation(selectedAllocation)}
+              >
+                編集
+              </button>
+              <button
+                type="button"
+                className="action-button danger"
+                disabled={deletingAllocationId === selectedAllocation.allocationId}
+                onClick={() => void handleDeleteAllocation(selectedAllocation)}
+              >
+                {deletingAllocationId === selectedAllocation.allocationId
+                  ? '削除中...'
+                  : '削除'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="status">配分を選択すると詳細を表示します。</p>
+        )}
+      </section>
       </section>
       )}
 

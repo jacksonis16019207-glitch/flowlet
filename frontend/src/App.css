@@ -665,6 +665,11 @@
   margin: 0 auto 24px;
 }
 
+.transaction-allocation-grid .transaction-allocation-panel {
+  max-width: none;
+  margin: 0;
+}
+
 .transaction-action-panel .panel-heading {
   align-items: start;
   gap: 16px;
