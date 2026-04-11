@@ -568,6 +568,11 @@
   color: #a23d35;
 }
 
+.status a {
+  color: inherit;
+  font-weight: 800;
+}
+
 .account-list {
   display: grid;
   gap: 14px;

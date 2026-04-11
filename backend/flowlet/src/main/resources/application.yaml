@@ -21,3 +21,8 @@ spring:
 
 server:
   forward-headers-strategy: framework
+
+flowlet:
+  github:
+    token: ${FLOWLET_GITHUB_TOKEN:}
+    repository: ${FLOWLET_GITHUB_REPOSITORY:}
