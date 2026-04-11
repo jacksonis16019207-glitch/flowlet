@@ -51,6 +51,7 @@ git branch -d feature/account-settings
 
 - `main`: review 1 件以上、CI 必須、direct push 禁止
 - `prod`: review 1 件以上、deploy 前チェック必須、direct push 禁止
+- `prod`: `main -> prod` の release PR または `hotfix/* -> prod` の hotfix PR だけを許可する
 
 ## GitHub Branch Protection Settings
 
@@ -83,7 +84,7 @@ GitHub の `Settings > Branches` で、少なくとも `main` と `prod` に bra
 - Require conversation resolution before merging: ON
 - Require status checks to pass before merging: ON
 - Require branches to be up to date before merging: ON
-- Required status checks: deploy 前に必要な `build`、`smoke-test`、`release-check` を追加する
+- Required status checks: deploy 前に必要な `build`、`smoke-test`、`release-check` に加え、`prod-release-source-check / validate-source-branch` を追加する
 - Require signed commits: OFF
 - Require linear history: OFF
 - Do not allow bypassing the above settings: ON
@@ -110,6 +111,7 @@ GitHub の repository settings では merge method を絞る。
 
 - `main`: `frontend-test`、`backend-test`、`frontend-build` など、通常開発で必須の検証を登録する
 - `prod`: `main` と同等以上に加え、デプロイ直前の確認ジョブを登録する
+- `prod`: `main` と同等以上に加え、`prod-release-source-check / validate-source-branch` を required check に登録して `main` と `hotfix/*` 以外からの PR を拒否する
 
 status check 名は workflow 追加後に実際の job 名に合わせて更新する。
 
