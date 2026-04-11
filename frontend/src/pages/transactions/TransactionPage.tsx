@@ -43,6 +43,10 @@ import type {
   Transaction,
   TransactionType,
 } from '../../features/transaction/types/transaction'
+import { Button } from '../../shared/components/ui/button'
+import { Input } from '../../shared/components/ui/input'
+import { Select } from '../../shared/components/ui/select'
+import { Textarea } from '../../shared/components/ui/textarea'
 
 type TransactionTab = 'transaction' | 'transfer' | 'allocation'
 type AllocationMode = 'amount' | 'ratio'
@@ -174,6 +178,8 @@ export function TransactionPage() {
   const [displayMonth, setDisplayMonth] = useState(today.slice(0, 7))
   const [transactionFilterType, setTransactionFilterType] = useState<TransactionFilterType>('ALL')
   const [transactionFilterAccountId, setTransactionFilterAccountId] = useState<number>(0)
+  const [transactionFilterCategoryId, setTransactionFilterCategoryId] = useState<number>(0)
+  const [transactionFilterGoalBucketId, setTransactionFilterGoalBucketId] = useState<number>(0)
   const [transactionFilterKeyword, setTransactionFilterKeyword] = useState('')
   const [deletingTransactionId, setDeletingTransactionId] = useState<number | null>(null)
   const [deletingAllocationId, setDeletingAllocationId] = useState<number | null>(null)
@@ -276,6 +282,20 @@ export function TransactionPage() {
           return false
         }
 
+        if (
+          transactionFilterCategoryId !== 0 &&
+          transaction.categoryId !== transactionFilterCategoryId
+        ) {
+          return false
+        }
+
+        if (
+          transactionFilterGoalBucketId !== 0 &&
+          transaction.goalBucketId !== transactionFilterGoalBucketId
+        ) {
+          return false
+        }
+
         const keyword = transactionFilterKeyword.trim().toLowerCase()
         if (!keyword) {
           return true
@@ -298,36 +318,121 @@ export function TransactionPage() {
       displayPeriod.periodStartDate,
       transactionFilterType,
       transactionFilterAccountId,
+      transactionFilterCategoryId,
+      transactionFilterGoalBucketId,
+      transactionFilterKeyword,
+    ],
+  )
+  const filteredLedgerTransactions = useMemo(() => {
+    if (activeTab === 'allocation') {
+      return []
+    }
+
+    return filteredTransactions.filter((transaction) => {
+      const isTransfer =
+        transaction.transactionType === 'TRANSFER_IN' ||
+        transaction.transactionType === 'TRANSFER_OUT' ||
+        Boolean(transaction.transferGroupId)
+
+      if (activeTab === 'transfer') {
+        return isTransfer
+      }
+
+      return !isTransfer
+    })
+  }, [activeTab, filteredTransactions])
+  const filteredAllocations = useMemo(
+    () =>
+      [...allocations]
+        .filter((allocation) => {
+          if (
+            allocation.allocationDate < displayPeriod.periodStartDate ||
+            allocation.allocationDate > displayPeriod.periodEndDate
+          ) {
+            return false
+          }
+
+          if (
+            transactionFilterAccountId !== 0 &&
+            allocation.accountId !== transactionFilterAccountId
+          ) {
+            return false
+          }
+
+          if (transactionFilterGoalBucketId !== 0) {
+            const matchedGoalBucket =
+              allocation.fromGoalBucketId === transactionFilterGoalBucketId ||
+              allocation.toGoalBucketId === transactionFilterGoalBucketId
+
+            if (!matchedGoalBucket) {
+              return false
+            }
+          }
+
+          const keyword = transactionFilterKeyword.trim().toLowerCase()
+          if (!keyword) {
+            return true
+          }
+
+          const searchTargets = [
+            allocation.description,
+            allocation.note ?? '',
+            allocation.fromGoalBucketName ?? '',
+            allocation.toGoalBucketName ?? '',
+          ]
+
+          return searchTargets.some((target) => target.toLowerCase().includes(keyword))
+        })
+        .sort(compareAllocations),
+    [
+      allocations,
+      displayPeriod.periodEndDate,
+      displayPeriod.periodStartDate,
+      transactionFilterAccountId,
+      transactionFilterGoalBucketId,
       transactionFilterKeyword,
     ],
   )
   const selectedTransaction =
-    filteredTransactions.find(
+    filteredLedgerTransactions.find(
       (transaction) => transaction.transactionId === selectedTransactionId,
-    ) ?? filteredTransactions[0] ?? null
-  const latestAllocations = useMemo(
-    () => [...allocations].sort(compareAllocations).slice(0, 8),
-    [allocations],
-  )
+    ) ?? filteredLedgerTransactions[0] ?? null
   const selectedAllocation =
-    latestAllocations.find((allocation) => allocation.allocationId === selectedAllocationId) ??
+    filteredAllocations.find((allocation) => allocation.allocationId === selectedAllocationId) ??
+    filteredAllocations[0] ??
     null
 
   useEffect(() => {
-    if (filteredTransactions.length === 0) {
+    if (filteredLedgerTransactions.length === 0) {
       if (selectedTransactionId != null) {
         setSelectedTransactionId(null)
       }
       return
     }
 
-    const matched = filteredTransactions.some(
+    const matched = filteredLedgerTransactions.some(
       (transaction) => transaction.transactionId === selectedTransactionId,
     )
     if (!matched) {
-      setSelectedTransactionId(filteredTransactions[0].transactionId)
+      setSelectedTransactionId(filteredLedgerTransactions[0].transactionId)
     }
-  }, [filteredTransactions, selectedTransactionId])
+  }, [filteredLedgerTransactions, selectedTransactionId])
+
+  useEffect(() => {
+    if (filteredAllocations.length === 0) {
+      if (selectedAllocationId != null) {
+        setSelectedAllocationId(null)
+      }
+      return
+    }
+
+    const matched = filteredAllocations.some(
+      (allocation) => allocation.allocationId === selectedAllocationId,
+    )
+    if (!matched) {
+      setSelectedAllocationId(filteredAllocations[0].allocationId)
+    }
+  }, [filteredAllocations, selectedAllocationId])
 
   async function loadPageData() {
     setLoading(true)
@@ -831,6 +936,8 @@ export function TransactionPage() {
   function resetTransactionFilters() {
     setTransactionFilterType('ALL')
     setTransactionFilterAccountId(0)
+    setTransactionFilterCategoryId(0)
+    setTransactionFilterGoalBucketId(0)
     setTransactionFilterKeyword('')
   }
 
@@ -900,6 +1007,8 @@ export function TransactionPage() {
   const hasTransactionFilters =
     transactionFilterType !== 'ALL' ||
     transactionFilterAccountId !== 0 ||
+    transactionFilterCategoryId !== 0 ||
+    transactionFilterGoalBucketId !== 0 ||
     transactionFilterKeyword.trim() !== ''
 
   return (
@@ -954,7 +1063,7 @@ export function TransactionPage() {
         {loading ? <p className="status">読み込み中...</p> : null}
 
         {activeTab === 'transaction' ? (
-          <form className="account-form transaction-form-grid" onSubmit={handleTransactionSubmit}>
+          <form className="account-form transaction-form-grid transaction-form-upgraded" onSubmit={handleTransactionSubmit}>
             <div className="section-heading">
               <h3>{editingTransactionId == null ? '通常取引を登録' : '通常取引を編集'}</h3>
               {editingTransactionId != null ? (
@@ -1029,24 +1138,27 @@ export function TransactionPage() {
               onQuickCreateCategory={handleQuickCreateCategory}
               onQuickCreateSubcategory={handleQuickCreateSubcategory}
             />
-            <button type="submit" disabled={submitting}>
+            <Button type="submit" className="transaction-submit-button" disabled={submitting}>
               {submitting
                 ? '保存中...'
                 : editingTransactionId == null
                   ? '通常取引を登録'
                   : '通常取引を更新'}
-            </button>
+            </Button>
           </form>
         ) : null}
 
         {activeTab === 'transfer' ? (
-          <form className="account-form transaction-form-grid" onSubmit={handleTransferSubmit}>
+          <form
+            className="account-form transaction-form-grid transaction-form-upgraded"
+            onSubmit={handleTransferSubmit}
+          >
             <div className="section-heading">
               <h3>振替を登録</h3>
             </div>
-            <label>
+            <label className="transaction-field">
               振替元口座
-              <select
+              <Select
                 value={transferForm.fromAccountId}
                 onChange={(event) =>
                   setTransferForm((current) => ({
@@ -1061,11 +1173,11 @@ export function TransactionPage() {
                     {account.providerName} / {account.accountName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               振替先口座
-              <select
+              <Select
                 value={transferForm.toAccountId}
                 onChange={(event) =>
                   setTransferForm((current) => ({
@@ -1079,11 +1191,11 @@ export function TransactionPage() {
                     {account.providerName} / {account.accountName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               振替元 GoalBucket
-              <select
+              <Select
                 value={transferForm.fromGoalBucketId ?? ''}
                 onChange={(event) =>
                   setTransferForm((current) => ({
@@ -1100,11 +1212,11 @@ export function TransactionPage() {
                       {goalBucket.bucketName}
                     </option>
                   ))}
-              </select>
+              </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               カテゴリ
-              <select
+              <Select
                 value={transferForm.categoryId}
                 onChange={(event) =>
                   setTransferForm((current) => ({
@@ -1119,11 +1231,11 @@ export function TransactionPage() {
                     {category.categoryName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               サブカテゴリ
-              <select
+              <Select
                 value={transferForm.subcategoryId ?? ''}
                 onChange={(event) =>
                   setTransferForm((current) => ({
@@ -1138,11 +1250,11 @@ export function TransactionPage() {
                     {subcategory.subcategoryName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               振替元の収支集計
-              <select
+              <Select
                 value={transferForm.outgoingCashflowTreatment}
                 onChange={(event) =>
                   setTransferForm((current) => ({
@@ -1156,11 +1268,11 @@ export function TransactionPage() {
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               振替先の収支集計
-              <select
+              <Select
                 value={transferForm.incomingCashflowTreatment}
                 onChange={(event) =>
                   setTransferForm((current) => ({
@@ -1174,7 +1286,7 @@ export function TransactionPage() {
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <QuickCreatePanel
               context="transfer"
@@ -1189,9 +1301,9 @@ export function TransactionPage() {
               onQuickCreateCategory={handleQuickCreateCategory}
               onQuickCreateSubcategory={handleQuickCreateSubcategory}
             />
-            <label>
+            <label className="transaction-field">
               振替日
-              <input
+              <Input
                 type="date"
                 value={transferForm.transactionDate}
                 onChange={(event) =>
@@ -1202,9 +1314,9 @@ export function TransactionPage() {
                 }
               />
             </label>
-            <label>
+            <label className="transaction-field">
               金額
-              <input
+              <Input
                 value={transferForm.amount}
                 onChange={(event) =>
                   setTransferForm((current) => ({ ...current, amount: event.target.value }))
@@ -1212,9 +1324,9 @@ export function TransactionPage() {
                 placeholder="50000"
               />
             </label>
-            <label>
+            <label className="transaction-field">
               説明
-              <input
+              <Input
                 value={transferForm.description}
                 onChange={(event) =>
                   setTransferForm((current) => ({
@@ -1225,9 +1337,9 @@ export function TransactionPage() {
                 placeholder="例: 生活費口座へ振替"
               />
             </label>
-            <label>
+            <label className="transaction-field transaction-field-wide">
               メモ
-              <textarea
+              <Textarea
                 value={transferForm.note}
                 onChange={(event) =>
                   setTransferForm((current) => ({ ...current, note: event.target.value }))
@@ -1245,14 +1357,17 @@ export function TransactionPage() {
                 (goalBucket) => goalBucket.accountId === transferForm.toAccountId,
               )}
             />
-            <button type="submit" disabled={submitting}>
+            <Button type="submit" className="transaction-submit-button" disabled={submitting}>
               {submitting ? '保存中...' : '振替を登録'}
-            </button>
+            </Button>
           </form>
         ) : null}
 
         {activeTab === 'allocation' ? (
-          <form className="account-form transaction-form-grid" onSubmit={handleAllocationSubmit}>
+          <form
+            className="account-form transaction-form-grid transaction-form-upgraded"
+            onSubmit={handleAllocationSubmit}
+          >
             <div className="section-heading">
               <h3>{editingAllocationId == null ? '配分を登録' : '配分を編集'}</h3>
               {editingAllocationId != null ? (
@@ -1261,9 +1376,9 @@ export function TransactionPage() {
                 </button>
               ) : null}
             </div>
-            <label>
+            <label className="transaction-field transaction-field-wide">
               対象口座
-              <select
+              <Select
                 value={allocationAccountId}
                 onChange={(event) => {
                   setAllocationAccountId(Number(event.target.value))
@@ -1275,11 +1390,11 @@ export function TransactionPage() {
                     {account.providerName} / {account.accountName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               配分元
-              <select
+              <Select
                 value={allocationFromGoalBucketId ?? ''}
                 onChange={(event) =>
                   setAllocationFromGoalBucketId(
@@ -1293,26 +1408,26 @@ export function TransactionPage() {
                     {goalBucket.bucketName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
-            <label>
+            <label className="transaction-field">
               配分日
-              <input
+              <Input
                 type="date"
                 value={allocationDate}
                 onChange={(event) => setAllocationDate(event.target.value)}
               />
             </label>
-            <label>
+            <label className="transaction-field">
               説明
-              <input
+              <Input
                 value={allocationDescription}
                 onChange={(event) => setAllocationDescription(event.target.value)}
               />
             </label>
-            <label>
+            <label className="transaction-field transaction-field-wide">
               メモ
-              <textarea
+              <Textarea
                 value={allocationNote}
                 onChange={(event) => setAllocationNote(event.target.value)}
               />
@@ -1326,18 +1441,19 @@ export function TransactionPage() {
               setDrafts={setAllocationDrafts}
               goalBuckets={accountGoalBuckets}
             />
-            <button type="submit" disabled={submitting}>
+            <Button type="submit" className="transaction-submit-button" disabled={submitting}>
               {submitting
                 ? '保存中...'
                 : editingAllocationId == null
                   ? '配分を登録'
                   : '配分を更新'}
-            </button>
+            </Button>
           </form>
         ) : null}
       </section>
       </FormModal>
 
+      {activeTab === 'allocation' ? null : (
       <section className="content-grid transaction-workbench-grid">
         <section className="panel">
           <div className="panel-heading">
@@ -1396,6 +1512,38 @@ export function TransactionPage() {
                 ))}
               </select>
             </label>
+            <label>
+              Category
+              <select
+                value={transactionFilterCategoryId}
+                onChange={(event) =>
+                  setTransactionFilterCategoryId(Number(event.target.value))
+                }
+              >
+                <option value={0}>All categories</option>
+                {categories.map((category) => (
+                  <option key={category.categoryId} value={category.categoryId}>
+                    {category.categoryName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Goal Bucket
+              <select
+                value={transactionFilterGoalBucketId}
+                onChange={(event) =>
+                  setTransactionFilterGoalBucketId(Number(event.target.value))
+                }
+              >
+                <option value={0}>All goal buckets</option>
+                {goalBuckets.map((goalBucket) => (
+                  <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>
+                    {goalBucket.bucketName}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="transaction-filter-keyword">
               キーワード
               <input
@@ -1423,6 +1571,21 @@ export function TransactionPage() {
                   ?.accountName ?? '未選択'}
               </span>
             ) : null}
+            {transactionFilterCategoryId !== 0 ? (
+              <span>
+                Category:{' '}
+                {categories.find((category) => category.categoryId === transactionFilterCategoryId)
+                  ?.categoryName ?? 'Not selected'}
+              </span>
+            ) : null}
+            {transactionFilterGoalBucketId !== 0 ? (
+              <span>
+                Goal Bucket:{' '}
+                {goalBuckets.find(
+                  (goalBucket) => goalBucket.goalBucketId === transactionFilterGoalBucketId,
+                )?.bucketName ?? 'Not selected'}
+              </span>
+            ) : null}
             {transactionFilterKeyword.trim() !== '' ? (
               <span>キーワード: {transactionFilterKeyword.trim()}</span>
             ) : null}
@@ -1446,7 +1609,7 @@ export function TransactionPage() {
             ) : null}
           </div>
           <div className="transaction-table-shell">
-            {filteredTransactions.length === 0 ? (
+            {filteredLedgerTransactions.length === 0 ? (
               <p className="status">条件に一致する取引はありません。</p>
             ) : (
               <div className="transaction-table-scroll">
@@ -1464,7 +1627,7 @@ export function TransactionPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTransactions.map((transaction) => {
+                    {filteredLedgerTransactions.map((transaction) => {
                       const selected =
                         transaction.transactionId === selectedTransaction?.transactionId
 
@@ -1612,17 +1775,19 @@ export function TransactionPage() {
           )}
         </section>
       </section>
+      )}
 
+      {activeTab !== 'allocation' ? null : (
       <section className="panel transaction-allocation-panel">
         <div className="panel-heading">
           <h2>直近の配分</h2>
-          <span>{latestAllocations.length} 件</span>
+          <span>{filteredAllocations.length} 件</span>
         </div>
         <div className="account-list">
-          {latestAllocations.length === 0 ? (
+          {filteredAllocations.length === 0 ? (
             <p className="status">配分はまだありません。</p>
           ) : (
-            latestAllocations.map((allocation) => (
+            filteredAllocations.map((allocation) => (
               <article key={allocation.allocationId} className="account-card">
                 <div className="account-card-header">
                   <span className="type-chip">{formatMoney(allocation.amount)}</span>
@@ -1672,20 +1837,21 @@ export function TransactionPage() {
           )}
         </div>
       </section>
+      )}
 
       <FormModal
         open={transactionDetailOpen && selectedTransaction != null}
         title={selectedTransaction?.description ?? '取引詳細'}
-        description="取引日、口座、GoalBucket、更新日時を確認できます。"
-        eyebrow="Transaction Detail"
+        description="取引日、金額、口座、カテゴリ、GoalBucket、更新情報を確認できます。"
+        eyebrow="取引詳細"
         panelClassName="modal-panel-wide"
         onClose={() => setTransactionDetailOpen(false)}
       >
         {selectedTransaction == null ? null : (
           <div className="transaction-detail-stack">
             <div className="transaction-detail-hero">
-              <p className="eyebrow">Selected Transaction</p>
-              <h3>{selectedTransaction.description}</h3>
+              <p className="eyebrow">取引サマリー</p>
+              <h3>{selectedTransaction.description || '説明なし'}</h3>
               <p>{formatSignedMoney(selectedTransaction)}</p>
             </div>
             <dl className="detail-list">
@@ -1767,16 +1933,16 @@ export function TransactionPage() {
       <FormModal
         open={allocationDetailOpen && selectedAllocation != null}
         title={selectedAllocation?.description ?? '配分詳細'}
-        description="配分日、移動元と移動先、関連する振替情報を確認できます。"
-        eyebrow="Allocation Detail"
+        description="配分日、配分元、配分先、関連する振替情報、更新情報を確認できます。"
+        eyebrow="配分詳細"
         panelClassName="modal-panel-wide"
         onClose={() => setAllocationDetailOpen(false)}
       >
         {selectedAllocation == null ? null : (
           <div className="transaction-detail-stack">
             <div className="transaction-detail-hero">
-              <p className="eyebrow">Selected Allocation</p>
-              <h3>{selectedAllocation.description}</h3>
+              <p className="eyebrow">配分サマリー</p>
+              <h3>{selectedAllocation.description || '説明なし'}</h3>
               <p>{formatMoney(selectedAllocation.amount)}</p>
             </div>
             <dl className="detail-list">
@@ -1806,7 +1972,7 @@ export function TransactionPage() {
               </div>
               {selectedAllocation.linkedTransferGroupId ? (
                 <div className="detail-list-item">
-                  <dt>振替連携</dt>
+                  <dt>関連する振替グループ</dt>
                   <dd>{selectedAllocation.linkedTransferGroupId}</dd>
                 </div>
               ) : null}
@@ -1858,9 +2024,9 @@ function CommonTransactionFields({
 }: CommonTransactionFieldsProps) {
   return (
     <>
-      <label>
-        口座
-        <select
+      <label className="transaction-field transaction-field-wide">
+        <span className="transaction-field-label">Account</span>
+        <Select
           value={form.accountId}
           onChange={(event) =>
             setForm((current) => ({
@@ -1875,11 +2041,14 @@ function CommonTransactionFields({
               {account.providerName} / {account.accountName}
             </option>
           ))}
-        </select>
+        </Select>
+        <small className="transaction-field-help">
+          Select the account for this entry.
+        </small>
       </label>
-      <label>
-        取引種別
-        <select
+      <label className="transaction-field">
+        <span className="transaction-field-label">Type</span>
+        <Select
           value={form.transactionType}
           onChange={(event) =>
             setForm((current) => ({
@@ -1890,14 +2059,14 @@ function CommonTransactionFields({
             }))
           }
         >
-          <option value="EXPENSE">支出</option>
-          <option value="INCOME">収入</option>
-        </select>
+          <option value="EXPENSE">Expense</option>
+          <option value="INCOME">Income</option>
+        </Select>
       </label>
-      <label>
-        GoalBucket
-        <select
-          value={form.goalBucketId ?? ''}
+      <label className="transaction-field">
+        <span className="transaction-field-label">GoalBucket</span>
+        <Select
+          value={form.goalBucketId ?? ""}
           onChange={(event) =>
             setForm((current) => ({
               ...current,
@@ -1905,17 +2074,17 @@ function CommonTransactionFields({
             }))
           }
         >
-          <option value="">未配分</option>
+          <option value="">None</option>
           {goalBuckets.map((goalBucket) => (
             <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>
               {goalBucket.bucketName}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
-      <label>
-        収支集計
-        <select
+      <label className="transaction-field">
+        <span className="transaction-field-label">Cashflow</span>
+        <Select
           value={form.cashflowTreatment}
           onChange={(event) =>
             setForm((current) => ({
@@ -1929,11 +2098,11 @@ function CommonTransactionFields({
               {option.label}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
-      <label>
-        カテゴリ
-        <select
+      <label className="transaction-field">
+        <span className="transaction-field-label">Category</span>
+        <Select
           value={form.categoryId}
           onChange={(event) =>
             setForm((current) => ({
@@ -1948,12 +2117,12 @@ function CommonTransactionFields({
               {category.categoryName}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
-      <label>
-        サブカテゴリ
-        <select
-          value={form.subcategoryId ?? ''}
+      <label className="transaction-field">
+        <span className="transaction-field-label">Subcategory</span>
+        <Select
+          value={form.subcategoryId ?? ""}
           onChange={(event) =>
             setForm((current) => ({
               ...current,
@@ -1961,17 +2130,17 @@ function CommonTransactionFields({
             }))
           }
         >
-          <option value="">なし</option>
+          <option value="">None</option>
           {subcategories.map((subcategory) => (
             <option key={subcategory.subcategoryId} value={subcategory.subcategoryId}>
               {subcategory.subcategoryName}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
-      <label>
-        取引日
-        <input
+      <label className="transaction-field">
+        <span className="transaction-field-label">Date</span>
+        <Input
           type="date"
           value={form.transactionDate}
           onChange={(event) =>
@@ -1979,9 +2148,9 @@ function CommonTransactionFields({
           }
         />
       </label>
-      <label>
-        金額
-        <input
+      <label className="transaction-field">
+        <span className="transaction-field-label">Amount</span>
+        <Input
           value={form.amount}
           onChange={(event) =>
             setForm((current) => ({ ...current, amount: event.target.value }))
@@ -1989,19 +2158,19 @@ function CommonTransactionFields({
           placeholder="2800"
         />
       </label>
-      <label>
-        説明
-        <input
+      <label className="transaction-field transaction-field-wide">
+        <span className="transaction-field-label">Description</span>
+        <Input
           value={form.description}
           onChange={(event) =>
             setForm((current) => ({ ...current, description: event.target.value }))
           }
-          placeholder="例: ホテル朝食"
+          placeholder="Example: Hotel breakfast"
         />
       </label>
-      <label>
-        メモ
-        <textarea
+      <label className="transaction-field transaction-field-wide">
+        <span className="transaction-field-label">Note</span>
+        <Textarea
           value={form.note}
           onChange={(event) =>
             setForm((current) => ({ ...current, note: event.target.value }))
@@ -2009,7 +2178,7 @@ function CommonTransactionFields({
         />
       </label>
       {!showDetailFields ? (
-        <p className="status">金額・説明・メモは一括明細セクションで入力します。</p>
+        <p className="status">Amount, description, and note are shared in batch mode.</p>
       ) : null}
     </>
   )
@@ -2142,12 +2311,12 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
   } = props
 
   return (
-    <div className="quick-create-panel">
+    <div className="quick-create-panel quick-create-panel-upgraded">
       <p className="eyebrow">候補になければその場で追加</p>
       <div className="quick-create-grid">
-        <label>
-          新規カテゴリ
-          <input
+        <label className="transaction-field">
+          <span className="transaction-field-label">新規カテゴリ</span>
+          <Input
             value={quickCategoryForm.categoryName}
             onChange={(event) =>
               onQuickCategoryFormChange((current) => ({
@@ -2158,9 +2327,9 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
             maxLength={100}
           />
         </label>
-        <label>
-          種別
-          <select
+        <label className="transaction-field">
+          <span className="transaction-field-label">種別</span>
+          <Select
             value={quickCategoryForm.categoryType}
             onChange={(event) =>
               onQuickCategoryFormChange((current) => ({
@@ -2172,21 +2341,22 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
             <option value="EXPENSE">支出</option>
             <option value="INCOME">収入</option>
             <option value="TRANSFER">振替</option>
-          </select>
+          </Select>
         </label>
-        <button
+        <Button
           type="button"
+          className="quick-create-button"
           disabled={quickSubmitting || !quickCategoryForm.categoryName.trim()}
           onClick={() => void onQuickCreateCategory(context)}
         >
           作成
-        </button>
+        </Button>
       </div>
       {quickCategoryErrorMessage ? <p className="field-error">{quickCategoryErrorMessage}</p> : null}
       <div className="quick-create-grid">
-        <label>
-          新規サブカテゴリ
-          <input
+        <label className="transaction-field">
+          <span className="transaction-field-label">新規サブカテゴリ</span>
+          <Input
             value={quickSubcategoryForm.subcategoryName}
             onChange={(event) =>
               onQuickSubcategoryFormChange((current) => ({
@@ -2197,9 +2367,9 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
             maxLength={100}
           />
         </label>
-        <label>
-          親カテゴリ
-          <select
+        <label className="transaction-field">
+          <span className="transaction-field-label">親カテゴリ</span>
+          <Select
             value={quickSubcategoryForm.categoryId}
             onChange={(event) =>
               onQuickSubcategoryFormChange((current) => ({
@@ -2214,15 +2384,16 @@ function QuickCreatePanel(props: QuickCreatePanelProps) {
                 {category.categoryName}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
-        <button
+        <Button
           type="button"
+          className="quick-create-button"
           disabled={quickSubmitting || !quickSubcategoryForm.subcategoryName.trim() || !quickSubcategoryForm.categoryId}
           onClick={() => void onQuickCreateSubcategory(context)}
         >
           作成
-        </button>
+        </Button>
       </div>
       {quickSubcategoryErrorMessage ? (
         <p className="field-error">{quickSubcategoryErrorMessage}</p>
@@ -2252,7 +2423,7 @@ function AllocationFields({
 }: AllocationFieldsProps) {
   return (
     <div className="allocation-editor">
-      <div className="inline-tabs">
+      <div className="inline-tabs allocation-mode-tabs">
         <button
           type="button"
           className={mode === 'amount' ? 'active' : ''}
@@ -2269,9 +2440,9 @@ function AllocationFields({
         </button>
       </div>
       {mode === 'ratio' ? (
-        <label>
+        <label className="transaction-field transaction-field-wide">
           配分元の基準額
-          <input
+          <Input
             value={baseAmount}
             onChange={(event) => setBaseAmount(event.target.value)}
             placeholder="50000"
@@ -2281,7 +2452,7 @@ function AllocationFields({
       <div className="subform-grid">
         {drafts.map((draft, index) => (
           <div key={`${draft.toGoalBucketId}-${index}`} className="allocation-row">
-            <select
+            <Select
               value={draft.toGoalBucketId}
               onChange={(event) =>
                 setDrafts((current) =>
@@ -2293,13 +2464,14 @@ function AllocationFields({
                 )
               }
             >
+              <option value={0}>配分先を選択</option>
               {goalBuckets.map((goalBucket) => (
                 <option key={goalBucket.goalBucketId} value={goalBucket.goalBucketId}>
                   {goalBucket.bucketName}
                 </option>
               ))}
-            </select>
-            <input
+            </Select>
+            <Input
               value={draft.value}
               onChange={(event) =>
                 setDrafts((current) =>
@@ -2312,8 +2484,9 @@ function AllocationFields({
               }
               placeholder={mode === 'amount' ? '30000' : '60'}
             />
-            <button
+            <Button
               type="button"
+              variant="danger"
               onClick={() =>
                 setDrafts((current) =>
                   current.filter((_, currentIndex) => currentIndex !== index),
@@ -2321,12 +2494,13 @@ function AllocationFields({
               }
             >
               削除
-            </button>
+            </Button>
           </div>
         ))}
       </div>
-      <button
+      <Button
         type="button"
+        className="allocation-add-button"
         onClick={() =>
           setDrafts((current) => [
             ...current,
@@ -2335,7 +2509,7 @@ function AllocationFields({
         }
       >
         配分先を追加
-      </button>
+      </Button>
     </div>
   )
 }

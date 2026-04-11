@@ -25,15 +25,17 @@ description: 日常開発の標準フローを扱う project-local Skill。Issue
 1. 対象範囲の `AGENTS.md`、関連 Issue、既存コード、関連 `docs/` を確認する
 2. 実施方針を短く共有して承認を得る
 3. 必要な Skill を選び、最小変更で実装する
-4. 仕様変更や運用影響があれば `docs/` を更新する
-5. 変更規模に応じて検証し、未実施の検証は理由を明示する
-6. コミットし、必要時は push や PR まで進める
+4. UI 構成、ページ分割、共通部分、導線、情報設計、視覚表現を見直す場合は、必ず `ui-ux-pro-max` を併用する
+5. 仕様変更や運用影響があれば `docs/` を更新する
+6. 変更規模に応じて検証し、未実施の検証は理由を明示する
+7. コミットし、必要時は push や PR まで進める
 
 ## Related Skills
 
 - GitHub 運用や Issue 整理: `github-task-management`
 - backend 実装: `backend-implementation`
 - frontend 実装: `frontend-implementation`
+- UI / UX 再設計、構造見直し、体験設計: `ui-ux-pro-max`
 - DB 変更: `db-change-management`
 - 本番運用: `release-ops`
 
