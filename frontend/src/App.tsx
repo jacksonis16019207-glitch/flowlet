@@ -76,8 +76,8 @@ function App() {
   useEffect(() => {
     const title =
       page === 'settings'
-        ? `${currentSettingsSection.label} | ${currentPage.label} | flowlet`
-        : `${currentPage.label} | flowlet`
+        ? `flowlet | ${currentPage.label} | ${currentSettingsSection.label}`
+        : `flowlet | ${currentPage.label}`
 
     document.title = title
   }, [currentPage.label, currentSettingsSection.label, page])
